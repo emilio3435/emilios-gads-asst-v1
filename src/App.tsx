@@ -1,9 +1,34 @@
 import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
-import remarkGfm from 'remark-gfm'; // Import the GFM plugin
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'; // Import necessary components
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './App.css';
 import audacyLogo from './assets/audacy-logo.png';
 
+// New component to display prompt details and analysis
+function AnalysisDetails() {
+  const location = useLocation();
+  const { prompt, modelName, analysisResult, finalPrompt } = location.state || {}; // Destructure finalPrompt
+
+  return (
+    <div className="analysis-details-container">
+      <Link to="/" className="back-button">Back to Form</Link> {/* Link to go back */}
+      <h2>Analysis Details</h2>
+        <h3>Original Prompt:</h3>
+        <pre className="prompt-text">{prompt}</pre> {/* Display original prompt */}
+      <h3>Complete Prompt Sent to LLM:</h3>
+      <pre className="prompt-text">{finalPrompt}</pre> {/* Display the final prompt */}
+      <h3>Model Used:</h3>
+      <p>{modelName}</p>
+      <h3>Analysis Output:</h3>
+      <div className="analysis-result">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{analysisResult}</ReactMarkdown>
+      </div>
+    </div>
+  );
+}
+
+// Main App component
 function App() {
   const [selectedTactics, setSelectedTactics] = useState<string[]>([]);
   const [selectedKPIs, setSelectedKPIs] = useState<string[]>([]);
@@ -12,6 +37,11 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentSituation, setCurrentSituation] = useState<string>('');
+  const [desiredOutcome, setDesiredOutcome] = useState<string>('');
+    const [prompt, setPrompt] = useState<string | null>(null); // new state
+    const [modelName, setModelName] = useState<string | null>(null); // new state
+    const [finalPrompt, setFinalPrompt] = useState<string | null>(null)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setAnalysisResult(null); // Clear previous results
@@ -35,7 +65,17 @@ function App() {
     setSelectedKPIs([event.target.value]);
   };
 
-  const handleSubmit = async () => {
+  // --- New handler functions for text areas ---
+  const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setCurrentSituation(event.target.value);
+  };
+
+  const handleOutcomeChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDesiredOutcome(event.target.value);
+  };
+  // -------------------------------------------
+
+   const handleSubmit = async () => {
     console.log("handleSubmit called");
     setError(null); // Clear previous errors
     setAnalysisResult(null); // Clear previous results
@@ -59,11 +99,19 @@ function App() {
     console.log("file:", file);
     console.log("selectedTactics:", selectedTactics);
     console.log("selectedKPIs:", selectedKPIs);
+    // --- Include text area values in the log ---
+    console.log("currentSituation:", currentSituation);
+    console.log("desiredOutcome:", desiredOutcome);
+    // -----------------------------------------
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('tactics', JSON.stringify(selectedTactics));
     formData.append('kpis', JSON.stringify(selectedKPIs));
+    // --- Append text area values to FormData ---
+    formData.append('currentSituation', currentSituation);
+    formData.append('desiredOutcome', desiredOutcome);
+    // ------------------------------------------
     // Note: You can't easily log FormData directly in the console
     console.log("formData prepared, sending...");
 
@@ -93,7 +141,12 @@ function App() {
       console.log("data:", data);
       // Make sure data.analysis is a string before setting
       setAnalysisResult(typeof data.analysis === 'string' ? data.analysis : JSON.stringify(data.analysis));
-    } catch (error) {
+            // --- Store prompt and model name in state ---
+      setPrompt(data.prompt); // Assuming your backend sends the prompt back
+      setModelName(data.modelName); // Assuming your backend sends the model name back
+      setFinalPrompt(data.finalPrompt)
+      // --------------------------------------------
+      } catch (error) {
       console.error('Error during analysis:', error);
       setError(error.message || 'An unexpected error occurred.'); // Show error in UI
     } finally {
@@ -119,8 +172,9 @@ function App() {
       <br />
 
       {/* --- Added 'required' attribute --- */}
+      <div className='select-container'>
       <select
-        className="tactics-list rounded-element" // Removed rounded-element class
+        className="tactics-list" // Removed rounded-element class
         value={selectedTactics[0] || ''} // Control component for single select
         onChange={handleTacticChange}
         required // Make selection mandatory
@@ -137,10 +191,12 @@ function App() {
         <option value="Email eDirect">Email eDirect</option>
         <option value="Amazon DSP">Amazon DSP</option>
       </select>
+      </div>
 
       {/* --- Added 'required' attribute --- */}
+      <div className='select-container'>
       <select
-        className="kpi-list rounded-element" // Removed rounded-element class
+        className="kpi-list" // Removed rounded-element class
         value={selectedKPIs[0] || ''} // Control component for single select
         onChange={handleKPIChange}
         required // Make selection mandatory
@@ -152,28 +208,60 @@ function App() {
         <option value="ROAS">ROAS</option>
         <option value="CPL">CPL</option>
       </select>
+      </div>
+
+      {/* --- New Text Areas --- */}
+      <div className="text-area-container">
+        <label htmlFor="currentSituation">Current Situation:</label>
+        <textarea
+          id="currentSituation"
+          className="text-area"
+          value={currentSituation}
+          onChange={handleSituationChange}
+          placeholder="Describe your current marketing situation..."
+        />
+      </div>
+      <div className="text-area-container">
+        <label htmlFor="desiredOutcome">Desired Outcome:</label>
+        <textarea
+          id="desiredOutcome"
+          className="text-area"
+          value={desiredOutcome}
+          onChange={handleOutcomeChange}
+          placeholder="Describe your desired outcome..."
+        />
+      </div>
+      {/* ---------------------- */}
 
       <button className='rounded-element' onClick={handleSubmit} disabled={isLoading}>
         {isLoading ? 'Analyzing...' : 'Analyze'} {/* Show loading state */}
       </button>
-
+      {analysisResult &&   <Link
+        to="/analysis"
+        className="rounded-element"
+        state={{ prompt, modelName, analysisResult, finalPrompt }}
+      >
+        View Analysis
+      </Link>}
       {/* Display Error Messages */}
       {error && <div className="error-message">{error}</div>}
 
       {/* Display Analysis Results */}
       {isLoading && <div className="loading-indicator">Loading analysis...</div>}
-      {analysisResult && !isLoading && (
-        <div className="analysis-result-container">
-          <h2>Analysis Results:</h2>
-          <div className="analysis-result">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {analysisResult}
-            </ReactMarkdown>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-export default App;
+// Main App Wrapper with Router
+function AppWrapper() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/analysis" element={<AnalysisDetails />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default AppWrapper;

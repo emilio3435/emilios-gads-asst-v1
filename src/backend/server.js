@@ -106,9 +106,33 @@ try {
       const kpis = JSON.parse(req.body.kpis);
       console.log("Received tactics:", tactics);
       console.log("Received kpis:", kpis);
+      // --- Get text area values ---
+      const currentSituation = req.body.currentSituation;
+      const desiredOutcome = req.body.desiredOutcome;
+      console.log("Received currentSituation:", currentSituation);
+      console.log("Received desiredOutcome:", desiredOutcome);
+      // ----------------------------
+
+       // --- Default prompt to always include ---
+      const defaultPrompt = "you are emilio's AE and are charged with explaining complex digital results to your clients in relatable terms without making them feel dumb/stupid. Help describe the sitautions outlined in these digital marketing scenarios with as much ease and simplicity as possible. ";
+      // --------------------------------------
 
       console.log("Creating prompt for Gemini...");
-      const prompt = "Analyze the following marketing data (provided as a JSON array):\n" + JSON.stringify(data) + "\n\nI am focusing on the following tactics: " + tactics.join(', ') + " and the following KPIs: " + kpis.join(', ') + ".\n\nProvide a concise analysis and recommendations based ONLY on the data provided."; // Replaced template literal with string concatenation
+      // --- Append text area data to the prompt ---
+      // --- Include the filename instead of the file contents ---
+      let prompt = `Analyze the marketing data from the file: ${fileName}.\n\n`;
+      prompt += "I am focusing on the following tactics: " + tactics.join(', ') + " and the following KPIs: " + kpis.join(', ') + ".\n\n";
+      prompt += "Here is my current situation:\n" + currentSituation + "\n\n";
+      prompt += "Here is my desired outcome:\n" + desiredOutcome + "\n\n";
+        // --- Append the default prompt here ---
+      prompt += defaultPrompt
+      // -------------------------------------------
+        
+      // --- Log the complete prompt here ---
+      console.log("--- Complete Prompt to Gemini ---");
+      console.log(prompt);
+      console.log("--- End of Prompt ---");
+      // ------------------------------------
 
       console.log("Sending prompt to Gemini...");
       // --- Read model name from environment variable ---
@@ -122,7 +146,7 @@ try {
       console.log("Received response from Gemini.");
 
       console.log("Sending response to frontend...");
-      res.json({ analysis: text });
+      res.json({ analysis: text, prompt: prompt, modelName: modelName, finalPrompt: prompt }); // Send back prompt and model name
       console.log("Response sent successfully.");
 
     } catch (error) {
