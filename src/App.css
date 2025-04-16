@@ -1,196 +1,232 @@
- body {
-   background: linear-gradient(to right, #FE5000, #ff7f00);
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   min-height: 100vh;
-   margin: 0;
-   font-family: sans-serif; /* Added default font */
- }
+/* --- General Styles --- */
+.App {
+  text-align: center; /* Center elements */
+  font-family: 'Arial', sans-serif; /* A clean, readable font */
+  padding: 20px;
+  background-color: #f8f8f8; /* Light gray background */
+  color: #333;
+  min-height: 100vh; /* Full viewport height */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+/* --------------------- */
+/* --- Styles for the Audacy Logo --- */
+.audacy-logo {
+  max-width: 200px; /* Adjust size as needed */
+  margin-bottom: 20px; /* Space below logo */
+}
+/* -------------------------------------- */
+/* --- Styles for the header --- */
+h1 {
+    color: #5029a7; /* audacy purple */
+    margin-bottom: 20px;
+  }
+  /* ------------------------- */
+  /* --- Styles for the File Input --- */
+  .choose-file-button {
+    background-color: #5029a7; /* Audacy purple */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s; /* Smooth hover effect */
+    border: none;
+    font-size: 0.95em;
+  }
+  .choose-file-button:hover {
+    background-color: #3a1e7a; /* Darker purple on hover */
+  }
+  .file-name {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  /* --------------------------------- */
+  /* --- Styles for Selects --- */
+  .select-container {
+    display: inline-block; /* Align containers horizontally */
+    margin: 10px; /* Space between select containers */
+    position: relative; /* For absolute positioning of icon */
+  }
 
- .App {
-   text-align: center;
-   padding: 30px; /* Increased padding */
-   background-color: white;
-   border-radius: 15px; /* Slightly more rounded */
-   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15); /* Adjusted shadow */
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   max-width: 800px; /* Limit overall width */
-   width: 90%; /* Responsive width */
- }
+  select.kpi-list,
+  select.tactics-list { /* Target selects specifically */
+    width: 250px; /* Wider selects */
+    padding: 12px; /* More padding */
+    border-radius: 8px; /* Less rounded for selects */
+    border: 1px solid #ccc;
+    background-color: #f8f9fa; /* Lighter background */
+    margin: 10px 5px; /* Adjusted margin */
+    font-size: 0.95em;
+    color: #6c757d; /* Default text color (greyish) */
+    appearance: none; /* Remove default arrow */
+    -webkit-appearance: none; /* For Safari */
+    -moz-appearance: none; /* For Firefox */
+  }
+  
+  /* --- Style for selects when invalid (default option selected) --- */
+  select.kpi-list:invalid,
+  select.tactics-list:invalid {
+    color: #6c757d; /* Keep greyish color for placeholder */
+  }
+  
+  /* --- Style for selected options --- */
+  select.kpi-list option:checked,
+  select.tactics-list option:checked {
+    background-color: #5029a7; /* Audacy purple for selected */
+    color: white;
+  }
+  
+  /* --- Style for the dropdown arrow --- */
+  .select-container::after {
+    content: '\25BC'; /* Down arrow character */
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none; /* Ensure arrow doesn't interfere with clicks */
+  }
 
- /* --- Style for the H1 Title --- */
- .App h1 {
-   color: #7A3BCB; /* Audacy Purple */
-   margin-top: 0; /* Adjust if needed after logo */
-   margin-bottom: 20px; /* Space below title */
- }
- /* ----------------------------- */
+  /* --------------------------------------------------------------- */
+/* --- Styles for the Analyze Button --- */
+.rounded-element {
+    border: none; /* Remove default border */
+    background-color: #5029a7; /* audacy purple */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px; /* More rounded */
+    cursor: pointer;
+    transition: background-color 0.3s; /* Smooth transition */
+    font-size: 0.95em;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  
+  .rounded-element:hover {
+    background-color: #3a1e7a; /* Darker purple on hover */
+  }
+  /* ----------------------------------- */
+  /* --- Styles for Error Messages --- */
+  .error-message {
+    color: red;
+    margin-top: 10px;
+    font-size: 0.9em;
+  }
+  /* --------------------------------- */
+  /* --- Styles for the Loading Indicator --- */
+  .loading-indicator {
+    margin-top: 20px;
+    color: #6c757d; /* Gray color */
+  }
+  /* --------------------------------------- */
+  /* --- Styles for the Analysis Output --- */
+  .analysis-result-container {
+    margin-top: 30px; /* More space above results */
+    width: 95%; /* Wider container */
+    text-align: left; /* Align container content left */
+  }
+  
+  .analysis-result-container h2 {
+    margin-bottom: 10px; /* Space below heading */
+    color: #333;
+    font-size: 1.2em;
+    border-bottom: 1px solid #eee; /* Separator line */
+    padding-bottom: 5px;
+  }
+  
+  .analysis-result code { /* Basic code styling */
+    background-color: #e9ecef;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+  }
+  /* -------------------------------------- */
+  /* --- Styles for Text Areas --- */
+.text-area-container {
+    width: 100%;
+    margin-bottom: 15px;
+    text-align: center; /* Center the container content */
+  }
+  
+  .text-area-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    text-align: center; /* Center the label text */
+  }
+  
+  .text-area {
+    width: 95%; /* slightly reduced width */
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-family: inherit; /* Match body font */
+    resize: vertical; /* Allow vertical resize */
+    background-color: white; /* White background */
+    color: black; /* Make text black */
+  }
+  
+  /* --- Style for Text Area Placeholders --- */
+  .text-area::placeholder {
+    color: black; /* Make placeholder text black */
+    opacity: 1; /* Ensure placeholder is fully opaque */
+  }
+/* ------------------------------------------- */
+/* --- Styles for the Analysis Details Page --- */
+.analysis-details-container {
+  padding: 20px;
+  text-align: center; /* Center everything */
+  background-color: white; /* White background */
+  color: black; /* Black text */
+  width: 80%; /* Limit width for readability */
+  margin: 0 auto; /* Center the container horizontally */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
 
- .choose-file-button {
-   background-color: #4CAF50; /* Keep green */
-   color: white;
-   padding: 12px 25px; /* Slightly larger */
-   border-radius: 25px; /* More rounded */
-   cursor: pointer;
-   border: none;
-   margin-bottom: 10px;
-   font-size: 1em;
-   transition: background-color 0.2s ease; /* Added transition */
- }
- .choose-file-button:hover {
-     background-color: #45a049; /* Darker green on hover */
- }
+.analysis-details-container h2 {
+  margin-bottom: 20px;
+  color: #333; /* Darker color for headings */
+}
 
+.analysis-details-container h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #333; /* Darker color for subheadings */
+}
 
- .rounded-element {
-   /* Analyze button styles */
-   background-color: #007bff; /* Changed analyze button color */
-   color: white; /* Button text color */
-   padding: 12px 25px; /* Match file button */
-   border-radius: 25px; /* Match file button */
-   margin: 15px 5px; /* Adjusted margin */
-   border: none;
-   font-size: 1em; /* Match file button */
-   cursor: pointer;
-   transition: background-color 0.2s ease; /* Added transition */
- }
- .rounded-element:disabled {
-     background-color: #cccccc; /* Disabled button style */
-     cursor: not-allowed;
- }
- .rounded-element:hover:not(:disabled) {
-     background-color: #0056b3; /* Darker blue on hover */
- }
+.analysis-details-container .prompt-text {
+  white-space: pre-wrap;
+  background-color: #f8f8f8; /* Slightly off-white for contrast */
+  padding: 15px; /* More padding */
+  border-radius: 8px; /* Rounded corners */
+  font-family: monospace;
+  border: 1px solid #ddd; /* Add a subtle border */
+  text-align: left; /* Left align the text */
+}
 
+.analysis-details-container .analysis-result {
+  margin-top: 20px; /* More space above results */
+  text-align: left; /* Left align the analysis text */
+  font-size: 1em; /* Slightly larger font for readability */
+  line-height: 1.6; /* Increased line spacing */
+}
 
- select.kpi-list,
- select.tactics-list { /* Target selects specifically */
-   width: 250px; /* Wider selects */
-   padding: 12px; /* More padding */
-   border-radius: 8px; /* Less rounded for selects */
-   border: 1px solid #ccc;
-   background-color: #f8f9fa; /* Lighter background */
-   margin: 10px 5px; /* Adjusted margin */
-   font-size: 0.95em;
-   color: #6c757d; /* Default text color (greyish) */
- }
-
- /* --- Style for selects when invalid (default option selected) --- */
- select.kpi-list:invalid,
- select.tactics-list:invalid {
-   color: #6c757d; /* Keep greyish color for placeholder */
- }
- /* --------------------------------------------------------------- */
-
- /* --- Style for selects when a valid option is selected --- */
- select.kpi-list:valid,
- select.tactics-list:valid {
-   color: #212529; /* Darker text color for selected option */
-   border-color: #7A3BCB; /* Add purple border when valid */
-   background-color: #ffffff; /* Optional: change background on selection */
- }
- /* ------------------------------------------------------- */
-
- .audacy-logo {
-   width: 100px;
-   height: auto;
-   margin-bottom: 15px; /* More space below logo */
- }
-
- .file-name {
-     color: #7A3BCB; /* Keep Audacy purple */
-     font-weight: bold;
-     margin-top: 5px;
-     font-size: 0.9em;
- }
-
- .error-message {
-     color: #dc3545; /* Bootstrap danger color */
-     background-color: #f8d7da; /* Light red background */
-     border: 1px solid #f5c6cb; /* Red border */
-     padding: 10px;
-     border-radius: 5px;
-     margin-top: 15px;
-     width: 80%;
-     text-align: center;
- }
-
- .loading-indicator {
-     margin-top: 20px;
-     color: #6c757d; /* Gray color */
- }
-
- /* --- Styles for the Analysis Output --- */
- .analysis-result-container {
-     margin-top: 30px; /* More space above results */
-     width: 95%; /* Wider container */
-     text-align: left; /* Align container content left */
- }
-
- .analysis-result-container h2 {
-     margin-bottom: 10px; /* Space below heading */
-     color: #333;
-     font-size: 1.2em;
-     border-bottom: 1px solid #eee; /* Separator line */
-     padding-bottom: 5px;
- }
-
- .analysis-result {
-   border: 1px solid #dee2e6; /* Lighter border */
-   background-color: #f8f9fa; /* Light background */
-   padding: 15px; /* More padding */
-   border-radius: 8px;
-   min-height: 150px; /* Increased min-height */
-   width: 100%; /* Take full width of container */
-   box-sizing: border-box; /* Include padding/border in width */
-   white-space: pre-wrap; /* Preserve whitespace and wrap lines */
-   font-family: inherit; /* Inherit body font */
-   line-height: 1.6; /* Better readability */
-   color: #212529; /* Darker text */
-   overflow-wrap: break-word; /* Break long words if needed */
- }
-
- /* Style elements generated by react-markdown */
- .analysis-result h1,
- .analysis-result h2,
- .analysis-result h3 {
-     margin-top: 1em;
-     margin-bottom: 0.5em;
-     border-bottom: none; /* Remove default border if any */
-     padding-bottom: 0;
- }
- .analysis-result h2 { font-size: 1.3em; }
- .analysis-result h3 { font-size: 1.15em; }
-
- .analysis-result p {
-     margin-bottom: 0.8em;
- }
-
- .analysis-result ul,
- .analysis-result ol {
-     margin-left: 20px;
-     margin-bottom: 1em;
- }
-
- .analysis-result li {
-     margin-bottom: 0.4em;
- }
-
- .analysis-result strong {
-     font-weight: bold;
- }
-
- .analysis-result em {
-     font-style: italic;
- }
-
- .analysis-result code { /* Basic code styling */
-     background-color: #e9ecef;
-     padding: 0.2em 0.4em;
-     border-radius: 3px;
-     font-family: monospace;
- }
- /* -------------------------------------- */
+.analysis-details-container .back-button {
+  display: inline-block;
+  margin-bottom: 20px;
+  background-color: #5029a7;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  text-decoration: none;
+}
+.back-button:hover {
+    background-color: #3a1e7a; /* Darker purple on hover */
+  }
