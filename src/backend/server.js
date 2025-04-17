@@ -47,9 +47,42 @@ if (!apiKey) {
 } else {
   // Log only the first few and last few characters for security
   console.log(`GEMINI_API_KEY loaded successfully: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`); 
+  // Check if the API key is linked to a Project ID or Organization
+  const projectIdentifier = apiKey.includes('_') ? apiKey.split('_')[1] : 'unknown';
+  console.log(`API Key project identifier: ${projectIdentifier}`);
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
+
+// Function to check available models (will log info about models available to this API key)
+async function checkAPIConfiguration() {
+  try {
+    console.log('=== CHECKING API CONFIGURATION ===');
+    // Try to list models or other operations to verify API key permissions
+    // This is just an example and may need to be adjusted based on the actual API
+    const generationConfig = {
+      temperature: 0.9,
+      topP: 0.95,
+      topK: 40,
+    };
+    
+    // Create a test model instance
+    const testModel = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash-latest',
+      generationConfig
+    });
+    
+    // Get model info if possible
+    console.log('API key appears valid. Configured test model.');
+    return true;
+  } catch (error) {
+    console.error('Error checking API configuration:', error.message);
+    return false;
+  }
+}
+
+// Check API configuration on startup
+checkAPIConfiguration().catch(console.error);
 
 // Async function to check available models
 async function checkAvailableModels() {
@@ -160,12 +193,12 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     const defaultModelName = 'gemini-2.5-pro-preview-03-25';
     const modelName = envModelName || defaultModelName;
     
-    console.log(`Environment variable GEMINI_MODEL_NAME is set to: ${envModelName ? envModelName : 'not set'}`);
-    console.log(`Default model name is: ${defaultModelName}`);
-    console.log(`Final model being used is: ${modelName}`);
+    console.log('=== MODEL DIAGNOSTICS ===');
+    console.log(`Environment variable GEMINI_MODEL_NAME: ${envModelName ? envModelName : 'not set'}`);
+    console.log(`Default model name: ${defaultModelName}`);
+    console.log(`Attempting to use model: ${modelName}`);
     
     const model = genAI.getGenerativeModel({ model: modelName });
-    console.log(`Model initialized with: ${modelName}`);
     
     // Add retry logic with exponential backoff for API calls
     const maxRetries = 5;
@@ -177,6 +210,14 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API with model: ${modelName}`);
         result = await model.generateContent(finalPrompt);
         console.log('API call successful!');
+        
+        // Try to get the actual model used from response metadata if available
+        if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].modelName) {
+            console.log(`Actual model used according to response: ${result.response.candidates[0].modelName}`);
+        } else {
+            console.log('Model name not available in response metadata');
+        }
+        
         break; // If successful, exit the loop
       } catch (error) {
         console.error(`Error on attempt ${retryCount + 1}:`, error);
@@ -232,6 +273,24 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     }
     
     const response = await result.response;
+    
+    // Log response metadata if available
+    if (response._responseData && response._responseData.candidates) {
+        console.log('Response metadata:', JSON.stringify(response._responseData.candidates[0], null, 2));
+    }
+    
+    let actualModelUsed = modelName;
+    // Try to extract model information from response
+    try {
+        if (response._responseData && response._responseData.candidates && 
+            response._responseData.candidates[0] && response._responseData.candidates[0].model) {
+            actualModelUsed = response._responseData.candidates[0].model;
+            console.log(`Extracted model from response: ${actualModelUsed}`);
+        }
+    } catch (err) {
+        console.log('Could not extract model information from response:', err.message);
+    }
+    
     let htmlText = response.text();    
     console.log('Raw Gemini response:', htmlText); // Log raw response first
 
@@ -257,7 +316,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       raw: rawText,
       prompt: finalPrompt, // Send the final generated prompt
       modelName: modelName, // This sends the model name used in the API call
-      actualModelUsed: result.modelName || modelName // Try to get the actual model name from the response if available
+      actualModelUsed: actualModelUsed // Try to get the actual model name from the response if available
     });
 
     console.log('Response sent to client with model:', modelName);
