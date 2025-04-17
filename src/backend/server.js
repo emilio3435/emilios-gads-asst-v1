@@ -136,7 +136,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log('--- End Prompt ---');
     
     // Call Gemini API
-    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-1.5-pro-latest';
+    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro-preview-03-25';
     console.log(`Using Gemini model: ${modelName}`);
     const model = genAI.getGenerativeModel({ model: modelName });
     
@@ -202,7 +202,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       html: htmlText, // Send the cleaned HTML
       raw: rawText,
       prompt: finalPrompt, // Send the final generated prompt
-      modelName: modelName
+      modelName: modelName // This sends the model name used in the API call
     });
 
     console.log('Response sent to client.');

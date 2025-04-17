@@ -165,47 +165,116 @@ function App() {
 
     const formatCsvDataAsTable = (prompt: string | null) => {
         if (!prompt) return "";
-        const dataMatch = prompt.match(/Data:\n([\s\S]*?)(?=\n\nTactics:|$)/);
-        if (dataMatch) {
-            const csvData = dataMatch[1].trim();
-            const parsedData = Papa.parse(csvData, { header: true, skipEmptyLines: true });
-            if (parsedData.data.length > 0) {
-                // Create a scrollable container for the table
-                let tableContainer = '<div class="csv-table-container">';
-                let table = '<table class="csv-data-table">';
-                
-                // Create header row
-                table += '<thead><tr>';
-                Object.keys(parsedData.data[0]).forEach(header => {
-                    table += `<th>${header}</th>`;
-                });
-                table += '</tr></thead>';
-                
-                // Create table body
-                table += '<tbody>';
-                parsedData.data.forEach((row: any) => {
-                    table += '<tr>';
-                    Object.values(row).forEach((value: any) => {
-                        // Handle null or undefined values
-                        const displayValue = value === null || value === undefined ? '' : value;
-                        table += `<td>${displayValue}</td>`;
+        
+        // Look for data sections in INPUT DATA or Campaign Data
+        const dataMatch = prompt.match(/(?:INPUT DATA:|Campaign Data:)(?:[\s\S]*?)(?:File Name:|Selected Tactic:|Campaign Data:)([\s\S]*?)(?=\n\n|$)/);
+        
+        if (dataMatch && dataMatch[1]) {
+            // Extract just the data part
+            const dataSection = dataMatch[1].trim();
+            
+            // Check if it contains data in a format we can parse
+            const jsonMatches = dataSection.match(/\[\s*{[\s\S]*}\s*\]/);
+            
+            if (jsonMatches) {
+                try {
+                    // Try to parse the JSON data
+                    const jsonData = JSON.parse(jsonMatches[0]);
+                    
+                    // Create a scrollable container for the table
+                    let tableContainer = '<div class="csv-table-container">';
+                    let table = '<table class="csv-data-table">';
+                    
+                    // Create header row if data exists and has properties
+                    if (jsonData.length > 0) {
+                        table += '<thead><tr>';
+                        Object.keys(jsonData[0]).forEach(header => {
+                            table += `<th>${header}</th>`;
+                        });
+                        table += '</tr></thead>';
+                        
+                        // Create table body
+                        table += '<tbody>';
+                        jsonData.forEach((row: any) => {
+                            table += '<tr>';
+                            Object.values(row).forEach((value: any) => {
+                                // Handle null or undefined values
+                                const displayValue = value === null || value === undefined ? '' : value;
+                                table += `<td>${displayValue}</td>`;
+                            });
+                            table += '</tr>';
+                        });
+                        table += '</tbody>';
+                    }
+                    
+                    table += '</table></div>';
+                    
+                    // Add inline CSS for table styling
+                    tableContainer = '<style>' +
+                        '.csv-table-container { overflow-x: auto; margin: 10px 0; max-height: 400px; overflow-y: auto; }' +
+                        '.csv-data-table { width: 100%; border-collapse: collapse; }' +
+                        '.csv-data-table th, .csv-data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
+                        '.csv-data-table thead { position: sticky; top: 0; background-color: #f2f2f2; }' +
+                        '.csv-data-table th { background-color: #f2f2f2; font-weight: bold; }' +
+                        '.csv-data-table tr:nth-child(even) { background-color: #f9f9f9; }' +
+                        '.csv-data-table tr:hover { background-color: #f0f0f0; }' +
+                        '</style>' + tableContainer;
+                    
+                    // Replace the JSON data with the formatted table
+                    return prompt.replace(jsonMatches[0], tableContainer);
+                } catch (e) {
+                    console.error('Error parsing JSON data:', e);
+                    return prompt;
+                }
+            }
+        }
+        
+        // Fall back to the original CSV parsing logic if JSON parsing fails
+        const csvDataMatch = prompt.match(/(?:INPUT DATA:|Campaign Data:)([\s\S]*?)(?=\n\n(?:[A-Z]|$)|$)/);
+        if (csvDataMatch) {
+            const csvData = csvDataMatch[1].trim();
+            try {
+                const parsedData = Papa.parse(csvData, { header: true, skipEmptyLines: true });
+                if (parsedData.data.length > 0 && Object.keys(parsedData.data[0]).length > 1) {
+                    // Create a scrollable container for the table
+                    let tableContainer = '<div class="csv-table-container">';
+                    let table = '<table class="csv-data-table">';
+                    
+                    // Create header row
+                    table += '<thead><tr>';
+                    Object.keys(parsedData.data[0]).forEach(header => {
+                        table += `<th>${header}</th>`;
                     });
-                    table += '</tr>';
-                });
-                table += '</tbody></table></div>';
-                
-                // Add inline CSS for table styling
-                tableContainer = '<style>' +
-                    '.csv-table-container { overflow-x: auto; margin: 10px 0; max-height: 400px; overflow-y: auto; }' +
-                    '.csv-data-table { width: 100%; border-collapse: collapse; }' +
-                    '.csv-data-table th, .csv-data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
-                    '.csv-data-table thead { position: sticky; top: 0; background-color: #f2f2f2; }' +
-                    '.csv-data-table th { background-color: #f2f2f2; font-weight: bold; }' +
-                    '.csv-data-table tr:nth-child(even) { background-color: #f9f9f9; }' +
-                    '.csv-data-table tr:hover { background-color: #f0f0f0; }' +
-                    '</style>' + tableContainer;
-                
-                return prompt.replace(dataMatch[0], `Data:\n${tableContainer}`);
+                    table += '</tr></thead>';
+                    
+                    // Create table body
+                    table += '<tbody>';
+                    parsedData.data.forEach((row: any) => {
+                        table += '<tr>';
+                        Object.values(row).forEach((value: any) => {
+                            // Handle null or undefined values
+                            const displayValue = value === null || value === undefined ? '' : value;
+                            table += `<td>${displayValue}</td>`;
+                        });
+                        table += '</tr>';
+                    });
+                    table += '</tbody></table></div>';
+                    
+                    // Add inline CSS for table styling
+                    tableContainer = '<style>' +
+                        '.csv-table-container { overflow-x: auto; margin: 10px 0; max-height: 400px; overflow-y: auto; }' +
+                        '.csv-data-table { width: 100%; border-collapse: collapse; }' +
+                        '.csv-data-table th, .csv-data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
+                        '.csv-data-table thead { position: sticky; top: 0; background-color: #f2f2f2; }' +
+                        '.csv-data-table th { background-color: #f2f2f2; font-weight: bold; }' +
+                        '.csv-data-table tr:nth-child(even) { background-color: #f9f9f9; }' +
+                        '.csv-data-table tr:hover { background-color: #f0f0f0; }' +
+                        '</style>' + tableContainer;
+                    
+                    return prompt.replace(csvDataMatch[0], `INPUT DATA:\n${tableContainer}`);
+                }
+            } catch (e) {
+                console.error('Error parsing CSV data:', e);
             }
         }
         return prompt;
@@ -341,7 +410,7 @@ function App() {
                         {/* Model attribution */}
                         {modelName && (
                             <div className="model-attribution">
-                                <p>Analysis by {modelName}</p>
+                                <p>Analysis by <strong>{modelName}</strong></p>
                             </div>
                         )}
                     </div>
