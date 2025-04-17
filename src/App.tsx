@@ -16,6 +16,7 @@ function App() {
     const [rawAnalysisResult, setRawAnalysisResult] = useState<string | null>(null);
     const [promptSent, setPromptSent] = useState<string | null>(null);
     const [modelName, setModelName] = useState<string | null>(null);
+    const [actualModelUsed, setActualModelUsed] = useState<string | null>(null);
     const [showPrompt, setShowPrompt] = useState<boolean>(false);
     const [showResults, setShowResults] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -285,6 +286,7 @@ function App() {
         setAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
+        setActualModelUsed(null);
         setShowResults(false);
 
         if (!file) {
@@ -336,6 +338,7 @@ function App() {
             setRawAnalysisResult(data.raw);
             setPromptSent(data.prompt);
             setModelName(data.modelName);
+            setActualModelUsed(data.actualModelUsed || data.modelName);
             setShowResults(true);
         } catch (error: any) {
             console.error('Error during analysis:', error);
@@ -408,9 +411,9 @@ function App() {
                         )}
                         
                         {/* Model attribution */}
-                        {modelName && (
+                        {(actualModelUsed || modelName) && (
                             <div className="model-attribution">
-                                <p>Analysis by <strong>{modelName}</strong></p>
+                                <p>Analysis by <strong>{actualModelUsed || modelName}</strong></p>
                             </div>
                         )}
                     </div>

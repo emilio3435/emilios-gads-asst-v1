@@ -51,6 +51,26 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
+// Async function to check available models
+async function checkAvailableModels() {
+  try {
+    console.log('Attempting to get available models...');
+    // Note: This is an example - the actual API might not support this method directly
+    // You may need to check Google Generative AI API documentation for the correct method
+    const models = await genAI.getModels();
+    console.log('Available models:', models);
+    return models;
+  } catch (error) {
+    console.error('Error getting available models:', error.message);
+    return null;
+  }
+}
+
+// Try to check available models (this may not work depending on the API implementation)
+checkAvailableModels().catch(error => {
+  console.log('Could not check available models:', error.message);
+});
+
 // POST endpoint for analyzing marketing data
 app.post('/analyze', upload.single('file'), async (req, res) => {
   console.log('--- New request to /analyze ---');
@@ -136,9 +156,16 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log('--- End Prompt ---');
     
     // Call Gemini API
-    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro-preview-03-25';
-    console.log(`Using Gemini model: ${modelName}`);
+    const envModelName = process.env.GEMINI_MODEL_NAME;
+    const defaultModelName = 'gemini-2.5-pro-preview-03-25';
+    const modelName = envModelName || defaultModelName;
+    
+    console.log(`Environment variable GEMINI_MODEL_NAME is set to: ${envModelName ? envModelName : 'not set'}`);
+    console.log(`Default model name is: ${defaultModelName}`);
+    console.log(`Final model being used is: ${modelName}`);
+    
     const model = genAI.getGenerativeModel({ model: modelName });
+    console.log(`Model initialized with: ${modelName}`);
     
     // Add retry logic with exponential backoff for API calls
     const maxRetries = 5;
@@ -147,11 +174,30 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     
     while (retryCount < maxRetries) {
       try {
-        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API`);
+        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API with model: ${modelName}`);
         result = await model.generateContent(finalPrompt);
+        console.log('API call successful!');
         break; // If successful, exit the loop
       } catch (error) {
         console.error(`Error on attempt ${retryCount + 1}:`, error);
+        
+        // Check if this is a model-not-found error
+        if (error.message && error.message.includes('not found')) {
+          console.error(`The specified model '${modelName}' was not found or is not available.`);
+          // Try using a fallback model if the specified one doesn't exist
+          if (modelName === 'gemini-2.5-pro-preview-03-25') {
+            const fallbackModel = 'gemini-1.5-pro-latest';
+            console.log(`Attempting to use fallback model: ${fallbackModel}`);
+            try {
+              const fallbackModelInstance = genAI.getGenerativeModel({ model: fallbackModel });
+              result = await fallbackModelInstance.generateContent(finalPrompt);
+              console.log(`Successfully used fallback model: ${fallbackModel}`);
+              break;
+            } catch (fallbackError) {
+              console.error(`Error using fallback model: ${fallbackError.message}`);
+            }
+          }
+        }
         
         // If this is a 429 resource exhaustion error or a 503 unavailable error
         if (error.message && (error.message.includes('429') || error.message.includes('503'))) {
@@ -171,8 +217,16 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
           console.log(`Retrying in ${Math.round(waitTime / 1000)} seconds...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         } else {
-          // For other errors, don't retry
-          throw error;
+          // For other errors, show more details but still retry
+          console.error('Detailed error:', JSON.stringify(error, null, 2));
+          retryCount++;
+          
+          if (retryCount >= maxRetries) {
+            throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
+          }
+          
+          // Use a simple backoff for other errors
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
     }
@@ -202,10 +256,11 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       html: htmlText, // Send the cleaned HTML
       raw: rawText,
       prompt: finalPrompt, // Send the final generated prompt
-      modelName: modelName // This sends the model name used in the API call
+      modelName: modelName, // This sends the model name used in the API call
+      actualModelUsed: result.modelName || modelName // Try to get the actual model name from the response if available
     });
 
-    console.log('Response sent to client.');
+    console.log('Response sent to client with model:', modelName);
   } catch (error) {
     // Handle errors (e.g., JSON parsing, file parsing, API call)
     console.error('--- Error in /analyze ---');
