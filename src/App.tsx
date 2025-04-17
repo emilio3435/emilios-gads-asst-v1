@@ -1,5 +1,4 @@
 ;import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 
 import audacyLogo from './assets/audacy-logo.png';
 import './App.css';
@@ -22,7 +21,7 @@ function App() {
     const [showResults, setShowResults] = useState<boolean>(false); // Control view
 
     // State for loading and errors
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);   
     const [error, setError] = useState<string | null>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +117,12 @@ function App() {
             const data = await response.json();
 
             // Store results and switch view
-            setAnalysisResult(typeof data.analysis === 'string' ? data.analysis : JSON.stringify(data.analysis));
+
+            if(data.html){
+                setAnalysisResult(data.html)
+            } else{
+                setAnalysisResult(data.raw)
+            }
             setPromptSent(data.prompt); // Store the prompt that was sent
             setModelName(data.modelName); // Store the model name used
             setShowResults(true); // Show the results view
@@ -154,7 +158,7 @@ function App() {
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">
-                        {analysisResult ? (<ReactMarkdown>{analysisResult}</ReactMarkdown>) : (<p>No analysis result available.</p>)}
+                        {analysisResult ? (<div dangerouslySetInnerHTML={{ __html: analysisResult }} />) : (<p>No analysis result available.</p>)}
                     </div>
                     <div className="input-section">
                         <button className="show-input-button" onClick={() => setShowPrompt(true)}>
