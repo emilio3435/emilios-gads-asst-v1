@@ -44,6 +44,10 @@ h1 {
     color: #666;
     margin-bottom: 10px;
   }
+
+  .file-name span {
+    color: orange;
+  }
   /* --------------------------------- */
   /* --- Styles for Selects --- */
   .select-container {
@@ -66,20 +70,20 @@ h1 {
     -webkit-appearance: none; /* For Safari */
     -moz-appearance: none; /* For Firefox */
   }
-  
+
   /* --- Style for selects when invalid (default option selected) --- */
   select.kpi-list:invalid,
   select.tactics-list:invalid {
     color: #6c757d; /* Keep greyish color for placeholder */
   }
-  
+
   /* --- Style for selected options --- */
   select.kpi-list option:checked,
   select.tactics-list option:checked {
     background-color: #5029a7; /* Audacy purple for selected */
     color: white;
   }
-  
+
   /* --- Style for the dropdown arrow --- */
   .select-container::after {
     content: '\25BC'; /* Down arrow character */
@@ -95,7 +99,7 @@ h1 {
 /* --- Styles for the Analyze Button --- */
 .rounded-element {
     border: none; /* Remove default border */
-    background-color: #5029a7; /* audacy purple */
+    background-color: #5029a7; /* Audacy purple */
     color: white;
     padding: 10px 20px;
     border-radius: 25px; /* More rounded */
@@ -105,7 +109,7 @@ h1 {
     text-align: center;
     margin-bottom: 15px;
   }
-  
+
   .rounded-element:hover {
     background-color: #3a1e7a; /* Darker purple on hover */
   }
@@ -117,17 +121,24 @@ h1 {
     font-size: 0.9em;
   }
   /* --------------------------------- */
+
   /* --- Styles for the Loading Indicator --- */
   .loading-indicator {
-    margin-top: 20px;
-    color: #6c757d; /* Gray color */
+     display: none; /* Hide the old text indicator */
   }
   /* --------------------------------------- */
+
   /* --- Styles for the Analysis Output --- */
   .analysis-result-container {
     margin-top: 30px; /* More space above results */
-    width: 95%; /* Wider container */
-    text-align: left; /* Align container content left */
+    width: 90%; /* Wider container */
+    max-width: 1200px;
+    margin: 30px auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative; /* To contain the logo */
   }
   
   .analysis-result-container h2 {
@@ -177,61 +188,53 @@ h1 {
     color: black; /* Make placeholder text black */
     opacity: 1; /* Ensure placeholder is fully opaque */
   }
+
 /* ------------------------------------------- */
 
 /* --- Styles for the Analysis Results Page --- */
-.analysis-page-container {
-  display: flex;
-  width: 90%; /* Or adjust as needed */
-  max-width: 1200px; /* Max width */
-  margin: 30px auto; /* Center and add space */
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* Contain child elements */
-}
-
 .left-pane {
-  flex: 1; /* Take up half the space */
+  flex: 1;
   padding: 20px;
-  background-color: #f8f8f8;
+  background-color: #F2E7FF; /* Light Audacy Purple */
   border-right: 1px solid #ddd;
-  overflow-y: auto; /* Scroll if content overflows */
-  max-height: 70vh; /* Limit height */
+  overflow-y: auto;
+  max-height: 70vh;
 }
 
 .right-pane {
-  flex: 1; /* Take up half the space */
+  flex: 1;
   padding: 20px;
-  overflow-y: auto; /* Scroll if content overflows */
-  max-height: 70vh; /* Limit height */
+  background-color: #E8F5F3; /* Light Audacy Green */
+  overflow-y: auto;
+  max-height: 70vh;
 }
 
-.prompt-display h4, .model-name-display h4 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: #333;
+.prompt-display h4,
+.model-name-display h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #FE5000; /* Audacy Orange */
 }
 
 .prompt-display pre {
-  white-space: pre-wrap; /* Wrap long lines */
-  word-wrap: break-word; /* Break words if necessary */
+  white-space: pre-wrap;
+  word-wrap: break-word;
   font-family: monospace;
   font-size: 0.9em;
-  background-color: #efefef; /* Slightly different background */
+  background-color: #efefef;
   padding: 10px;
   border-radius: 4px;
   border: 1px solid #ccc;
 }
 
 .model-name-display p {
-    font-family: monospace;
-    font-size: 0.9em;
-    background-color: #efefef;
-    padding: 5px 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    display: inline-block; /* Fit content */
+  font-family: monospace;
+  font-size: 0.9em;
+  background-color: #efefef;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  display: inline-block;
 }
 
 .results-display {
@@ -242,10 +245,11 @@ h1 {
 }
 
 /* --- Styles for the Back Button --- */
-.back-button-container { /* Container to position button */
-    width: 100%;
-    text-align: left; /* Align button to the left */
-    margin-bottom: 20px;
+.back-button-container {
+  /* Container to position button */
+  width: 100%;
+  text-align: left; /* Align button to the left */
+  margin-bottom: 20px;
 }
 
 .back-button {
@@ -261,7 +265,136 @@ h1 {
   transition: background-color 0.3s ease;
 }
 
-.back-button:hover, .back-button:focus {
+.back-button:hover,
+.back-button:focus {
   background-color: #3a1e7a; /* Darker purple on hover/focus */
   outline: none; /* Remove default focus outline */
+}
+
+/* --- Styles for Loading Spinner --- */
+.spinner-container {
+  margin-top: 20px; /* Space above the spinner */
+  position: relative; /* Needed for absolute positioning of the logo */
+  width: 60px; /* Container size */
+  height: 60px; /* Container size */
+  display: inline-block; /* Or block/flex depending on desired layout */
+}
+
+.spinner {
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 6px solid #f3f3f3; /* Light grey border */
+  border-top: 6px solid #5029a7; /* Audacy purple for the spinning part */
+  border-radius: 50%;
+  animation: spin 1s linear infinite; /* Apply the spin animation */
+}
+
+.spinner-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Center the logo */
+  max-width: 70%; /* Adjust logo size relative to spinner */
+  max-height: 70%; /* Adjust logo size relative to spinner */
+}
+
+/* Spin Animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Audacy logo in the bottom right corner of the analysis page */
+.analysis-page-container::after {
+  content: '';
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 100px; /* Adjust as needed */
+  height: 30px; /* Adjust as needed */
+  background-image: url('./assets/audacy-logo.png'); /* Path to the logo */
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.5; /* Make it subtle */
+}
+
+
+
+
+
+/* Improve HTML output format */
+.prompt-display,
+.results-display {
+  font-size: 1.0em;
+  line-height: 1.6;
+  color: #333; /* Or any desired default color */
+  padding: 15px;
+}
+
+
+.analysis-page-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 30px auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+.results-display {
+    width: 100%; /* Full width for results */
+    padding: 20px;
+}
+
+.show-input-button {
+    background-color: #5029a7;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.prompt-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.prompt-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 80%;
+    max-height: 80vh;
+    overflow-y: auto; /* Add scroll for overflow */
+}
+
+.prompt-modal .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    background-color: #ccc;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
