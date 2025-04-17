@@ -1,4 +1,5 @@
 ;import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import audacyLogo from './assets/audacy-logo.png';
 import './App.css';
@@ -6,8 +7,8 @@ import './App.css';
 // Main App component
 function App() {
     // State for form inputs
-    const [selectedTactics, setSelectedTactics] = useState<string[]>([]);
-    const [selectedKPIs, setSelectedKPIs] = useState<string[]>([]);
+    const [selectedTactics, setSelectedTactics] = useState<string>('');
+    const [selectedKPIs, setSelectedKPIs] = useState<string>('');
     const [file, setFile] = useState<File | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [currentSituation, setCurrentSituation] = useState<string>('');
@@ -17,6 +18,7 @@ function App() {
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
     const [promptSent, setPromptSent] = useState<string | null>(null); // Store the prompt sent
     const [modelName, setModelName] = useState<string | null>(null); // Store the model name
+    const [showPrompt, setShowPrompt] = useState<boolean>(false); // Control prompt visibility
     const [showResults, setShowResults] = useState<boolean>(false); // Control view
 
     // State for loading and errors
@@ -45,12 +47,12 @@ function App() {
     };
 
 
-    const handleTacticChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedTactics([event.target.value]);
+    const handleTacticChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedTactics(event.target.value);
     };
 
-    const handleKPIChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedKPIs([event.target.value]);
+    const handleKPIChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedKPIs(event.target.value);
     };
 
     const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -68,8 +70,8 @@ function App() {
         setModelName(null);
         setShowResults(false); // Hide results initially
 
-        const currentTactic = (document.querySelector('.tactics-list') as HTMLSelectElement)?.value;
-        const currentKPI = (document.querySelector('.kpi-list') as HTMLSelectElement)?.value;
+        const currentTactic = selectedTactics;
+        const currentKPI = selectedKPIs;
 
         if (!file || !currentTactic || !currentKPI) {
             const missing = [];
@@ -152,17 +154,26 @@ function App() {
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">
-                        {analysisResult ? (<div dangerouslySetInnerHTML={{ __html: analysisResult }} />) : (<p>No analysis result available.</p>)}
+                        {analysisResult ? (<ReactMarkdown>{analysisResult}</ReactMarkdown>) : (<p>No analysis result available.</p>)}
                     </div>
-                    <button  className="show-input-button">
-                        Show Input?
-                    </button>
-                    <div  className="prompt-modal-overlay">
-                        <div  className="prompt-modal">
-                            <h4>Prompt Sent to LLM:</h4>
-                            <pre>{promptSent || 'Prompt not available.'}</pre>
-                            <button  className="close-button">Close</button>
+                    <div className="input-section">
+                        <button className="show-input-button" onClick={() => setShowPrompt(true)}>
+                            Show Input?
+                        </button>
+                        {/* Conditionally render the prompt modal */}
+                        {showPrompt && (
+                            <div className="prompt-modal-overlay">
+                                <div className="prompt-modal">
+                                    <h4>Prompt Sent to LLM:</h4>
+                                    <pre>{promptSent || 'Prompt not available.'}</pre>
+                                    <button className="close-button" onClick={() => setShowPrompt(false)}>
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
+
                 </div>
             </div>
         );
@@ -190,11 +201,11 @@ function App() {
             <br />
 
             {/* Tactics Select */}
-            <div className='select-container'>
+            <div className="select-container">
                 <select
                     className="tactics-list"
-                    value={selectedTactics[0] || ''}
-                    onChange={handleTacticChange}
+                    value={selectedTactics}
+                    onChange={e => setSelectedTactics(e.target.value)}
                     required
                 >
                     <option value="" disabled>Select Tactic</option>
@@ -211,20 +222,27 @@ function App() {
             </div>
 
             {/* KPI Select */}
-            <div className='select-container'>
+            <div className="select-container">
                 <select
                     className="kpi-list"
-                    value={selectedKPIs[0] || ''}
-                    onChange={handleKPIChange}
+                    value={selectedKPIs}
+                    onChange={e => setSelectedKPIs(e.target.value)}
                     required
                 >
                     <option value="" disabled>Select KPI</option>
-                    <option value="CTR">CTR</option>
-                    <option value="CPA">CPA</option>
                     <option value="ROAS">ROAS</option>
-                    <option value="CPL">CPL</option>
+                    <option value="CPA">CPA</option>
+                    <option value="CTR">CTR</option>
+                    <option value="CPC">CPC</option>
+                    <option value="Conversion Rate">Conversion Rate</option>
+                    <option value="Impressions">Impressions</option>
+                    <option value="Clicks">Clicks</option>
+                    <option value="Conversions">Conversions</option>
                 </select>
             </div>
+
+
+
 
             {/* Text Areas */}
             <div className="text-area-container">
