@@ -245,36 +245,84 @@ function App() {
             <div className="App">
                 <div className="back-button-container">
                     <button onClick={handleBackToForm} className="back-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
                         Back to Form
                     </button>
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">
-                        <h2>Analysis Result:</h2>
                         <div className="prompt-display-box">
-                            <p><strong>Selected Tactic:</strong> {selectedTactics}</p>
-                            <p><strong>Selected KPI:</strong> {selectedKPIs}</p>
-                            {fileName && <p><strong>Uploaded File:</strong> {fileName}</p>}
-                            {currentSituation && <p><strong>Current Situation:</strong> {currentSituation}</p>}
-                            {desiredOutcome && <p><strong>Desired Outcome:</strong> {desiredOutcome}</p>}
+                            <div className="campaign-info">
+                                <div className="info-item">
+                                    <span className="info-label">Tactic:</span>
+                                    <span className="info-value">{selectedTactics}</span>
+                                </div>
+                                <div className="info-item">
+                                    <span className="info-label">KPI:</span>
+                                    <span className="info-value">{selectedKPIs}</span>
+                                </div>
+                                {fileName && (
+                                    <div className="info-item">
+                                        <span className="info-label">File:</span>
+                                        <span className="info-value">{fileName}</span>
+                                    </div>
+                                )}
+                            </div>
+                            {(currentSituation || desiredOutcome) && (
+                                <div className="campaign-context">
+                                    {currentSituation && (
+                                        <div className="context-item">
+                                            <span className="context-label">Current Situation:</span>
+                                            <p className="context-value">{currentSituation}</p>
+                                        </div>
+                                    )}
+                                    {desiredOutcome && (
+                                        <div className="context-item">
+                                            <span className="context-label">Desired Outcome:</span>
+                                            <p className="context-value">{desiredOutcome}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        <hr style={{ borderTop: '3px solid #bbb', width: '100%' }} />
+                        
+                        {/* Analysis results */}
                         {analysisResult ? (
                             <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
                         ) : (
-                            <p>No analysis result available.</p>
+                            <div className="no-results">
+                                <p>No analysis result available.</p>
+                            </div>
+                        )}
+                        
+                        {/* Model attribution */}
+                        {modelName && (
+                            <div className="model-attribution">
+                                <p>Analysis by {modelName}</p>
+                            </div>
                         )}
                     </div>
+                    
                     <div className="input-section">
                         <button
                             className="show-input-button"
                             onClick={() => setShowPrompt(true)}
-                            style={{ marginRight: '10px' }}
                         >
-                            Show Input
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            Show Input Data
                         </button>
                         <div className="export-container">
                             <button className="export-button" onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
                                 Export
                             </button>
                             {isExportMenuOpen && (
@@ -289,6 +337,8 @@ function App() {
                             )}
                         </div>
                     </div>
+                    
+                    {/* Prompt Modal (no changes needed) */}
                     {showPrompt && (
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal prompt-content">
