@@ -5,9 +5,30 @@ import multer from 'multer'; // For handling file uploads
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import * as dotenv from 'dotenv';
+import fs from 'fs'; // Import file system module
+import path from 'path'; // Import path module
+import { fileURLToPath } from 'url'; // To handle ES module paths
+
+// Define __dirname for ES module scope
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '.env') }); // Load .env file relative to this file
+
+// --- Load Prompt Template --- 
+let promptTemplate = '';
+try {
+  promptTemplate = fs.readFileSync(path.join(__dirname, 'prompt_template.txt'), 'utf8');
+  console.log('Prompt template loaded successfully.');
+} catch (err) {
+  console.error('Error reading prompt template file:', err);
+  process.exit(1); // Exit if template can't be read
+}
+// ------------------------
+
 // Create Express app
 const app = express();
-const port = 5000;
+const port = 5001;
 
 // Middleware setup
 app.use(cors()); // Allow cross-origin requests
@@ -18,10 +39,18 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Initialize Gemini API
-const apiKey = 'AIzaSyACPb_2q8rfeX_Do-F-HhfvRjkaFpwujxM'; // Replace with your actual API key
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+  console.error('Error: GEMINI_API_KEY is not defined in the .env file.');
+  process.exit(1); // Exit if API key is missing
+} else {
+  // Log only the first few and last few characters for security
+  console.log(`GEMINI_API_KEY loaded successfully: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`); 
+}
+
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// Default prompt for client-friendly explanations
 // POST endpoint for analyzing marketing data
 app.post('/analyze', upload.single('file'), async (req, res) => {
   console.log('--- New request to /analyze ---');
@@ -50,16 +79,18 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       kpisString = kpis;
     }
 
-    let prompt;
+    let finalPrompt;
     let data = [];
+    let fileName = 'N/A'; // Default file name if none uploaded
 
     if (!req.file) {
       // Handle no file uploaded
-      console.log('No file uploaded. Instructing Gemini to return error message.');
-      prompt = "No file was uploaded for analysis. Please respond with exactly this message: 'please upload file for analysis'.";
+      console.log('No file uploaded. Using specific no-file prompt.');
+      // Keep the specific no-file prompt logic if desired, or adapt the template
+      finalPrompt = "No file was uploaded for analysis. Please respond with exactly this message: 'please upload file for analysis'.";
     } else {
       // Process uploaded file
-      const fileName = req.file.originalname;
+      fileName = req.file.originalname;
       const fileBuffer = req.file.buffer;
       console.log(`Processing file: ${fileName}`);
 
@@ -88,41 +119,91 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
       // Convert parsed data to string for Gemini
       const dataString = JSON.stringify(data, null, 2);
-      console.log('Parsed data:', dataString);
-      // Construct prompt with file data and form inputs
-      prompt = `Prompt for AEs to Access "Emilio" for Data-Driven Campaign Analysis\\n\\nYou are Emilio, the Digital Sales Manager for Audacy Denver, an expert in digital marketing tactics including SEM, SEO, Display, Video, OTT, Social Media, Email Marketing, and more. Your role is to assist Account Executives (AEs) in analyzing client campaign data pulled from the dashboard, providing clear, data-driven insights based on the client’s desired KPIs, marketing situation, and intended outcomes. Please format your response as HTML. Always ensure the text color is dark, preferably #333333, and that the text is left-aligned. Use appropriate HTML tags for headings, paragraphs, bold text, italics, lists, etc. Use a font-family that is sans-serif. Follow these guidelines:\\n\\nPurpose and Goals:\\nHelp AEs interpret campaign data to understand performance, optimize strategies, and communicate results to clients.\\nAct as an expert in digital marketing, offering actionable recommendations and explaining complex concepts in a succinct, understandable way for non-experts.\\nSupport tasks like summarizing data, creating Excel reports, sorting data, or answering specific campaign-related questions.\\nBehaviors and Rules:\\nTask Management:\\nPrioritize questions based on urgency and relevance to the client’s goals.\\nAsk clarifying questions if the AE’s input (e.g., KPIs, marketing situation, or desired outcome) is unclear to ensure accurate analysis.\\nProvide updates if the task requires multiple steps (e.g., generating a report).\\nCommunication:\\nUse a friendly, professional tone and clear, concise language.\\nProofread responses to ensure accuracy and clarity.\\nAvoid jargon unless explaining it simply for non-experts.\\nDigital Marketing Expertise:\\nLeverage up-to-date knowledge of digital marketing trends and best practices.\\nProvide specific, data-driven insights and recommendations tailored to the campaign’s KPIs (e.g., CTR, conversions, ROAS) and marketing situation (e.g., brand awareness, lead generation).\\nWhen relevant, suggest compelling ways to present findings to clients (e.g., key takeaways for a presentation).\\nInteraction Guidelines:\\nExpect AEs to provide:\\nCampaign data (e.g., dashboard metrics like impressions, clicks, conversions).\\nClient’s desired KPIs (e.g., increase in website traffic, higher conversion rates).\\nMarketing situation (e.g., launching a new product, targeting a specific audience).\\nDesired outcome (e.g., improve ROI, boost engagement).\\nIf any of these inputs are missing or unclear, politely ask the AE to clarify.\\nStructure responses to include:\\nA brief summary of the campaign performance based on the data.\\nInsights tied to the KPIs and marketing situation.\\nActionable recommendations to achieve the desired outcome.\\nIf requested, generate an Excel report, sorted data, or other deliverables in a clear format.\\nOverall Tone:\\nBe helpful, efficient, and positive.\\nDemonstrate a strong work ethic by delivering thorough, accurate, and timely responses.\\nMaintain a professional yet approachable demeanor, as if you’re a trusted manager guiding the AE.\\nExample Interaction:\\nAn AE might say: “I have a client campaign with 100,000 impressions, 500 clicks, and 20 conversions on a Display campaign. The client wants to increase conversions. What does this data tell us, and what should we do next?”\\n\\nYour response should:\\n\\nSummarize the performance (e.g., low CTR of 0.5%, conversion rate of 4%).\\nExplain what the data means in simple terms (e.g., “The campaign is getting visibility, but the click-through rate suggests the ad creative or targeting may not be engaging enough.”).\\nRecommend actions (e.g., “Test new ad creatives with stronger CTAs and refine audience targeting to improve CTR and conversions.”).\\nOffer to create a report or sort data if needed (e.g., “Would you like me to generate an Excel report comparing this campaign’s metrics to industry benchmarks?”).\\nNow, respond to the AE’s question or request with precision, ensuring all outputs are data-driven, client-focused, and aligned with Audacy Denver’s goals. Do not add any markdown code blocks to the response.\\n\\nAnalyze the following digital marketing campaign data from the file \\"${fileName}\\":\\n\\nData:\\n${dataString}\\n\\nTactics: ${tacticsString}\\n`;
-      prompt += `KPIs: ${kpisString}\\n`;
-      prompt += `Current Situation: ${currentSituation}\n`;
-      prompt += `Desired Outcome: ${desiredOutcome}\n\n`;
       
+      // Construct prompt from template and replace placeholders
+      finalPrompt = promptTemplate
+        .replace('{{fileName}}', fileName)
+        .replace('{{dataString}}', dataString)
+        .replace('{{tacticsString}}', tacticsString)
+        .replace('{{kpisString}}', kpisString)
+        .replace('{{currentSituation}}', currentSituation || 'Not provided')
+        .replace('{{desiredOutcome}}', desiredOutcome || 'Not provided');
     }
     
     // Log the prompt sent to Gemini
     console.log('--- Prompt to Gemini ---');
-    console.log(prompt);
+    console.log(finalPrompt);
     console.log('--- End Prompt ---');
     
     // Call Gemini API
-    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.0-flash';
+    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-1.5-flash-002';
     console.log(`Using Gemini model: ${modelName}`);
     const model = genAI.getGenerativeModel({ model: modelName });
-    const result = await model.generateContent(prompt);
+    
+    // Add retry logic with exponential backoff for API calls
+    const maxRetries = 5;
+    let retryCount = 0;
+    let result;
+    
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API`);
+        result = await model.generateContent(finalPrompt);
+        break; // If successful, exit the loop
+      } catch (error) {
+        console.error(`Error on attempt ${retryCount + 1}:`, error);
+        
+        // If this is a 429 resource exhaustion error or a 503 unavailable error
+        if (error.message && (error.message.includes('429') || error.message.includes('503'))) {
+          retryCount++;
+          
+          if (retryCount >= maxRetries) {
+            throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
+          }
+          
+          // Exponential backoff with jitter
+          const baseDelay = 1000; // 1 second
+          const maxDelay = 30000; // 30 seconds
+          const delay = Math.min(maxDelay, baseDelay * Math.pow(2, retryCount - 1));
+          const jitter = delay * 0.1 * Math.random(); // Add 0-10% jitter
+          const waitTime = delay + jitter;
+          
+          console.log(`Retrying in ${Math.round(waitTime / 1000)} seconds...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          // For other errors, don't retry
+          throw error;
+        }
+      }
+    }
+    
     const response = await result.response;
-    const text = response.text();    
-    console.log('Gemini response (with HTML):', text);
+    let htmlText = response.text();    
+    console.log('Raw Gemini response:', htmlText); // Log raw response first
 
+    // Remove ```html prefix and ``` suffix if present
+    const prefix = '```html';
+    const suffix = '```';
+    if (htmlText.startsWith(prefix)) {
+        htmlText = htmlText.substring(prefix.length);
+    }
+    if (htmlText.endsWith(suffix)) {
+        htmlText = htmlText.substring(0, htmlText.length - suffix.length);
+    }
+    htmlText = htmlText.trim(); // Remove any leading/trailing whitespace
 
-    // Extract raw text content from HTML
-    const rawText = text.replace(/<\/?[^>]+(>|$)/g, "");
+    console.log('Cleaned Gemini response (with HTML):', htmlText);
 
-    // Send response to client
+    // Extract raw text content from the CLEANED HTML
+    const rawText = htmlText.replace(/<\/?[^>]+(>|$)/g, "");
+
+    // Send cleaned response to client
     res.json({
-      html: text,
+      html: htmlText, // Send the cleaned HTML
       raw: rawText,
-      prompt: prompt,
+      prompt: finalPrompt, // Send the final generated prompt
       modelName: modelName
     });
-
 
     console.log('Response sent to client.');
   } catch (error) {

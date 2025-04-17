@@ -102,7 +102,7 @@ function App() {
 
     const handleExportToRtf = async () => {
         if (analysisResult) {
-            const rtf = await htmlToRtf.convertHTMLToRTF(analysisResult);
+            const rtf = await htmlToRtf.convertHtmlToRtf(analysisResult);
             const blob = new Blob([rtf], { type: 'application/rtf' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -129,21 +129,42 @@ function App() {
             const csvData = dataMatch[1].trim();
             const parsedData = Papa.parse(csvData, { header: true, skipEmptyLines: true });
             if (parsedData.data.length > 0) {
-                let table = '<table>';
-                table += '<tr>';
+                // Create a scrollable container for the table
+                let tableContainer = '<div class="csv-table-container">';
+                let table = '<table class="csv-data-table">';
+                
+                // Create header row
+                table += '<thead><tr>';
                 Object.keys(parsedData.data[0]).forEach(header => {
                     table += `<th>${header}</th>`;
                 });
-                table += '</tr>';
+                table += '</tr></thead>';
+                
+                // Create table body
+                table += '<tbody>';
                 parsedData.data.forEach((row: any) => {
                     table += '<tr>';
                     Object.values(row).forEach((value: any) => {
-                        table += `<td>${value}</td>`;
+                        // Handle null or undefined values
+                        const displayValue = value === null || value === undefined ? '' : value;
+                        table += `<td>${displayValue}</td>`;
                     });
                     table += '</tr>';
                 });
-                table += '</table>';
-                return prompt.replace(dataMatch[0], `Data:\n${table}`);
+                table += '</tbody></table></div>';
+                
+                // Add inline CSS for table styling
+                tableContainer = '<style>' +
+                    '.csv-table-container { overflow-x: auto; margin: 10px 0; max-height: 400px; overflow-y: auto; }' +
+                    '.csv-data-table { width: 100%; border-collapse: collapse; }' +
+                    '.csv-data-table th, .csv-data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
+                    '.csv-data-table thead { position: sticky; top: 0; background-color: #f2f2f2; }' +
+                    '.csv-data-table th { background-color: #f2f2f2; font-weight: bold; }' +
+                    '.csv-data-table tr:nth-child(even) { background-color: #f9f9f9; }' +
+                    '.csv-data-table tr:hover { background-color: #f0f0f0; }' +
+                    '</style>' + tableContainer;
+                
+                return prompt.replace(dataMatch[0], `Data:\n${tableContainer}`);
             }
         }
         return prompt;
@@ -272,23 +293,61 @@ function App() {
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal prompt-content">
                                 <h2>Prompt Sent to LLM:</h2>
+                                <button onClick={() => setShowPrompt(false)} className="close-button">Close</button>
                                 {promptSent ? (
                                     <div className="formatted-prompt">
                                         {promptSent.split('\n\n').map((section, index) => {
-                                            const [header, content] = section.split(':\n');
-                                            if (header === "Data") {
-                                                const table = formatCsvDataAsTable("Data:\n" + content);
+                                            // Check if the section contains a header
+                                            if (section.includes(':\n')) {
+                                                const [header, content] = section.split(':\n');
+                                                
+                                                // Special handling for data section with CSV format
+                                                if (header === "INPUT DATA" || header === "Campaign Data") {
+                                                    const table = formatCsvDataAsTable(header + ":\n" + content);
+                                                    return (
+                                                        <div key={index} className="prompt-section">
+                                                            <h3>{header}:</h3>
+                                                            <div dangerouslySetInnerHTML={{ __html: table.replace(header + ":\n", "") }} />
+                                                        </div>
+                                                    );
+                                                } 
+                                                // Special handling for JSON data
+                                                else if (content && (content.trim().startsWith('{') || content.trim().startsWith('['))) {
+                                                    try {
+                                                        // Try to parse and format JSON
+                                                        const jsonData = JSON.parse(content.trim());
+                                                        const formattedJson = JSON.stringify(jsonData, null, 2);
+                                                        return (
+                                                            <div key={index} className="prompt-section">
+                                                                <h3>{header}:</h3>
+                                                                <pre className="json-content">{formattedJson}</pre>
+                                                            </div>
+                                                        );
+                                                    } catch (e) {
+                                                        // If not valid JSON, display as normal text
+                                                        return (
+                                                            <div key={index} className="prompt-section">
+                                                                <h3>{header}:</h3>
+                                                                <p className="content-text">{content}</p>
+                                                            </div>
+                                                        );
+                                                    }
+                                                } 
+                                                // Normal text content
+                                                else {
+                                                    return (
+                                                        <div key={index} className="prompt-section">
+                                                            <h3>{header}:</h3>
+                                                            <p className="content-text">{content}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                            } 
+                                            // Section without header
+                                            else {
                                                 return (
-                                                    <div key={index}>
-                                                        <h3>{header}:</h3>
-                                                        <div dangerouslySetInnerHTML={{ __html: table.replace("Data:\n", "") }} />
-                                                    </div>
-                                                );
-                                            } else {
-                                                return (
-                                                    <div key={index}>
-                                                        <h3>{header}:</h3>
-                                                        <p>{content}</p>
+                                                    <div key={index} className="prompt-section">
+                                                        <p className="content-text">{section}</p>
                                                     </div>
                                                 );
                                             }
@@ -297,7 +356,6 @@ function App() {
                                 ) : (
                                     <p>Prompt not available.</p>
                                 )}
-                                <button onClick={() => setShowPrompt(false)} className="close-button">Close</button>
                             </div>
                         </div>
                     )}
@@ -400,7 +458,7 @@ function App() {
                     />
                 </div>
             )}
-            <style jsx>{`
+            <style>{`
                 .recommendation-message {
                     background-color: #FE7333;
                     padding: 10px;

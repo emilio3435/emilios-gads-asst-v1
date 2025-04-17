@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       '/api': {
          // --- Change this line ---
-         target: 'http://localhost:5000', // Target localhost instead
+         target: 'http://localhost:5001', // Changed target port to 5001
          // ------------------------
          changeOrigin: true,
          secure: false,
