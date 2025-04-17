@@ -136,7 +136,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log('--- End Prompt ---');
     
     // Call Gemini API
-    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-1.5-flash-002';
+    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-1.5-pro-latest';
     console.log(`Using Gemini model: ${modelName}`);
     const model = genAI.getGenerativeModel({ model: modelName });
     

@@ -46,8 +46,15 @@ EmilioAI is designed to replicate the expertise of a Digital Sales Manager. It a
 3. Create a `.env` file in the project root with your Google Gemini API key:
    ```
    GEMINI_API_KEY=your_api_key_here
-   GEMINI_MODEL_NAME=gemini-1.5-flash-002
+   GEMINI_MODEL_NAME=gemini-1.5-pro-latest
    ```
+   You can get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   
+   Available models:
+   - `gemini-1.5-pro-latest` (Default - Better analysis quality, more detailed responses)
+   - `gemini-1.5-flash-latest` (Faster responses, good for most analyses)
+   - `gemini-1.0-pro` (Previous generation model)
+   - `gemini-1.0-ultra` (Previous generation most capable model)
 
 4. Start the development server
    ```
