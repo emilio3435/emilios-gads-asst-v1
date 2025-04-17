@@ -1,7 +1,11 @@
 ;import React, { useState } from 'react';
+import htmlToRtf from 'html-to-rtf';
+import Papa from 'papaparse';
 
 import audacyLogo from './assets/audacy-logo.png';
 import './App.css';
+
+
 
 // Main App component
 function App() {
@@ -61,6 +65,49 @@ function App() {
     const handleOutcomeChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setDesiredOutcome(event.target.value);
     };
+
+    const handleExportToRtf = async () => {
+        if (analysisResult) {
+            const rtf = await htmlToRtf.convertHTMLToRTF(analysisResult);
+            const blob = new Blob([rtf], { type: 'application/rtf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'analysis.rtf';
+            link.click();
+        }
+    }
+
+    const formatCsvDataAsTable = (prompt: string | null) => {
+        if (!prompt) return "";
+        // Regular expression to find the data section
+        const dataMatch = prompt.match(/Data:\n([\s\S]*?)(?=\n\nTactics:|$)/);
+        if (dataMatch) {
+            const csvData = dataMatch[1].trim();
+            const parsedData = Papa.parse(csvData, { header: true, skipEmptyLines: true });
+
+            if (parsedData.data.length > 0) {
+                // Create the HTML table
+                let table = '<table style="border-collapse: collapse; width: 100%;">';
+                // Add headers
+                table += '<tr style="background-color: #f2f2f2;">';
+                Object.keys(parsedData.data[0]).forEach(header => {
+                    table += `<th style="border: 1px solid #ddd; padding: 8px;">${header}</th>`;
+                });
+                table += '</tr>';
+                parsedData.data.forEach((row: any) => {
+                    table += '<tr>';
+                    Object.values(row).forEach((value: any) => {
+                        table += `<td style="border: 1px solid #ddd; padding: 8px;">${value}</td>`;
+                    });
+                    table += '</tr>';
+                })
+                table += '</table>';
+                return prompt.replace(dataMatch[0], `Data:\n${table}`);
+            }
+        }
+        return prompt;
+    }
 
     const handleSubmit = async () => {
         setError(null);
@@ -124,7 +171,9 @@ function App() {
                 setAnalysisResult(data.raw)
             }
             setPromptSent(data.prompt); // Store the prompt that was sent
+
             setModelName(data.modelName); // Store the model name used
+
             setShowResults(true); // Show the results view
 
         } catch (error: any) { // Explicitly type error
@@ -162,8 +211,11 @@ function App() {
                     </div>
                     <div className="input-section">
                         <button className="show-input-button" onClick={() => setShowPrompt(true)}>
-                            Show Input?
+                            Show Input 
                         </button>
+                        <button className='export-button' onClick={handleExportToRtf}>
+                                Export to RTF
+                         </button>
                         {/* Conditionally render the prompt modal */}
                         {showPrompt && (
                             <div className="prompt-modal-overlay">

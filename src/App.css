@@ -200,6 +200,13 @@ input[type='file'] {
   width: 80%;
   max-width: 600px;
   position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+/* Styling for the pre element within the modal to wrap text */
+.prompt-modal pre {
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 /* Close Button in Modal */
