@@ -2,7 +2,7 @@
 import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 
-import audacyLogo from './assets/audacy-logo.png';
+import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
 
 
@@ -28,6 +28,9 @@ function App() {
     const [isLoading, setIsLoading] = useState<boolean>(false);   
     const [error, setError] = useState<string | null>(null);
 
+    const [targetCPA, setTargetCPA] = useState<number | null>(null);
+    const [targetROAS, setTargetROAS] = useState<number | null>(null);
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAnalysisResult(null);
         setError(null);
@@ -35,7 +38,6 @@ function App() {
             const selectedFile = event.target.files[0];
             // Basic validation for file type (can be enhanced)
             if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx')) {
-                setFile(selectedFile);
                 setFileName(selectedFile.name);
                 setError(null); // Clear error if valid file is selected
             } else {
@@ -46,6 +48,12 @@ function App() {
         } else {
             setFile(null);
             setFileName(null);
+        }
+        if (event.target.files && event.target.files.length > 0) {
+            const selectedFile = event.target.files[0];
+            setFile(selectedFile);
+        } else {
+            setFile(null);
         }
     };
 
@@ -58,7 +66,15 @@ function App() {
         setSelectedKPIs(event.target.value);
     };
 
-    const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleTargetCPAChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTargetCPA(event.target.value ? parseFloat(event.target.value) : null);
+    };
+
+    const handleTargetROASChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTargetROAS(event.target.value ? parseFloat(event.target.value) : null);
+    };
+
+        const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCurrentSituation(event.target.value);
     };
 
@@ -109,7 +125,7 @@ function App() {
         return prompt;
     }
 
-        const handleSubmit = async () => {
+        const handleSubmit = async () =>  {
         setError(null);
         setAnalysisResult(null);
         setPromptSent(null);
@@ -119,17 +135,22 @@ function App() {
         const currentTactic = selectedTactics;
         const currentKPI = selectedKPIs;
 
-        if (!file || !currentTactic || !currentKPI) {
-            const missing = [];
-            if (!file) missing.push("file");
-            if (!currentTactic) missing.push("tactic");
-            if (!currentKPI) missing.push("KPI");
-            const errorMessage = `Please select a ${missing.join(', ')}.`;
-            setError(errorMessage);
-            return;
+        if (!file) {
+          setError('Please upload a file for analysis.');
+          return;
         }
-
+    
+        if (!currentTactic) {
+          setError('Please select a tactic.');
+          return;
+        }
+        
+    
+        
         // Double-check file type before sending
+
+         // Double-check file type before sending
+
         if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx')) {
             setError('Invalid file type selected. Please choose a CSV or XLSX file.');
             return;
@@ -142,6 +163,8 @@ function App() {
         formData.append('kpis', JSON.stringify(selectedKPIs));
         formData.append('currentSituation', currentSituation);
         formData.append('desiredOutcome', desiredOutcome);
+        formData.append('targetCPA', JSON.stringify(targetCPA)); // Include targetCPA, can be null
+        formData.append('targetROAS', JSON.stringify(targetROAS)); // Include targetROAS, can be null
 
         setIsLoading(true);
 
@@ -303,7 +326,10 @@ function App() {
                 Choose File
             </label>
             {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
-            {!fileName && file === null && <p className="file-name">Please select a CSV or XLSX file.</p>} {/* Prompt if no file */}
+            {file && (
+                <button className="remove-file-button rounded-element" onClick={() => {setFile(null); setFileName(null);}}>Remove File</button>
+            )}
+            {fileName === null && file === null && <p className="file-name">Please select a CSV or XLSX file.</p>} {/* Prompt if no file */}
             <br />
 
             {/* Tactics Select */}
@@ -347,6 +373,33 @@ function App() {
                 </select>
             </div>
 
+            {/* Target CPA Input */}
+            {selectedKPIs === 'CPA' && (
+                <div className="input-container">
+                    <label htmlFor="targetCPA">Target CPA:</label>
+                    <input
+                        type="number"
+                        id="targetCPA"
+                        value={targetCPA !== null ? targetCPA : ''}
+                        onChange={handleTargetCPAChange}
+                        placeholder="Enter Target CPA"
+                    />
+                </div>
+            )}
+
+            {/* Target ROAS Input */}
+            {selectedKPIs === 'ROAS' && (
+                <div className="input-container">
+                    <label htmlFor="targetROAS">Target ROAS:</label>
+                    <input
+                        type="number"
+                        id="targetROAS"
+                        value={targetROAS !== null ? targetROAS : ''}
+                        onChange={handleTargetROASChange}
+                        placeholder="Enter Target ROAS"
+                    />
+                </div>
+            )}
 
 
 
@@ -373,7 +426,7 @@ function App() {
             </div>
 
             {/* Submit Button and Loading Spinner */}
-            <button className='rounded-element' onClick={handleSubmit} disabled={isLoading || !file}>
+            <button className='rounded-element' onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? '' : 'Analyze'}
             </button>
             {isLoading && (

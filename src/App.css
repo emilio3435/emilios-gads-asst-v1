@@ -50,6 +50,7 @@ input[type='file'] {
 .file-name {
   margin-bottom: 10px;
   font-style: italic;
+  font-size: 0.9em; /* Reduced font size */
   color: #777;
 }
 
@@ -60,6 +61,19 @@ input[type='file'] {
 }
 
 /* Input fields */
+.tactics-list, .kpi-list {
+  width: 100%;
+  padding: 12px; /* Increased padding for larger size */
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  background-color: white;
+  color: black;
+  font-size: 1.1em; /* Slightly increased font size */
+}
+
+.text-input {
   width: 100%;
   padding: 10px;
   margin-bottom: 20px;
