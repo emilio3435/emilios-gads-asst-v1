@@ -5,10 +5,6 @@ import multer from 'multer'; // For handling file uploads
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import * as dotenv from 'dotenv';
-
-// Load environment variables from .env file
-dotenv.config();
-
 // Create Express app
 const app = express();
 const port = 5000;
@@ -22,11 +18,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Initialize Gemini API
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  console.error('Error: GEMINI_API_KEY is not set in .env file.');
-  process.exit(1);
-}
+const apiKey = 'AIzaSyACPb_2q8rfeX_Do-F-HhfvRjkaFpwujxM'; // Replace with your actual API key
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Default prompt for client-friendly explanations

@@ -1,11 +1,9 @@
-;import React, { useState } from 'react';
+import React, { useState } from 'react';
 import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 
 import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
-
-
 
 // Main App component
 function App() {
@@ -26,7 +24,7 @@ function App() {
 
     // State for loading and errors
     const [isLoading, setIsLoading] = useState<boolean>(false);   
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);    
 
     const [targetCPA, setTargetCPA] = useState<number | null>(null);
     const [targetROAS, setTargetROAS] = useState<number | null>(null);
@@ -57,11 +55,30 @@ function App() {
         }
     };
 
-
-    const handleTacticChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedTactics(event.target.value);
+    // Define KPI recommendations based on tactic
+    const recommendations: { [key: string]: string[] } = {
+        'SEM': ['ROAS', 'CPA', 'CTR', 'CPC'],
+        'SEO': ['Conversion Rate', 'Impressions', 'Clicks'],
+        'Display Ads': ['CTR', 'Impressions', 'Clicks', 'Conversions'],
+        'Video Display Ads': ['Impressions', 'Clicks', 'Conversions'],
+        'YouTube': ['Impressions', 'Clicks', 'Conversions'],
+        'OTT': ['Impressions', 'Conversions'],
+        'Social Ads': ['CTR', 'Impressions', 'Clicks', 'Conversions'],
+        'Email eDirect': ['CTR', 'Conversion Rate', 'Conversions'],
+        'Amazon DSP': ['ROAS', 'Conversions', 'CPA'],
+    };
+        
+    const getRecommendationMessage = (tactic: string | null) => {
+        if (tactic && recommendations[tactic]) {
+            return `Recommended KPIs: ${recommendations[tactic].join(', ')}`;
+        }
+        return '';
     };
 
+    const handleTacticChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedTactics(event.target.value);
+    };
+    
     const handleKPIChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedKPIs(event.target.value);
     };
@@ -74,7 +91,7 @@ function App() {
         setTargetROAS(event.target.value ? parseFloat(event.target.value) : null);
     };
 
-        const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCurrentSituation(event.target.value);
     };
 
@@ -92,7 +109,7 @@ function App() {
             link.download = 'analysis.rtf';
             link.click();
         }
-    }
+    };
 
     const formatCsvDataAsTable = (prompt: string | null) => {
         if (!prompt) return "";
@@ -117,15 +134,15 @@ function App() {
                         table += `<td style="border: 1px solid #ddd; padding: 8px;">${value}</td>`;
                     });
                     table += '</tr>';
-                })
+                });
                 table += '</table>';
                 return prompt.replace(dataMatch[0], `Data:\n${table}`);
             }
         }
         return prompt;
-    }
+    };
 
-        const handleSubmit = async () =>  {
+    const handleSubmit = async () =>  {
         setError(null);
         setAnalysisResult(null);
         setPromptSent(null);
@@ -136,26 +153,20 @@ function App() {
         const currentKPI = selectedKPIs;
 
         if (!file) {
-          setError('Please upload a file for analysis.');
-          return;
+            setError('Please upload a file for analysis.');
+            return;
         }
     
         if (!currentTactic) {
-          setError('Please select a tactic.');
-          return;
+            setError('Please select a tactic.');
+            return;
         }
         
-    
-        
         // Double-check file type before sending
-
-         // Double-check file type before sending
-
         if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx')) {
             setError('Invalid file type selected. Please choose a CSV or XLSX file.');
             return;
         }
-
 
         const formData = new FormData();
         formData.append('file', file);
@@ -187,18 +198,14 @@ function App() {
             const data = await response.json();
 
             // Store results and switch view
-
             if (data.html) {
                 setAnalysisResult(data.html);
             } else {
                 setAnalysisResult(data.raw);
             }
             setPromptSent(data.prompt); // Store the prompt that was sent
-
             setModelName(data.modelName); // Store the model name used
-
             setShowResults(true); // Show the results view
-
         } catch (error: any) { // Explicitly type error
             console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
@@ -219,10 +226,11 @@ function App() {
         // setFileName(null);
         // etc.
     };
+
     // Render the Analysis Results View
     if (showResults) {
         return (
-            <div className="App"> {/* Reuse App class for overall styling */}
+            <div className="App">
                 <div className="back-button-container">
                     <button onClick={handleBackToForm} className="back-button">
                         Back to Form
@@ -232,20 +240,14 @@ function App() {
                 <div className="analysis-page-container">
                     <div className="results-display">
                         <h2>Analysis Result:</h2>
-
                         <div className="prompt-display-box">
-
                             <p><strong>Selected Tactic:</strong> {selectedTactics}</p>
                             <p><strong>Selected KPI:</strong> {selectedKPIs}</p>
                             {fileName && <p><strong>Uploaded File:</strong> {fileName}</p>}
                             {currentSituation && <p><strong>Current Situation:</strong> {currentSituation}</p>}
                             {desiredOutcome && <p><strong>Desired Outcome:</strong> {desiredOutcome}</p>}
                         </div>
-
-
-
                         <hr style={{ borderTop: '3px solid #bbb', width: '100%' }} />
-
                         {analysisResult ? (<div dangerouslySetInnerHTML={{ __html: analysisResult }} />) : (<p>No analysis result available.</p>)}
                     </div>
                     <div className="input-section">
@@ -256,13 +258,12 @@ function App() {
                             Export to RTF
                         </button>
 
-                        {showPrompt && ( // Show prompt information in rich text
+                        {showPrompt && (
                             <div className="prompt-modal-overlay">
                                 <div className="prompt-modal prompt-content">
                                     <h2>Prompt Sent to LLM:</h2>
                                     {promptSent ? (
                                         <div className="formatted-prompt">
-                                            {/* Display prompt details here */}
                                             {promptSent.split('\n\n').map((section, index) => {
                                                 const [header, content] = section.split(':\n');
                                                 if (header === "Data") {
@@ -293,14 +294,14 @@ function App() {
                     </div>
                     <style jsx>{`
                         .prompt-content {
-                            white-space: pre-wrap; /* Preserve whitespace formatting */
-                            word-wrap: break-word; /* Prevent long words from overflowing */
-                            font-family: monospace; /* Use a monospace font for code-like appearance */
+                            white-space: pre-wrap;
+                            word-wrap: break-word;
+                            font-family: monospace;
                             background-color: #f8f8f8;
                             padding: 20px;
                             border-radius: 5px;
-                            overflow-x: auto; /* Add horizontal scrollbar if content overflows */
-                            max-height: 500px; /* Limit vertical height with scrollbar */
+                            overflow-x: auto;
+                            max-height: 500px;
                         }
                     `}</style>
                 </div>
@@ -329,12 +330,14 @@ function App() {
             {file && (
                 <button className="remove-file-button rounded-element" onClick={() => {setFile(null); setFileName(null);}}>Remove File</button>
             )}
-            {fileName === null && file === null && <p className="file-name">Please select a CSV or XLSX file.</p>} {/* Prompt if no file */}
+            {fileName === null && file === null && <p className="file-name">Please select a CSV or XLSX file.</p>}
             <br />
 
             {/* Tactics Select */}
             <div className="select-container">
+                <label htmlFor="tactics-list">Select Tactic:</label>
                 <select
+                    id="tactics-list"
                     className="tactics-list"
                     value={selectedTactics}
                     onChange={e => setSelectedTactics(e.target.value)}
@@ -353,9 +356,18 @@ function App() {
                 </select>
             </div>
 
+            {/* Show recommendation message based on selectedTactics */}
+            {selectedTactics && getRecommendationMessage(selectedTactics) && (
+                <div className="recommendation-message">
+                    {getRecommendationMessage(selectedTactics)}
+                </div>
+            )}
+            
             {/* KPI Select */}
             <div className="select-container">
+                <label htmlFor="kpi-list">Select KPI:</label>
                 <select
+                    id="kpi-list"
                     className="kpi-list"
                     value={selectedKPIs}
                     onChange={e => setSelectedKPIs(e.target.value)}
@@ -383,6 +395,7 @@ function App() {
                         value={targetCPA !== null ? targetCPA : ''}
                         onChange={handleTargetCPAChange}
                         placeholder="Enter Target CPA"
+                        className="text-input"
                     />
                 </div>
             )}
@@ -394,14 +407,25 @@ function App() {
                     <input
                         type="number"
                         id="targetROAS"
-                        value={targetROAS !== null ? targetROAS : ''}
+                            value={targetROAS !== null ? targetROAS : ''}
                         onChange={handleTargetROASChange}
                         placeholder="Enter Target ROAS"
+                        className="text-input"
                     />
                 </div>
-            )}
-
-
+            )}            
+                
+        {/* CSS for the recommendation message */}
+        <style jsx>{`
+          .recommendation-message {
+            background-color: #FE7333;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            color: white;
+            font-weight: bold;
+          }
+        `}</style>
 
             {/* Text Areas */}
             <div className="text-area-container">
@@ -430,7 +454,10 @@ function App() {
                 {isLoading ? '' : 'Analyze'}
             </button>
             {isLoading && (
-                <div className="spinner-container"><div className="spinner"></div><img src={audacyLogo} alt="Audacy Logo" className="spinner-logo" /></div>
+                <div className="spinner-container">
+                    <div className="spinner"></div>
+                    <img src={audacyLogo} alt="Audacy Logo" className="spinner-logo" />
+                </div>
             )}
 
             {/* Display Error Messages */}
@@ -442,4 +469,4 @@ function App() {
     );
 }
 
-export default App; // Export the main App component directly
+export default App;
