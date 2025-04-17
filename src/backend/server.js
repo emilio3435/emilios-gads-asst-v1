@@ -116,7 +116,9 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     const model = genAI.getGenerativeModel({ model: modelName });
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const text = response.text();    console.log('Gemini response:', text);
+    const text = response.text();    
+    console.log('Gemini response (with HTML):', text);
+
 
     // Extract raw text content from HTML
     const rawText = text.replace(/<\/?[^>]+(>|$)/g, "");

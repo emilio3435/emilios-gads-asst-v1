@@ -109,7 +109,7 @@ function App() {
         return prompt;
     }
 
-    const handleSubmit = async () => {
+        const handleSubmit = async () => {
         setError(null);
         setAnalysisResult(null);
         setPromptSent(null);
@@ -165,10 +165,10 @@ function App() {
 
             // Store results and switch view
 
-            if(data.html){
-                setAnalysisResult(data.html)
-            } else{
-                setAnalysisResult(data.raw)
+            if (data.html) {
+                setAnalysisResult(data.html);
+            } else {
+                setAnalysisResult(data.raw);
             }
             setPromptSent(data.prompt); // Store the prompt that was sent
 
@@ -205,8 +205,24 @@ function App() {
                         Back to Form
                     </button>
                 </div>
+                
                 <div className="analysis-page-container">
                     <div className="results-display">
+                        <h2>Analysis Result:</h2>
+
+                        <div className="prompt-display-box">
+
+                            <p><strong>Selected Tactic:</strong> {selectedTactics}</p>
+                            <p><strong>Selected KPI:</strong> {selectedKPIs}</p>
+                            {fileName && <p><strong>Uploaded File:</strong> {fileName}</p>}
+                            {currentSituation && <p><strong>Current Situation:</strong> {currentSituation}</p>}
+                            {desiredOutcome && <p><strong>Desired Outcome:</strong> {desiredOutcome}</p>}
+                        </div>
+
+
+
+                        <hr style={{ borderTop: '3px solid #bbb', width: '100%' }} />
+
                         {analysisResult ? (<div dangerouslySetInnerHTML={{ __html: analysisResult }} />) : (<p>No analysis result available.</p>)}
                     </div>
                     <div className="input-section">
@@ -214,22 +230,56 @@ function App() {
                             Show Input 
                         </button>
                         <button className='export-button' onClick={handleExportToRtf}>
-                                Export to RTF
-                         </button>
-                        {/* Conditionally render the prompt modal */}
-                        {showPrompt && (
+                            Export to RTF
+                        </button>
+
+                        {showPrompt && ( // Show prompt information in rich text
                             <div className="prompt-modal-overlay">
-                                <div className="prompt-modal">
-                                    <h4>Prompt Sent to LLM:</h4>
-                                    <pre>{promptSent || 'Prompt not available.'}</pre>
-                                    <button className="close-button" onClick={() => setShowPrompt(false)}>
-                                        Close
-                                    </button>
+                                <div className="prompt-modal prompt-content">
+                                    <h2>Prompt Sent to LLM:</h2>
+                                    {promptSent ? (
+                                        <div className="formatted-prompt">
+                                            {/* Display prompt details here */}
+                                            {promptSent.split('\n\n').map((section, index) => {
+                                                const [header, content] = section.split(':\n');
+                                                if (header === "Data") {
+                                                    const table = formatCsvDataAsTable("Data:\n" + content);
+                                                    return (
+                                                        <div key={index}>
+                                                            <h3>{header}:</h3>
+                                                            <div dangerouslySetInnerHTML={{ __html: table.replace("Data:\n", "") }} />
+                                                        </div>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <div key={index}>
+                                                            <h3>{header}:</h3>
+                                                            <p>{content}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p>Prompt not available.</p>
+                                    )}
+                                    <button onClick={() => setShowPrompt(false)} className="close-button">Close</button>
                                 </div>
                             </div>
                         )}
                     </div>
-
+                    <style jsx>{`
+                        .prompt-content {
+                            white-space: pre-wrap; /* Preserve whitespace formatting */
+                            word-wrap: break-word; /* Prevent long words from overflowing */
+                            font-family: monospace; /* Use a monospace font for code-like appearance */
+                            background-color: #f8f8f8;
+                            padding: 20px;
+                            border-radius: 5px;
+                            overflow-x: auto; /* Add horizontal scrollbar if content overflows */
+                            max-height: 500px; /* Limit vertical height with scrollbar */
+                        }
+                    `}</style>
                 </div>
             </div>
         );
