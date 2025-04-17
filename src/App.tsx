@@ -202,7 +202,7 @@ function App() {
       <label htmlFor="fileInput" className="choose-file-button rounded-element">
         Choose File
       </label>
-      {fileName && <p className="file-name">Selected File: {fileName}</p>}
+      {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
       {!fileName && file === null && <p className="file-name">Please select a CSV or XLSX file.</p>} {/* Prompt if no file */}
       <br />
 
