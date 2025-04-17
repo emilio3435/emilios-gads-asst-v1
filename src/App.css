@@ -178,55 +178,90 @@ h1 {
     opacity: 1; /* Ensure placeholder is fully opaque */
   }
 /* ------------------------------------------- */
-/* --- Styles for the Analysis Details Page --- */
-.analysis-details-container {
+
+/* --- Styles for the Analysis Results Page --- */
+.analysis-page-container {
+  display: flex;
+  width: 90%; /* Or adjust as needed */
+  max-width: 1200px; /* Max width */
+  margin: 30px auto; /* Center and add space */
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* Contain child elements */
+}
+
+.left-pane {
+  flex: 1; /* Take up half the space */
   padding: 20px;
-  text-align: center; /* Center everything */
-  background-color: white; /* White background */
-  color: black; /* Black text */
-  width: 80%; /* Limit width for readability */
-  margin: 0 auto; /* Center the container horizontally */
-  border-radius: 10px; /* Rounded corners */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  background-color: #f8f8f8;
+  border-right: 1px solid #ddd;
+  overflow-y: auto; /* Scroll if content overflows */
+  max-height: 70vh; /* Limit height */
 }
 
-.analysis-details-container h2 {
-  margin-bottom: 20px;
-  color: #333; /* Darker color for headings */
+.right-pane {
+  flex: 1; /* Take up half the space */
+  padding: 20px;
+  overflow-y: auto; /* Scroll if content overflows */
+  max-height: 70vh; /* Limit height */
 }
 
-.analysis-details-container h3 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  color: #333; /* Darker color for subheadings */
+.prompt-display h4, .model-name-display h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
 }
 
-.analysis-details-container .prompt-text {
-  white-space: pre-wrap;
-  background-color: #f8f8f8; /* Slightly off-white for contrast */
-  padding: 15px; /* More padding */
-  border-radius: 8px; /* Rounded corners */
+.prompt-display pre {
+  white-space: pre-wrap; /* Wrap long lines */
+  word-wrap: break-word; /* Break words if necessary */
   font-family: monospace;
-  border: 1px solid #ddd; /* Add a subtle border */
-  text-align: left; /* Left align the text */
+  font-size: 0.9em;
+  background-color: #efefef; /* Slightly different background */
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
 
-.analysis-details-container .analysis-result {
-  margin-top: 20px; /* More space above results */
-  text-align: left; /* Left align the analysis text */
-  font-size: 1em; /* Slightly larger font for readability */
-  line-height: 1.6; /* Increased line spacing */
+.model-name-display p {
+    font-family: monospace;
+    font-size: 0.9em;
+    background-color: #efefef;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    display: inline-block; /* Fit content */
 }
 
-.analysis-details-container .back-button {
+.results-display {
+  font-size: 1em;
+  line-height: 1.6;
+  text-align: left;
+  color: #333;
+}
+
+/* --- Styles for the Back Button --- */
+.back-button-container { /* Container to position button */
+    width: 100%;
+    text-align: left; /* Align button to the left */
+    margin-bottom: 20px;
+}
+
+.back-button {
   display: inline-block;
-  margin-bottom: 20px;
-  background-color: #5029a7;
+  background-color: #5029a7; /* Audacy purple */
   color: white;
-  padding: 10px 15px;
+  padding: 10px 20px;
+  border: none;
   border-radius: 5px;
-  text-decoration: none;
+  cursor: pointer;
+  text-decoration: none; /* Remove underline if it's an anchor */
+  font-size: 1em;
+  transition: background-color 0.3s ease;
 }
-.back-button:hover {
-    background-color: #3a1e7a; /* Darker purple on hover */
-  }
+
+.back-button:hover, .back-button:focus {
+  background-color: #3a1e7a; /* Darker purple on hover/focus */
+  outline: none; /* Remove default focus outline */
+}
