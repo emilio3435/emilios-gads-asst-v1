@@ -28,7 +28,7 @@ try {
 
 // Create Express app
 const app = express();
-const port = 5001;
+const port = 5002;
 
 // Middleware setup
 app.use(cors()); // Allow cross-origin requests
