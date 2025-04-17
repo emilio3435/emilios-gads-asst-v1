@@ -113,10 +113,51 @@ function App() {
     };
 
     const handleExportToGmail = () => {
-        if (rawAnalysisResult) {
-            const subject = encodeURIComponent("Marketing Analysis Results");
-            const body = encodeURIComponent(rawAnalysisResult);
-            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        if (analysisResult && rawAnalysisResult) {
+            try {
+                // Create a well-formatted email body with campaign info and analysis
+                let emailContent = `Campaign Analysis: ${selectedTactics} - ${selectedKPIs}\n\n`;
+                
+                // Add campaign information
+                emailContent += `CAMPAIGN INFORMATION:\n`;
+                emailContent += `Tactic: ${selectedTactics}\n`;
+                emailContent += `KPI: ${selectedKPIs}\n`;
+                if (fileName) emailContent += `File: ${fileName}\n`;
+                if (currentSituation) emailContent += `Current Situation: ${currentSituation}\n`;
+                if (desiredOutcome) emailContent += `Desired Outcome: ${desiredOutcome}\n\n`;
+                
+                // Add the raw analysis text without HTML tags
+                emailContent += `ANALYSIS RESULTS:\n\n${rawAnalysisResult}\n\n`;
+                
+                // Add attribution
+                if (modelName) {
+                    emailContent += `\nAnalysis powered by ${modelName}`;
+                }
+                
+                // Add campaign date
+                const today = new Date();
+                emailContent += `\nAnalysis Date: ${today.toLocaleDateString()}`;
+                
+                // Check if content is too long for most email clients (typically ~100KB limit)
+                // Use a more conservative 50KB limit to be safe
+                if (emailContent.length > 50000) {
+                    // Truncate the content and add a note about using RTF export for full content
+                    const truncatedContent = emailContent.substring(0, 49000) + 
+                        "\n\n[NOTE: This analysis has been truncated due to email size limitations. " +
+                        "For the complete analysis, please use the 'Export to RTF' option.]";
+                    emailContent = truncatedContent;
+                }
+                
+                // Encode the subject and body for the mailto URL
+                const subject = encodeURIComponent(`Campaign Analysis: ${selectedTactics} - ${selectedKPIs}`);
+                const body = encodeURIComponent(emailContent);
+                
+                // Open the default email client with the pre-filled email
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            } catch (error) {
+                console.error('Error formatting email content:', error);
+                alert('An error occurred while preparing the email. Please try again.');
+            }
         } else {
             alert("No analysis result available to export.");
         }
@@ -331,7 +372,7 @@ function App() {
                                         Export to RTF
                                     </button>
                                     <button onClick={() => { handleExportToGmail(); setIsExportMenuOpen(false); }}>
-                                        Export to Gmail
+                                        Export to Email
                                     </button>
                                 </div>
                             )}
