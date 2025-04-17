@@ -1,61 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
-
+import DOMPurify from 'dompurify';
 import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
 
-// Main App component
 function App() {
-    // State for form inputs
     const [selectedTactics, setSelectedTactics] = useState<string>('');
     const [selectedKPIs, setSelectedKPIs] = useState<string>('');
     const [file, setFile] = useState<File | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [currentSituation, setCurrentSituation] = useState<string>('');
     const [desiredOutcome, setDesiredOutcome] = useState<string>('');
-
-    // State for analysis results and view control
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
-    const [promptSent, setPromptSent] = useState<string | null>(null); // Store the prompt sent
-    const [modelName, setModelName] = useState<string | null>(null); // Store the model name
-    const [showPrompt, setShowPrompt] = useState<boolean>(false); // Control prompt visibility
-    const [showResults, setShowResults] = useState<boolean>(false); // Control view
-
-    // State for loading and errors
-    const [isLoading, setIsLoading] = useState<boolean>(false);   
-    const [error, setError] = useState<string | null>(null);    
-
+    const [rawAnalysisResult, setRawAnalysisResult] = useState<string | null>(null);
+    const [promptSent, setPromptSent] = useState<string | null>(null);
+    const [modelName, setModelName] = useState<string | null>(null);
+    const [showPrompt, setShowPrompt] = useState<boolean>(false);
+    const [showResults, setShowResults] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
     const [targetCPA, setTargetCPA] = useState<number | null>(null);
     const [targetROAS, setTargetROAS] = useState<number | null>(null);
+    const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
+    const exportMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setIsExportMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAnalysisResult(null);
         setError(null);
         if (event.target.files && event.target.files.length > 0) {
             const selectedFile = event.target.files[0];
-            // Basic validation for file type (can be enhanced)
             if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx')) {
                 setFileName(selectedFile.name);
-                setError(null); // Clear error if valid file is selected
+                setError(null);
             } else {
                 setFile(null);
                 setFileName(null);
                 setError('Unsupported file type. Please upload CSV or XLSX.');
             }
+            setFile(selectedFile);
         } else {
             setFile(null);
             setFileName(null);
         }
-        if (event.target.files && event.target.files.length > 0) {
-            const selectedFile = event.target.files[0];
-            setFile(selectedFile);
-        } else {
-            setFile(null);
-        }
     };
 
-    // Define KPI recommendations based on tactic
     const recommendations: { [key: string]: string[] } = {
         'SEM': ['ROAS', 'CPA', 'CTR', 'CPC'],
         'SEO': ['Conversion Rate', 'Impressions', 'Clicks'],
@@ -67,7 +68,7 @@ function App() {
         'Email eDirect': ['CTR', 'Conversion Rate', 'Conversions'],
         'Amazon DSP': ['ROAS', 'Conversions', 'CPA'],
     };
-        
+
     const getRecommendationMessage = (tactic: string | null) => {
         if (tactic && recommendations[tactic]) {
             return `Recommended KPIs: ${recommendations[tactic].join(', ')}`;
@@ -78,8 +79,8 @@ function App() {
     const handleTacticChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedTactics(event.target.value);
     };
-    
-    const handleKPIChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+    const handleKPIChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedKPIs(event.target.value);
     };
 
@@ -111,27 +112,33 @@ function App() {
         }
     };
 
+    const handleExportToGmail = () => {
+        if (rawAnalysisResult) {
+            const subject = encodeURIComponent("Marketing Analysis Results");
+            const body = encodeURIComponent(rawAnalysisResult);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        } else {
+            alert("No analysis result available to export.");
+        }
+    };
+
     const formatCsvDataAsTable = (prompt: string | null) => {
         if (!prompt) return "";
-        // Regular expression to find the data section
         const dataMatch = prompt.match(/Data:\n([\s\S]*?)(?=\n\nTactics:|$)/);
         if (dataMatch) {
             const csvData = dataMatch[1].trim();
             const parsedData = Papa.parse(csvData, { header: true, skipEmptyLines: true });
-
             if (parsedData.data.length > 0) {
-                // Create the HTML table
-                let table = '<table style="border-collapse: collapse; width: 100%;">';
-                // Add headers
-                table += '<tr style="background-color: #f2f2f2;">';
+                let table = '<table>';
+                table += '<tr>';
                 Object.keys(parsedData.data[0]).forEach(header => {
-                    table += `<th style="border: 1px solid #ddd; padding: 8px;">${header}</th>`;
+                    table += `<th>${header}</th>`;
                 });
                 table += '</tr>';
                 parsedData.data.forEach((row: any) => {
                     table += '<tr>';
                     Object.values(row).forEach((value: any) => {
-                        table += `<td style="border: 1px solid #ddd; padding: 8px;">${value}</td>`;
+                        table += `<td>${value}</td>`;
                     });
                     table += '</tr>';
                 });
@@ -142,27 +149,23 @@ function App() {
         return prompt;
     };
 
-    const handleSubmit = async () =>  {
+    const handleSubmit = async () => {
         setError(null);
         setAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
-        setShowResults(false); // Hide results initially
-
-        const currentTactic = selectedTactics;
-        const currentKPI = selectedKPIs;
+        setShowResults(false);
 
         if (!file) {
             setError('Please upload a file for analysis.');
             return;
         }
-    
-        if (!currentTactic) {
+
+        if (!selectedTactics) {
             setError('Please select a tactic.');
             return;
         }
-        
-        // Double-check file type before sending
+
         if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx')) {
             setError('Invalid file type selected. Please choose a CSV or XLSX file.');
             return;
@@ -174,13 +177,12 @@ function App() {
         formData.append('kpis', JSON.stringify(selectedKPIs));
         formData.append('currentSituation', currentSituation);
         formData.append('desiredOutcome', desiredOutcome);
-        formData.append('targetCPA', JSON.stringify(targetCPA)); // Include targetCPA, can be null
-        formData.append('targetROAS', JSON.stringify(targetROAS)); // Include targetROAS, can be null
+        formData.append('targetCPA', JSON.stringify(targetCPA));
+        formData.append('targetROAS', JSON.stringify(targetROAS));
 
         setIsLoading(true);
 
         try {
-            // Ensure the server path is correct (using relative path for proxy)
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 body: formData,
@@ -190,44 +192,33 @@ function App() {
                 let errorDetails = `HTTP error! status: ${response.status}`;
                 try {
                     const errorData = await response.json();
-                    errorDetails = errorData.details || errorData.error || errorDetails;
-                } catch (e) { /* Ignore if response body is not JSON */ }
+                    errorDetails = errorData.error || errorData.details || errorDetails;
+                } catch (e) {
+                    // Ignore if response body is not JSON
+                }
                 throw new Error(errorDetails);
             }
 
             const data = await response.json();
-
-            // Store results and switch view
-            if (data.html) {
-                setAnalysisResult(data.html);
-            } else {
-                setAnalysisResult(data.raw);
-            }
-            setPromptSent(data.prompt); // Store the prompt that was sent
-            setModelName(data.modelName); // Store the model name used
-            setShowResults(true); // Show the results view
-        } catch (error: any) { // Explicitly type error
+            const sanitizedHtml = DOMPurify.sanitize(data.html);
+            setAnalysisResult(sanitizedHtml);
+            setRawAnalysisResult(data.raw);
+            setPromptSent(data.prompt);
+            setModelName(data.modelName);
+            setShowResults(true);
+        } catch (error: any) {
             console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
-            setShowResults(false); // Ensure results view is hidden on error
+            setShowResults(false);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Function to go back to the form
     const handleBackToForm = () => {
         setShowResults(false);
-        // Optionally clear results/form fields
-        // setAnalysisResult(null);
-        // setPromptSent(null);
-        // setModelName(null);
-        // setFile(null);
-        // setFileName(null);
-        // etc.
     };
 
-    // Render the Analysis Results View
     if (showResults) {
         return (
             <div className="App">
@@ -236,7 +227,6 @@ function App() {
                         Back to Form
                     </button>
                 </div>
-                
                 <div className="analysis-page-container">
                     <div className="results-display">
                         <h2>Analysis Result:</h2>
@@ -248,74 +238,78 @@ function App() {
                             {desiredOutcome && <p><strong>Desired Outcome:</strong> {desiredOutcome}</p>}
                         </div>
                         <hr style={{ borderTop: '3px solid #bbb', width: '100%' }} />
-                        {analysisResult ? (<div dangerouslySetInnerHTML={{ __html: analysisResult }} />) : (<p>No analysis result available.</p>)}
-                    </div>
-                    <div className="input-section">
-                        <button className="show-input-button" onClick={() => setShowPrompt(true)}>
-                            Show Input 
-                        </button>
-                        <button className='export-button' onClick={handleExportToRtf}>
-                            Export to RTF
-                        </button>
-
-                        {showPrompt && (
-                            <div className="prompt-modal-overlay">
-                                <div className="prompt-modal prompt-content">
-                                    <h2>Prompt Sent to LLM:</h2>
-                                    {promptSent ? (
-                                        <div className="formatted-prompt">
-                                            {promptSent.split('\n\n').map((section, index) => {
-                                                const [header, content] = section.split(':\n');
-                                                if (header === "Data") {
-                                                    const table = formatCsvDataAsTable("Data:\n" + content);
-                                                    return (
-                                                        <div key={index}>
-                                                            <h3>{header}:</h3>
-                                                            <div dangerouslySetInnerHTML={{ __html: table.replace("Data:\n", "") }} />
-                                                        </div>
-                                                    );
-                                                } else {
-                                                    return (
-                                                        <div key={index}>
-                                                            <h3>{header}:</h3>
-                                                            <p>{content}</p>
-                                                        </div>
-                                                    );
-                                                }
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <p>Prompt not available.</p>
-                                    )}
-                                    <button onClick={() => setShowPrompt(false)} className="close-button">Close</button>
-                                </div>
-                            </div>
+                        {analysisResult ? (
+                            <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
+                        ) : (
+                            <p>No analysis result available.</p>
                         )}
                     </div>
-                    <style jsx>{`
-                        .prompt-content {
-                            white-space: pre-wrap;
-                            word-wrap: break-word;
-                            font-family: monospace;
-                            background-color: #f8f8f8;
-                            padding: 20px;
-                            border-radius: 5px;
-                            overflow-x: auto;
-                            max-height: 500px;
-                        }
-                    `}</style>
+                    <div className="input-section">
+                        <button
+                            className="show-input-button"
+                            onClick={() => setShowPrompt(true)}
+                            style={{ marginRight: '10px' }}
+                        >
+                            Show Input
+                        </button>
+                        <div className="export-container">
+                            <button className="export-button" onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}>
+                                Export
+                            </button>
+                            {isExportMenuOpen && (
+                                <div className="export-menu" ref={exportMenuRef}>
+                                    <button onClick={() => { handleExportToRtf(); setIsExportMenuOpen(false); }}>
+                                        Export to RTF
+                                    </button>
+                                    <button onClick={() => { handleExportToGmail(); setIsExportMenuOpen(false); }}>
+                                        Export to Gmail
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    {showPrompt && (
+                        <div className="prompt-modal-overlay">
+                            <div className="prompt-modal prompt-content">
+                                <h2>Prompt Sent to LLM:</h2>
+                                {promptSent ? (
+                                    <div className="formatted-prompt">
+                                        {promptSent.split('\n\n').map((section, index) => {
+                                            const [header, content] = section.split(':\n');
+                                            if (header === "Data") {
+                                                const table = formatCsvDataAsTable("Data:\n" + content);
+                                                return (
+                                                    <div key={index}>
+                                                        <h3>{header}:</h3>
+                                                        <div dangerouslySetInnerHTML={{ __html: table.replace("Data:\n", "") }} />
+                                                    </div>
+                                                );
+                                            } else {
+                                                return (
+                                                    <div key={index}>
+                                                        <h3>{header}:</h3>
+                                                        <p>{content}</p>
+                                                    </div>
+                                                );
+                                            }
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p>Prompt not available.</p>
+                                )}
+                                <button onClick={() => setShowPrompt(false)} className="close-button">Close</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         );
     }
 
-    // Render the Form View (default)
     return (
         <div className="App">
             <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
             <h1>Marketing Assistant</h1>
-
-            {/* File Input */}
             <input
                 type="file"
                 id="fileInput"
@@ -328,19 +322,19 @@ function App() {
             </label>
             {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
             {file && (
-                <button className="remove-file-button rounded-element" onClick={() => {setFile(null); setFileName(null);}}>Remove File</button>
+                <button className="remove-file-button rounded-element" onClick={() => { setFile(null); setFileName(null); }}>
+                    Remove File
+                </button>
             )}
             {fileName === null && file === null && <p className="file-name">Please select a CSV or XLSX file.</p>}
             <br />
-
-            {/* Tactics Select */}
             <div className="select-container">
                 <label htmlFor="tactics-list">Select Tactic:</label>
                 <select
                     id="tactics-list"
                     className="tactics-list"
                     value={selectedTactics}
-                    onChange={e => setSelectedTactics(e.target.value)}
+                    onChange={handleTacticChange}
                     required
                 >
                     <option value="" disabled>Select Tactic</option>
@@ -355,22 +349,18 @@ function App() {
                     <option value="Amazon DSP">Amazon DSP</option>
                 </select>
             </div>
-
-            {/* Show recommendation message based on selectedTactics */}
             {selectedTactics && getRecommendationMessage(selectedTactics) && (
                 <div className="recommendation-message">
                     {getRecommendationMessage(selectedTactics)}
                 </div>
             )}
-            
-            {/* KPI Select */}
             <div className="select-container">
                 <label htmlFor="kpi-list">Select KPI:</label>
                 <select
                     id="kpi-list"
                     className="kpi-list"
                     value={selectedKPIs}
-                    onChange={e => setSelectedKPIs(e.target.value)}
+                    onChange={handleKPIChange}
                     required
                 >
                     <option value="" disabled>Select KPI</option>
@@ -384,8 +374,6 @@ function App() {
                     <option value="Conversions">Conversions</option>
                 </select>
             </div>
-
-            {/* Target CPA Input */}
             {selectedKPIs === 'CPA' && (
                 <div className="input-container">
                     <label htmlFor="targetCPA">Target CPA:</label>
@@ -399,35 +387,29 @@ function App() {
                     />
                 </div>
             )}
-
-            {/* Target ROAS Input */}
             {selectedKPIs === 'ROAS' && (
                 <div className="input-container">
                     <label htmlFor="targetROAS">Target ROAS:</label>
                     <input
                         type="number"
                         id="targetROAS"
-                            value={targetROAS !== null ? targetROAS : ''}
+                        value={targetROAS !== null ? targetROAS : ''}
                         onChange={handleTargetROASChange}
                         placeholder="Enter Target ROAS"
                         className="text-input"
                     />
                 </div>
-            )}            
-                
-        {/* CSS for the recommendation message */}
-        <style jsx>{`
-          .recommendation-message {
-            background-color: #FE7333;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 5px;
-            color: white;
-            font-weight: bold;
-          }
-        `}</style>
-
-            {/* Text Areas */}
+            )}
+            <style jsx>{`
+                .recommendation-message {
+                    background-color: #FE7333;
+                    padding: 10px;
+                    border-radius: 5px;
+                    margin-top: 5px;
+                    color: white;
+                    font-weight: bold;
+                }
+            `}</style>
             <div className="text-area-container">
                 <label htmlFor="currentSituation">Current Situation:</label>
                 <textarea
@@ -448,22 +430,17 @@ function App() {
                     placeholder="Describe your desired outcome..."
                 />
             </div>
-
-            {/* Submit Button and Loading Spinner */}
-            <button className='rounded-element' onClick={handleSubmit} disabled={isLoading}>
+            <button className="rounded-element" onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? '' : 'Analyze'}
             </button>
             {isLoading && (
                 <div className="spinner-container">
                     <div className="spinner"></div>
                     <img src={audacyLogo} alt="Audacy Logo" className="spinner-logo" />
+                    <p>Analyzing your data, please wait...</p>
                 </div>
             )}
-
-            {/* Display Error Messages */}
             {error && <div className="error-message">{error}</div>}
-
-            {/* Loading Indicator */}
             {isLoading && <div className="loading-indicator">Loading analysis...</div>}
         </div>
     );

@@ -17,19 +17,16 @@ body {
   border-radius: 8px;
 }
 
-/* Logo */
 .audacy-logo {
   height: 50px;
   margin-bottom: 20px;
 }
 
-/* Heading */
 h1 {
-  color: #5029a7; /* Audacy purple */
+  color: #5029a7;
   margin-bottom: 30px;
 }
 
-/* Form Elements */
 label {
   display: block;
   margin-bottom: 5px;
@@ -46,31 +43,29 @@ input[type='file'] {
   cursor: pointer;
 }
 
-/* Style for file name display */
 .file-name {
   margin-bottom: 10px;
   font-style: italic;
-  font-size: 0.9em; /* Reduced font size */
+  font-size: 0.9em;
   color: #777;
 }
 
 .file-name span {
   font-style: normal;
   font-weight: bold;
-  color: #5029a7; /* Audacy purple for selected file */
+  color: #5029a7;
 }
 
-/* Input fields */
 .tactics-list, .kpi-list {
   width: 100%;
-  padding: 12px; /* Increased padding for larger size */
+  padding: 12px;
   margin-bottom: 20px;
   border: 1px solid #ccc;
   border-radius: 5px;
   box-sizing: border-box;
   background-color: white;
   color: black;
-  font-size: 1.1em; /* Slightly increased font size */
+  font-size: 1.1em;
 }
 
 .text-input {
@@ -82,7 +77,6 @@ input[type='file'] {
   box-sizing: border-box;
   background-color: white;
   color: black;
-  color: #666; /* Dark grey for placeholder */
 }
 
 .text-area {
@@ -98,12 +92,11 @@ input[type='file'] {
 }
 
 .text-area::placeholder {
-  color: #666; /* Dark grey for placeholder */
+  color: #666;
 }
 
-/* Submit Button */
 .rounded-element, .choose-file-button, .back-button, .show-input-button {
-  background-color: #5029a7; /* Audacy purple */
+  background-color: #5029a7;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -116,22 +109,19 @@ input[type='file'] {
 }
 
 .rounded-element:hover, .choose-file-button:hover, .back-button:hover, .show-input-button:hover {
-  background-color: #3a1e7a; /* Darker purple on hover */
+  background-color: #3a1e7a;
 }
 
-/* Error Messages */
 .error-message {
   color: red;
   margin-top: 10px;
   font-size: 0.9em;
 }
 
-/* Loading Indicator */
 .loading-indicator {
-   display: none;
+  display: none;
 }
 
-/* Spinner Styles */
 .spinner-container {
   display: flex;
   flex-direction: column;
@@ -141,7 +131,7 @@ input[type='file'] {
 
 .spinner {
   border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #5029a7; /* Audacy purple */
+  border-left-color: #5029a7;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -162,20 +152,17 @@ input[type='file'] {
   }
 }
 
-/* Back Button Container */
 .back-button-container {
   text-align: left;
   margin-bottom: 20px;
 }
 
-/* Analysis Page Container */
 .analysis-page-container {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* Results Display */
 .results-display {
   width: 100%;
   padding: 20px;
@@ -188,12 +175,10 @@ input[type='file'] {
   text-align: left;
 }
 
-/* Input Section (for the Show Input button) */
 .input-section {
   margin-bottom: 20px;
 }
 
-/* Prompt Modal Overlay */
 .prompt-modal-overlay {
   position: fixed;
   top: 0;
@@ -206,7 +191,6 @@ input[type='file'] {
   align-items: center;
 }
 
-/* Prompt Modal */
 .prompt-modal {
   background-color: white;
   padding: 20px;
@@ -217,13 +201,12 @@ input[type='file'] {
   word-wrap: break-word;
   white-space: pre-wrap;
 }
-/* Styling for the pre element within the modal to wrap text */
+
 .prompt-modal pre {
   word-wrap: break-word;
   white-space: pre-wrap;
 }
 
-/* Close Button in Modal */
 .prompt-modal .close-button {
   position: absolute;
   top: 10px;
@@ -233,4 +216,103 @@ input[type='file'] {
   padding: 5px 10px;
   border-radius: 3px;
   cursor: pointer;
+}
+
+.results-display table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  display: block;
+}
+
+.results-display th, .results-display td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.results-display th {
+  background-color: #f2f2f2;
+}
+
+.results-display tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.results-display h2 {
+  color: #5029a7;
+  margin-top: 20px;
+}
+
+.results-display p {
+  margin-bottom: 15px;
+}
+
+.formatted-prompt table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.formatted-prompt th, .formatted-prompt td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.formatted-prompt th {
+  background-color: #f2f2f2;
+}
+
+.spinner-container p {
+  margin-top: 10px;
+  color: #333;
+}
+
+.export-container {
+  position: relative;
+  display: inline-block;
+}
+
+.export-button {
+  background-color: #FE5000;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: background-color 0.3s;
+}
+
+.export-button:hover {
+  background-color: #e64500;
+}
+
+.export-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 10;
+  min-width: 150px;
+}
+
+.export-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95em;
+}
+
+.export-menu button:hover {
+  background-color: #f0f0f0;
 }
