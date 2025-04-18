@@ -426,7 +426,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 app.post('/get-help', upload.single('contextFile'), async (req, res) => {
   console.log('--- New request to /get-help ---');
   try {
-    // Extract data from request (now coming from form-data)
+    // Extract data from the request body (now coming from form-data)
     const {
       originalPrompt,
       originalAnalysis,
@@ -436,153 +436,128 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
       fileName,
       currentSituation,
       desiredOutcome,
-      modelId
+      conversationHistory: conversationHistoryJson
     } = req.body;
 
-    // Get additional context file if uploaded
-    const contextFile = req.file;
-    let additionalContext = '';
+    const contextFile = req.file; // Get the uploaded file
 
-    // Basic validation
+    console.log('--- Help Request Received ---');
+    console.log('Question:', question);
+    console.log('Conversation History JSON:', conversationHistoryJson);
+    // console.log('Context File:', contextFile ? contextFile.originalname : 'None');
+
     if (!question) {
       return res.status(400).json({ error: 'Question is required.' });
     }
 
-    // Get conversation history
-    const conversationHistory = req.body.conversationHistory ? 
-      JSON.parse(req.body.conversationHistory) : [];
-    
-    // Check if this is a follow-up question (conversation history already exists)
-    const isFollowUp = conversationHistory && conversationHistory.length > 0;
-    
-    let helpPrompt = '';
-    
-    if (isFollowUp) {
-      // For follow-up questions, just send the question directly without additional context
-      // This ensures unmodified interaction with the model after the initial prompt
-      helpPrompt = question;
-      
-      console.log('Follow-up question detected - sending direct question without additional context');
-    } else {
-      // Process the context file if provided (only for initial question)
-      if (contextFile) {
-        console.log(`Context file uploaded: ${contextFile.originalname}`);
-        
-        try {
-          // Handle different file types
-          if (contextFile.originalname.endsWith('.csv')) {
-            // Parse CSV
-            const csvData = contextFile.buffer.toString('utf8');
-            additionalContext = `\nADDITIONAL CONTEXT (CSV):\n${csvData}\n`;
-            console.log('CSV context file processed successfully');
-          } 
-          else if (contextFile.originalname.endsWith('.xlsx')) {
-            // For XLSX, we can only use basic info
-            additionalContext = `\nADDITIONAL CONTEXT:\nAn Excel file named "${contextFile.originalname}" was provided for additional context.\n`;
-            console.log('XLSX context noted (cannot process detailed content)');
+    let additionalContext = '';
+    if (contextFile) {
+      console.log(`Processing help context file: ${contextFile.originalname}`);
+      const fileBuffer = contextFile.buffer;
+      const lowerCaseFileName = contextFile.originalname.toLowerCase();
+
+      try {
+        if (lowerCaseFileName.endsWith('.csv')) {
+          const fileContent = fileBuffer.toString('utf-8');
+          const parseResult = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
+          if (parseResult.errors.length > 0) {
+            console.warn('CSV parsing errors in help context:', parseResult.errors);
+            additionalContext = `\n\n--- Additional Context File (${contextFile.originalname}) ---\n[Could not fully parse CSV, but content starts with: ${fileContent.substring(0, 500)}]`;
+          } else {
+            additionalContext = `\n\n--- Additional Context File (${contextFile.originalname}) ---\n${JSON.stringify(parseResult.data, null, 2)}`;
           }
-          else if (contextFile.originalname.endsWith('.pdf')) {
-            additionalContext = `\nADDITIONAL CONTEXT:\nA PDF file named "${contextFile.originalname}" was provided for additional context.\n`;
-            console.log('PDF context noted (cannot process detailed content)');
+        } else if (lowerCaseFileName.endsWith('.xlsx')) {
+          const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const excelData = XLSX.utils.sheet_to_json(worksheet);
+          additionalContext = `\n\n--- Additional Context File (${contextFile.originalname}) ---\n${JSON.stringify(excelData, null, 2)}`;
+        } else if (lowerCaseFileName.endsWith('.pdf')) {
+          const uint8Array = new Uint8Array(fileBuffer);
+          const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+          const pdfDoc = await loadingTask.promise;
+          let fullText = '';
+          for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const textContent = await page.getTextContent();
+            fullText += textContent.items.map(item => item.str).join(' ') + '\n';
           }
-        } catch (fileError) {
-          console.error('Error processing context file:', fileError);
-          additionalContext = `\nADDITIONAL CONTEXT:\nA file named "${contextFile.originalname}" was provided, but could not be fully processed.\n`;
+          additionalContext = `\n\n--- Additional Context File (${contextFile.originalname}) ---\n${fullText.trim()}`;
+        } else {
+          additionalContext = `\n\n--- Additional Context File (${contextFile.originalname}) ---\n[Unsupported file type for direct processing]`;
         }
+        console.log('Processed additional context from file.');
+      } catch (fileError) {
+        console.error(`Error processing help context file ${contextFile.originalname}:`, fileError);
+        additionalContext = `\n\n--- Additional Context File (${contextFile.originalname}) ---\n[Error processing file: ${fileError.message}]`;
       }
-      
-      // For initial question, construct a rich prompt with all context
-      helpPrompt = `
-You are EmilioAI, a senior digital marketing analyst. You previously provided an analysis about a marketing campaign.
+    }
 
-ORIGINAL DATA:
-Tactic: ${tactic || 'Not specified'}
-KPI: ${kpi || 'Not specified'}
-${fileName ? `File: ${fileName}` : ''}
-${currentSituation ? `Current Situation: ${currentSituation}` : ''}
-${desiredOutcome ? `Desired Outcome: ${desiredOutcome}` : ''}
+    // --- Format previous conversation ---
+    let previousConversationFormatted = '';
+    try {
+      const conversationHistory = conversationHistoryJson ? JSON.parse(conversationHistoryJson) : [];
+      if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+        console.log(`Formatting ${conversationHistory.length} previous messages...`);
+        previousConversationFormatted = "\n\n--- Previous Conversation Turn(s) ---";
+        
+        // Iterate through all messages in the history
+        conversationHistory.forEach(message => {\n          // Sanitize content - remove HTML tags for the prompt\n          const textContent = message.content ? message.content.replace(/<\\/?[^>]+(>|$)/g, "") : '';\n          const role = message.type === 'user' ? 'User' : 'Audacy AI';\n          previousConversationFormatted += `\\n${role}: ${textContent}\\n`;\n        });
+         previousConversationFormatted += "------------------------------------\n";
+      } else {
+        console.log('No valid conversation history found or history is empty.');
+      }
+    } catch (parseError) {
+      console.error('Error parsing conversation history JSON:', parseError);
+      // Handle cases where JSON might be malformed
+      previousConversationFormatted = '\n\n[Error processing conversation history]\n';
+    }
 
-YOUR PREVIOUS ANALYSIS:
-${originalAnalysis || 'No previous analysis available.'}
-${additionalContext}
-NEW QUESTION FROM THE USER:
+    // Construct the prompt for the help request
+    // Ensure all parts are included, especially the formatted conversation history
+    const helpPrompt = `
+CONTEXT: You are an AI assistant helping a user understand a previous data analysis.
+
+--- Original Analysis Context ---
+Tactic: ${tactic || 'N/A'}
+KPI: ${kpi || 'N/A'}
+File Name: ${fileName || 'N/A'}
+Current Situation: ${currentSituation || 'N/A'}
+Desired Outcome: ${desiredOutcome || 'N/A'}
+Original Prompt Sent for Analysis:
+\`\`\`
+${originalPrompt || 'N/A'}
+\`\`\`
+Original Analysis Received:
+\`\`\`
+${originalAnalysis || 'N/A'}
+\`\`\`
+---------------------------------${previousConversationFormatted}${additionalContext}
+--- Current User Question ---
 ${question}
 
-FORMAT YOUR RESPONSE AS HTML, with proper headings, paragraphs, and lists as appropriate.
+INSTRUCTIONS: Address the user's NEW question directly, using the provided original analysis, the previous conversation turns, and any additional context files as reference. Provide a clear, concise, and helpful response. If the question is unrelated to the analysis, politely state that. Respond in well-formatted HTML.
 `;
-    }
 
     console.log('--- Help Prompt to Gemini ---');
-    console.log(helpPrompt);
+    console.log(`Help prompt constructed including conversation history (length: ${previousConversationFormatted.length}) and additional context (length: ${additionalContext.length}).`);
     console.log('--- End Help Prompt ---');
 
-    // Determine which model to use
-    const envModelName = process.env.GEMINI_MODEL_NAME;
-    const defaultModelName = 'gemini-2.5-pro-preview-03-25';
-    const modelName = modelId || envModelName || defaultModelName;
-    
-    // Configure provider-specific options  
-    let provider = 'google';
-    if (modelName.includes('claude')) {
-      provider = 'anthropic';
-    } else if (modelName.includes('gpt')) {
-      provider = 'openai';
-    }
-    
-    console.log(`Using model for help: ${modelName} (provider: ${provider})`);
-    
-    // Use appropriate provider API
-    let result;
     try {
-      if (provider === 'google') {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        result = await callModelWithRetry(model, helpPrompt, 3);
-      } else {
-        // Mock implementation for other providers
-        console.log(`Using mock implementation for ${provider} provider`);
-        result = {
-          response: {
-            text: () => `<div class="help-response">
-              <h2>Follow-up Answer (${provider} ${modelName})</h2>
-              <p>This is a mock response for ${modelName} since the actual API integration is not implemented.</p>
-              <p>In a production environment, this would use the ${provider} API with the appropriate model to answer your question.</p>
-            </div>`
-          }
-        };
-      }
+      // Use a default or specific model for help requests if desired
+      // Using the default model configured earlier for consistency
+      const model = genAI.getGenerativeModel({ model: process.env.GEMINI_DEFAULT_MODEL || 'gemini-2.0-flash' });
+      const result = await callModelWithRetry(model, helpPrompt);
+      const response = await result.response;
+      const responseText = response.text();
+      
+      console.log('Raw help response from Gemini:', responseText);
+
+      res.json({ response: responseText });
     } catch (error) {
-      console.error('Error calling model for help:', error);
-      return res.status(500).json({ error: `Error calling ${modelName}: ${error.message}` });
+      console.error('Error getting help from model:', error);
+      res.status(500).json({ error: `Error getting help: ${error.message}` });
     }
-
-    const response = await result.response;
-    let htmlText = response.text();
-    console.log('Raw Gemini help response:', htmlText);
-
-    // Check if the response is wrapped in markdown code blocks
-    const prefix = '```html';
-    const suffix = '```';
-    if (htmlText.startsWith(prefix)) {
-        htmlText = htmlText.substring(prefix.length);
-    }
-    if (htmlText.endsWith(suffix)) {
-        htmlText = htmlText.substring(0, htmlText.length - suffix.length);
-    }
-    htmlText = htmlText.trim();
-
-    console.log('Cleaned Gemini help response:', htmlText);
-
-    // Extract raw text content from the HTML
-    const rawText = htmlText.replace(/<\/?[^>]+(>|$)/g, "");
-
-    // Send response to client
-    res.json({
-      html: htmlText,
-      raw: rawText,
-      modelName: modelName
-    });
-
-    console.log('Help response sent to client.');
   } catch (error) {
     console.error('--- Error in /get-help ---');
     console.error(error);
