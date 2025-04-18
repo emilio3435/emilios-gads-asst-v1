@@ -28,6 +28,8 @@ function App() {
     const [helpResponse, setHelpResponse] = useState<string | null>(null);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
     const [showKpiRecommendation, setShowKpiRecommendation] = useState<boolean>(false);
+    const [helpContextFile, setHelpContextFile] = useState<File | null>(null);
+    const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -69,6 +71,23 @@ function App() {
         } else {
             setFile(null);
             setFileName(null);
+        }
+    };
+
+    const handleHelpContextFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+            const selectedFile = event.target.files[0];
+            if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.pdf')) {
+                setHelpContextFileName(selectedFile.name);
+                setHelpContextFile(selectedFile);
+            } else {
+                setHelpContextFile(null);
+                setHelpContextFileName(null);
+                alert('Unsupported file type. Please upload CSV, XLSX, or PDF.');
+            }
+        } else {
+            setHelpContextFile(null);
+            setHelpContextFileName(null);
         }
     };
 
@@ -145,25 +164,28 @@ function App() {
         setHelpResponse(null);
 
         try {
-            // Prepare data for the help request
-            const helpData = {
-                originalPrompt: promptSent,
-                originalAnalysis: rawAnalysisResult,
-                question: helpQuestion,
-                tactic: selectedTactics,
-                kpi: selectedKPIs,
-                fileName: fileName,
-                currentSituation: currentSituation,
-                desiredOutcome: desiredOutcome
-            };
+            // Create FormData to support file uploads
+            const formData = new FormData();
+            
+            // Append all the data fields
+            formData.append('originalPrompt', promptSent || '');
+            formData.append('originalAnalysis', rawAnalysisResult || '');
+            formData.append('question', helpQuestion);
+            formData.append('tactic', selectedTactics || '');
+            formData.append('kpi', selectedKPIs || '');
+            formData.append('fileName', fileName || '');
+            formData.append('currentSituation', currentSituation || '');
+            formData.append('desiredOutcome', desiredOutcome || '');
+            
+            // Append the context file if it exists
+            if (helpContextFile) {
+                formData.append('contextFile', helpContextFile);
+            }
 
             // Send the help request to the server
             const response = await fetch('/api/get-help', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(helpData)
+                body: formData,
             });
 
             if (!response.ok) {
@@ -185,6 +207,9 @@ function App() {
             setHelpResponse(`<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`);
         } finally {
             setIsHelpLoading(false);
+            // Clear the help context file after submission
+            setHelpContextFile(null);
+            setHelpContextFileName(null);
         }
     };
 
@@ -641,6 +666,34 @@ function App() {
                                     <p className="help-instructions">
                                         Ask a specific question about the analysis or request additional information based on the data.
                                     </p>
+                                    
+                                    {/* Add file upload for additional context */}
+                                    <div className="help-context-file-container">
+                                        <p className="context-file-label">Upload additional context (optional):</p>
+                                        <input
+                                            type="file"
+                                            id="helpContextFile"
+                                            accept=".csv, .xlsx, .pdf"
+                                            onChange={handleHelpContextFileChange}
+                                            style={{ display: 'none' }}
+                                        />
+                                        <div className="context-file-input-container">
+                                            <label htmlFor="helpContextFile" className="context-file-button">
+                                                Choose File
+                                            </label>
+                                            {helpContextFileName && (
+                                                <div className="context-file-info">
+                                                    <span className="context-file-name">{helpContextFileName}</span>
+                                                    <button 
+                                                        className="context-file-remove"
+                                                        onClick={() => { setHelpContextFile(null); setHelpContextFileName(null); }}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                     
                                     <textarea
                                         ref={helpInputRef}

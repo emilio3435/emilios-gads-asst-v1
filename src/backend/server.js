@@ -344,10 +344,10 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 });
 
 // POST endpoint for getting follow-up help
-app.post('/get-help', express.json(), async (req, res) => {
+app.post('/get-help', upload.single('contextFile'), async (req, res) => {
   console.log('--- New request to /get-help ---');
   try {
-    // Extract data from request
+    // Extract data from request (now coming from form-data)
     const {
       originalPrompt,
       originalAnalysis,
@@ -357,17 +357,50 @@ app.post('/get-help', express.json(), async (req, res) => {
       fileName,
       currentSituation,
       desiredOutcome,
-      modelId,
-      conversationHistory = []
+      modelId
     } = req.body;
+
+    // Get additional context file if uploaded
+    const contextFile = req.file;
+    let additionalContext = '';
 
     // Basic validation
     if (!question) {
       return res.status(400).json({ error: 'Question is required.' });
     }
 
+    // Process the context file if provided
+    if (contextFile) {
+      console.log(`Context file uploaded: ${contextFile.originalname}`);
+      
+      try {
+        // Handle different file types
+        if (contextFile.originalname.endsWith('.csv')) {
+          // Parse CSV
+          const csvData = contextFile.buffer.toString('utf8');
+          additionalContext = `\nADDITIONAL CONTEXT (CSV):\n${csvData}\n`;
+          console.log('CSV context file processed successfully');
+        } 
+        else if (contextFile.originalname.endsWith('.xlsx')) {
+          // For XLSX, we can only use basic info
+          additionalContext = `\nADDITIONAL CONTEXT:\nAn Excel file named "${contextFile.originalname}" was provided for additional context.\n`;
+          console.log('XLSX context noted (cannot process detailed content)');
+        }
+        else if (contextFile.originalname.endsWith('.pdf')) {
+          additionalContext = `\nADDITIONAL CONTEXT:\nA PDF file named "${contextFile.originalname}" was provided for additional context.\n`;
+          console.log('PDF context noted (cannot process detailed content)');
+        }
+      } catch (fileError) {
+        console.error('Error processing context file:', fileError);
+        additionalContext = `\nADDITIONAL CONTEXT:\nA file named "${contextFile.originalname}" was provided, but could not be fully processed.\n`;
+      }
+    }
+
     // Format previous conversation if it exists
     let previousConversation = '';
+    const conversationHistory = req.body.conversationHistory ? 
+      JSON.parse(req.body.conversationHistory) : [];
+      
     if (conversationHistory && conversationHistory.length > 0) {
       // Get all messages except the most recent user message (which is the current question)
       const previousMessages = conversationHistory.slice(0, -1);
@@ -397,17 +430,19 @@ ${desiredOutcome ? `Desired Outcome: ${desiredOutcome}` : ''}
 YOUR PREVIOUS ANALYSIS:
 ${originalAnalysis || 'No previous analysis available.'}
 ${previousConversation}
+${additionalContext}
 NEW QUESTION FROM THE USER:
 ${question}
 
 INSTRUCTIONS:
 1. Answer the user's question directly and specifically based on the marketing data and your previous analysis
-2. Provide additional context, explanations, or recommendations as needed
-3. Format your response in clean, structured HTML for proper display
-4. Be concise but thorough
-5. If the question pertains to something not covered in your original analysis, acknowledge this and provide your best assessment based on the available information
-6. If the question requires data that wasn't included in the original analysis, explain what additional data would be helpful
-7. Reference any relevant parts of the conversation history if applicable
+2. If additional context files were provided, incorporate insights from those files into your answer
+3. Provide additional context, explanations, or recommendations as needed
+4. Format your response in clean, structured HTML for proper display
+5. Be concise but thorough
+6. If the question pertains to something not covered in your original analysis, acknowledge this and provide your best assessment based on the available information
+7. If the question requires data that wasn't included in the original analysis, explain what additional data would be helpful
+8. Reference any relevant parts of the conversation history if applicable
 
 FORMAT YOUR RESPONSE AS HTML, with proper headings, paragraphs, and lists as appropriate.
 `;
