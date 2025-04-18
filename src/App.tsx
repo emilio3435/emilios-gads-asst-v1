@@ -811,8 +811,8 @@ function App() {
                             value={selectedModelId}
                             onChange={handleModelChange}
                         >
-                            <option value="gemini-2.5-pro-preview-03-25">Better (More Detailed)</option>
-                            <option value="gemini-2.0-flash">Faster (More Concise)</option>
+                            <option value="gemini-2.5-pro-preview-03-25">better (2.5)</option>
+                            <option value="gemini-2.0-flash">faster (2.0)</option>
                         </select>
                     </div>
                 )}
