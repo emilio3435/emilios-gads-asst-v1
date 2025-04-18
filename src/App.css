@@ -452,23 +452,25 @@ input[type='file'] {
 
 .analysis p {
   line-height: 1.6;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   color: #333;
   font-size: 15px;
   text-align: left;
 }
 
 .analysis ul, .analysis ol {
-  margin-bottom: 20px;
-  padding-left: 25px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  padding-left: 30px;
   text-align: left;
 }
 
 .analysis li {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   line-height: 1.5;
   text-align: left;
   position: relative;
+  padding-left: 5px;
 }
 
 /* Remove the complex flex and value-span styles */
@@ -485,7 +487,6 @@ input[type='file'] {
 
 .analysis ul li {
   list-style-type: disc;
-  padding-left: 0;
 }
 
 .analysis ul li::before {
@@ -498,7 +499,6 @@ input[type='file'] {
 
 .analysis ol li {
   list-style-type: decimal;
-  counter-increment: none;
 }
 
 .analysis ol li::before {
@@ -1730,4 +1730,37 @@ label.choose-file-button {
 .analysis li > ul, 
 .analysis li > ol {
   margin-top: 10px;
+}
+
+/* Style for nested lists */
+.analysis ul ul, .analysis ol ol, .analysis ul ol, .analysis ol ul {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  padding-left: 25px;
+}
+
+.analysis ul ul li {
+  list-style-type: circle;
+}
+
+.analysis ol ol li {
+  list-style-type: lower-alpha;
+}
+
+/* Style for definition-like structures (using strong as label) */
+.analysis p > strong:first-child {
+  display: block;
+  margin-bottom: 4px;
+  color: #444;
+}
+
+.analysis li > strong:first-child {
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+/* Add margin below list items that contain nested lists */
+.analysis li:has(> ul),
+.analysis li:has(> ol) {
+  margin-bottom: 12px;
 }

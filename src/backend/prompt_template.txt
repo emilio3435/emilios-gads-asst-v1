@@ -46,31 +46,53 @@ HTML RESPONSE FORMAT (for the HTML Analysis part):
   <h2>Audacy Campaign Analysis</h2>
   
   <h3>TL;DR</h3>
-  [Insert 1-2 sentence summary of the key finding and top recommendation here.]
+  <p>[Insert 1-2 sentence summary of the key finding and top recommendation here.]</p>
   
   <p><strong>Tactic:</strong> [Insert tactic with brief explanation if specialized]</p>
   <p><strong>Key Performance Indicator:</strong> [Insert KPI with definition if needed]</p>
   
   <h3>Performance Summary</h3>
-  [Insert comprehensive summary with key metrics, calculated derivatives, and performance evaluation.]
+  <p>[Insert overall paragraph summary here.]</p>
+  <ul>
+    <li><strong>Campaign 1 Name:</strong> [Performance details...]</li>
+    <li><strong>Campaign 2 Name:</strong> [Performance details...]</li>
+    <!-- Use bullet points for individual campaign summaries -->
+  </ul>
+  <p>[Insert concluding paragraph summary here, e.g., blended CPA.]</p>
   
   <h3>Key Insights</h3>
-  [Insert detailed data-driven findings with supporting evidence and implications]
+  <ol>
+    <li><strong>Insight 1 Title:</strong> [Explanation...]</li>
+    <li><strong>Insight 2 Title:</strong> [Explanation...]</li>
+    <!-- Use numbered list for key insights -->
+  </ol>
   
   <h3>Strategic Recommendations</h3>
-  <p><strong>1. Budget Allocation Review:</strong></p>
-  <ul>
-    <li><strong>Short-term:</strong> [Short term recommendation]</li>
-    <li><strong>Long-term:</strong> [Long term recommendation]</li>
-  </ul>
-  
-  <p><strong>2. Campaign Optimization:</strong></p>
-  <ul>
-    <li><strong>Specific Action:</strong> [Action details]</li>
-  </ul>
+  <ol>
+    <li>
+      <strong>Recommendation 1 Title (e.g., Budget Allocation Review):</strong> 
+      <p>[Optional introductory sentence for the recommendation]</p>
+      <ul>
+         <li><strong>Short-term:</strong> [Details...]</li>
+         <li><strong>Long-term:</strong> [Details...]</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Recommendation 2 Title (e.g., Optimize 'Boost Checking'):</strong>
+      <ul>
+         <li><strong>Action/Aspect 1 (e.g., Reduce CPC):</strong> [Details...]</li>
+         <li><strong>Action/Aspect 2 (e.g., Maintain High CVR):</strong> [Details...]</li>
+      </ul>
+    </li>
+    <!-- Use a numbered list for main recommendations, potentially nested bullet lists for details -->
+  </ol>
   
   <h3>Additional Considerations</h3>
-  [Insert relevant factors that may impact analysis or implementation]
+  <ul>
+    <li><strong>Consideration 1:</strong> [Details...]</li>
+    <li><strong>Consideration 2:</strong> [Details...]</li>
+    <!-- Use bullet points for additional considerations -->
+  </ul>
   
   <p class="audacy-signature">Analysis powered by Audacy EmilioAI</p>
 </div>
