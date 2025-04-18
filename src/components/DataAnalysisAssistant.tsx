@@ -38,7 +38,6 @@ const DataAnalysisAssistant: React.FC = () => {
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
-    const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -424,8 +423,13 @@ const DataAnalysisAssistant: React.FC = () => {
         return prompt;
     };
 
-    const handleModelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedModelId(event.target.value);
+    // Simplified Model Selection Handler
+    const handleModelSelection = (selection: 'quality' | 'speed') => {
+        if (selection === 'quality') {
+            setSelectedModelId('gemini-2.5-pro-preview-03-25');
+        } else {
+            setSelectedModelId('gemini-2.0-flash');
+        }
     };
 
     const handleSubmit = async () => {
@@ -534,10 +538,6 @@ const DataAnalysisAssistant: React.FC = () => {
         cleaned = cleaned.replace(/^\s+/, '');
         
         return cleaned;
-    };
-
-    const handleAdvancedOptionsToggle = () => {
-        setShowAdvancedOptions(!showAdvancedOptions);
     };
 
     if (showResults) {
@@ -898,7 +898,25 @@ const DataAnalysisAssistant: React.FC = () => {
 
     return (
         <div className="App">
-            <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
+            <div className="app-header">
+                <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
+                <div className="model-selector-simple">
+                    <span className="model-selector-label">Analysis Speed:</span>
+                    <button 
+                        className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
+                        onClick={() => handleModelSelection('speed')}
+                    >
+                        Faster
+                    </button>
+                    <button 
+                        className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
+                        onClick={() => handleModelSelection('quality')}
+                    >
+                        Better Quality
+                    </button>
+                </div>
+            </div>
+
             <h1>Marketing Assistant</h1>
             <input
                 type="file"
@@ -997,34 +1015,6 @@ const DataAnalysisAssistant: React.FC = () => {
                     onChange={handleOutcomeChange}
                     placeholder="Describe your desired outcome..."
                 />
-            </div>
-
-            <div className="advanced-options-section">
-                <div className="advanced-options-toggle">
-                    <label className="toggle-label">
-                        <input
-                            type="checkbox"
-                            checked={showAdvancedOptions}
-                            onChange={handleAdvancedOptionsToggle}
-                        />
-                        <span className="toggle-text">Show Advanced Options</span>
-                    </label>
-                </div>
-
-                {showAdvancedOptions && (
-                    <div className="select-container model-select-container advanced-model-select">
-                        <label htmlFor="model-list">Select Analysis Model:</label>
-                        <select
-                            id="model-list"
-                            className="model-list"
-                            value={selectedModelId}
-                            onChange={handleModelChange}
-                        >
-                            <option value="gemini-2.5-pro-preview-03-25">better (2.5)</option>
-                            <option value="gemini-2.0-flash">faster (2.0)</option>
-                        </select>
-                    </div>
-                )}
             </div>
 
             {selectedKPIs === 'CPA' && (
