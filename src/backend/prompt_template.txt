@@ -52,7 +52,10 @@ HTML RESPONSE FORMAT (for the HTML Analysis part):
   <p><strong>Key Performance Indicator:</strong> [Insert KPI with definition if needed]</p>
   
   <h3>Performance Summary</h3>
-  [Insert comprehensive summary with key metrics, calculated derivatives, and performance evaluation]
+  [Insert comprehensive summary with key metrics, calculated derivatives, and performance evaluation. 
+  **IMPORTANT: For bulleted lists summarizing performance (like Campaign vs CPA), use the following format: 
+  <ul class="inline-values"><li>Campaign Name: <span class="value-span">$Value</span></li>...</ul>**
+  ]
   
   <h3>Key Insights</h3>
   [Insert detailed data-driven findings with supporting evidence and implications]
