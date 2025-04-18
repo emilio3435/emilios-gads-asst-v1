@@ -106,7 +106,8 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     const kpis = req.body.kpis ? JSON.parse(req.body.kpis) : [];
     const currentSituation = req.body.currentSituation || 'Not provided';
     const desiredOutcome = req.body.desiredOutcome || 'Not provided';
-    const requestedModelId = req.body.modelId || null; // Get requested model from client
+    // Extract modelId from the request, default to a stable model if not provided
+    const requestedModelId = req.body.modelId || 'gemini-1.0-pro'; 
 
     let tacticsString = '';
     if (Array.isArray(tactics)) {
@@ -217,27 +218,37 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log(finalPrompt);
     console.log('--- End Prompt ---');
     
-    // Determine which model to use FOR ANALYSIS - PRIORITIZE CUSTOM GEM
-    const customGemId = process.env.CUSTOM_GEM_ID;
+    // --- Use the requested model ID --- 
+    const allowedModels = [
+        'gemini-1.5-pro-preview-0409',
+        'gemini-1.5-flash-preview-0514',
+        'gemini-1.0-pro'
+    ];
+
     let modelName;
-    let displayModelName; // New variable for display purposes
-    
-    if (customGemId) {
-        modelName = customGemId;
-        displayModelName = "Audacy EmilioAI (Custom)"; // Custom branding
-        console.log(`Using CUSTOM Gem for analysis: ${modelName}`);
+    if (allowedModels.includes(requestedModelId)) {
+        modelName = requestedModelId;
     } else {
-        // Fallback logic if CUSTOM_GEM_ID is not set
-        const envModelName = process.env.GEMINI_MODEL_NAME;
-        const defaultModelName = 'gemini-2.5-pro-preview-03-25'; // Updated default
-        modelName = envModelName || defaultModelName;
-        displayModelName = "Audacy EmilioAI"; // Still use Audacy branding even with standard model
-        console.log('Using standard model for analysis with Audacy branding:', modelName);
+        console.warn(`Requested model ${requestedModelId} not allowed or invalid. Falling back to default.`);
+        modelName = 'gemini-1.0-pro'; // Fallback to default stable model
     }
     
-    // Provider is always Google for Gemini models
-    const provider = 'google'; 
-    
+    // Determine display name based on model used
+    let displayModelName;
+    switch (modelName) {
+        case 'gemini-1.5-pro-preview-0409':
+            displayModelName = "Audacy AI (Gemini 1.5 Pro)";
+            break;
+        case 'gemini-1.5-flash-preview-0514':
+            displayModelName = "Audacy AI (Gemini 1.5 Flash)";
+            break;
+        case 'gemini-1.0-pro':
+            displayModelName = "Audacy AI (Gemini 1.0 Pro)";
+            break;
+        default:
+            displayModelName = "Audacy AI"; // Generic fallback
+    }
+
     console.log(`Initializing model for analysis: ${modelName}`);
     
     // Initialize the model

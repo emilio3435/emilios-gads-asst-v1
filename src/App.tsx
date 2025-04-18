@@ -31,6 +31,7 @@ function App() {
     const [helpContextFile, setHelpContextFile] = useState<File | null>(null);
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
+    const [selectedModelId, setSelectedModelId] = useState<string>('gemini-1.5-pro-preview-0409');
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -432,6 +433,10 @@ function App() {
         return prompt;
     };
 
+    const handleModelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedModelId(event.target.value);
+    };
+
     const handleSubmit = async () => {
         setError(null);
         setAnalysisResult(null);
@@ -462,6 +467,7 @@ function App() {
         formData.append('desiredOutcome', desiredOutcome);
         formData.append('targetCPA', JSON.stringify(targetCPA));
         formData.append('targetROAS', JSON.stringify(targetROAS));
+        formData.append('modelId', selectedModelId);
 
         setIsLoading(true);
 
@@ -898,6 +904,19 @@ function App() {
                     <option value="Impressions">Impressions</option>
                     <option value="Clicks">Clicks</option>
                     <option value="Conversions">Conversions</option>
+                </select>
+            </div>
+            <div className="select-container model-select-container">
+                <label htmlFor="model-list">Select Analysis Model:</label>
+                <select
+                    id="model-list"
+                    className="model-list"
+                    value={selectedModelId}
+                    onChange={handleModelChange}
+                >
+                    <option value="gemini-1.5-pro-preview-0409">Gemini 1.5 Pro (Latest)</option>
+                    <option value="gemini-1.5-flash-preview-0514">Gemini 1.5 Flash (Fast)</option>
+                    <option value="gemini-1.0-pro">Gemini 1.0 Pro (Stable)</option>
                 </select>
             </div>
             {selectedKPIs === 'CPA' && (
