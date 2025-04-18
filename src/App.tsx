@@ -214,7 +214,8 @@ function App() {
             }
 
             const data = await response.json();
-            const sanitizedHtml = DOMPurify.sanitize(data.html || data.response);
+            let sanitizedHtml = DOMPurify.sanitize(data.html || data.response);
+            sanitizedHtml = cleanMarkdownCodeBlocks(sanitizedHtml);
             
             // Add AI response to conversation
             const newAiMessage = {
@@ -229,16 +230,17 @@ function App() {
         } catch (error: any) {
             console.error('Error getting help:', error);
             const errorMessage = `<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`;
+            const cleanedErrorMessage = cleanMarkdownCodeBlocks(errorMessage);
             
             // Add error message to conversation
             const newErrorMessage = {
                 type: 'assistant',
-                content: errorMessage,
+                content: cleanedErrorMessage,
                 timestamp: new Date()
             };
             
             setHelpConversation([...updatedConversation, newErrorMessage]);
-            setHelpResponse(errorMessage);
+            setHelpResponse(cleanedErrorMessage);
         } finally {
             setIsHelpLoading(false);
             setHelpQuestion(''); // Clear the question input for the next question
@@ -504,6 +506,18 @@ function App() {
         setShowResults(true);
     };
 
+    // Add this helper function near the top of your file, before the App component
+    const cleanMarkdownCodeBlocks = (content: string): string => {
+        // Remove ```html and ``` markdown code block delimiters
+        let cleaned = content.replace(/```html/g, '');
+        cleaned = cleaned.replace(/```/g, '');
+        
+        // Remove excessive whitespace/newlines at the beginning
+        cleaned = cleaned.replace(/^\s+/, '');
+        
+        return cleaned;
+    };
+
     if (showResults) {
         return (
             <div className="App">
@@ -694,7 +708,7 @@ function App() {
                     {showHelpModal && (
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal help-modal">
-                                <h2>Chat with EmilioAI</h2>
+                                <h2>Chat with Audacy AI</h2>
                                 <button onClick={() => setShowHelpModal(false)} className="close-button">Close</button>
                                 
                                 {/* Conversation History */}
@@ -706,7 +720,7 @@ function App() {
                                                     {message.type === 'user' ? (
                                                         <p>{message.content}</p>
                                                     ) : (
-                                                        <div dangerouslySetInnerHTML={{ __html: message.content }} />
+                                                        <div dangerouslySetInnerHTML={{ __html: cleanMarkdownCodeBlocks(message.content) }} />
                                                     )}
                                                 </div>
                                                 <div className="message-time">
