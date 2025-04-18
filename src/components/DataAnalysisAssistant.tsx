@@ -63,6 +63,32 @@ const DataAnalysisAssistant: React.FC = () => {
         }
     }, [showHelpModal]);
 
+    // Load conversation history from localStorage when component mounts
+    useEffect(() => {
+        const savedConversation = localStorage.getItem('helpConversation');
+        if (savedConversation) {
+            try {
+                // Parse the conversation and convert string timestamps back to Date objects
+                const parsedConversation = JSON.parse(savedConversation, (key, value) => {
+                    if (key === 'timestamp' && typeof value === 'string') {
+                        return new Date(value);
+                    }
+                    return value;
+                });
+                setHelpConversation(parsedConversation);
+            } catch (e) {
+                console.error('Error loading conversation from localStorage:', e);
+            }
+        }
+    }, []);
+
+    // Save conversation history to localStorage whenever it changes
+    useEffect(() => {
+        if (helpConversation.length > 0) {
+            localStorage.setItem('helpConversation', JSON.stringify(helpConversation));
+        }
+    }, [helpConversation]);
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAnalysisResult(null);
         setError(null);
@@ -804,6 +830,8 @@ const DataAnalysisAssistant: React.FC = () => {
                                                     setHelpResponse(null);
                                                     setHelpQuestion('');
                                                     helpInputRef.current?.focus();
+                                                    // Also clear localStorage when clearing conversation
+                                                    localStorage.removeItem('helpConversation');
                                                 }}
                                             >
                                                 Clear Conversation

@@ -485,12 +485,13 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
         const previousMessages = conversationHistory.slice(0, -1);
         
         if (previousMessages.length > 0) {
-          previousConversationFormatted = "PREVIOUS CONVERSATION:\n";
+          previousConversationFormatted = "===== IMPORTANT: CONVERSATION HISTORY =====\n";
           previousMessages.forEach(message => {
             const textContent = message.content.replace(/<\/?[^>]+(>|$)/g, "");
-            const role = message.type === 'user' ? 'User' : 'You (EmilioAI)';
+            const role = message.type === 'user' ? 'USER' : 'YOU (EMILIOAI)';
             previousConversationFormatted += `${role}: ${textContent}\n\n`;
           });
+          previousConversationFormatted += "===== END OF CONVERSATION HISTORY =====\n\n";
         }
       }
     } catch (error) {
@@ -500,11 +501,15 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
 
     const promptForHelp = `You are EmilioAI, a helpful assistant working with the Audacy Campaign Performance Analysis tool. The user is asking for help related to their analysis. 
 
+${previousConversationFormatted}
+
 RESPOND IN VALID HTML FORMAT. Wrap paragraphs in <p> tags, use <ul> and <li> for lists, and <strong> for emphasis. Do not use markdown formatting like # or **. 
+
+IMPORTANT: Base your response on the CONVERSATION HISTORY above. Maintain context from previous interactions.
 
 User Question: ${req.body.question}
 
-${additionalContext ? `Additional Context from Uploaded File: ${additionalContext}\n\n` : ''}${previousConversationFormatted}
+${additionalContext ? `Additional Context from Uploaded File: ${additionalContext}\n\n` : ''}
 
 FORMAT INSTRUCTIONS:
 1. Answer the user's question directly and concisely.
