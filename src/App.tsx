@@ -32,6 +32,7 @@ function App() {
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
     const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
 
     // Focus on help input when modal opens
     useEffect(() => {
@@ -41,6 +42,13 @@ function App() {
             }, 100);
         }
     }, [showHelpModal]);
+
+    // Scroll to bottom of chat when conversation updates
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [helpConversation]);
 
     // Load conversation history from localStorage when component mounts
     useEffect(() => {
@@ -597,7 +605,7 @@ function App() {
                                 
                                 {/* Conversation History */}
                                 {helpConversation.length > 0 && (
-                                    <div className="help-conversation">
+                                    <div className="help-conversation" ref={chatContainerRef}>
                                         <div className="conversation-controls">
                                             <button 
                                                 className="new-chat-button"

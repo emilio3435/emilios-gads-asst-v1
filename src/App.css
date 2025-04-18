@@ -1616,11 +1616,11 @@ label.choose-file-button {
   margin-bottom: 15px;
 }
 
-/* Improved chat-like interface */
+/* Enhanced chat conversation container */
 .help-conversation {
   flex: 1;
   overflow-y: auto;
-  max-height: 70vh;
+  max-height: 50vh; /* Set maximum height */
   margin-bottom: 10px;
   padding: 6px;
   border: 1px solid #eee;
@@ -1628,6 +1628,7 @@ label.choose-file-button {
   background-color: #f9f9f9;
   display: flex;
   flex-direction: column;
+  scroll-behavior: smooth; /* Add smooth scrolling */
 }
 
 .conversation-message {

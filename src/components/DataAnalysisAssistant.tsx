@@ -41,6 +41,7 @@ const DataAnalysisAssistant: React.FC = () => {
     const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -62,6 +63,13 @@ const DataAnalysisAssistant: React.FC = () => {
             }, 100);
         }
     }, [showHelpModal]);
+
+    // Scroll to bottom of chat when conversation updates
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [helpConversation]);
 
     // Load conversation history from localStorage when component mounts
     useEffect(() => {
@@ -750,7 +758,7 @@ const DataAnalysisAssistant: React.FC = () => {
                                 
                                 {/* Conversation History */}
                                 {helpConversation.length > 0 && (
-                                    <div className="help-conversation">
+                                    <div className="help-conversation" ref={chatContainerRef}>
                                         <div className="conversation-controls">
                                             <button 
                                                 className="new-chat-button"
