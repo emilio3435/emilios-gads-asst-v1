@@ -2099,8 +2099,9 @@ select:focus {
 
 .conversation-info {
   font-size: 0.8rem;
-  color: #777;
+  color: #FE5000; /* Audacy orange for better visibility */
   font-style: italic;
+  font-weight: 500;
 }
 
 /* Remove conversation history toggle styles */

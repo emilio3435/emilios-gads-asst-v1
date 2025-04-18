@@ -71,9 +71,9 @@ const DataAnalysisAssistant: React.FC = () => {
         }
     }, [helpConversation]);
 
-    // Load conversation history from localStorage when component mounts
+    // Load conversation history from sessionStorage when component mounts
     useEffect(() => {
-        const savedConversation = localStorage.getItem('helpConversation');
+        const savedConversation = sessionStorage.getItem('helpConversation');
         if (savedConversation) {
             try {
                 // Parse the conversation and convert string timestamps back to Date objects
@@ -85,15 +85,27 @@ const DataAnalysisAssistant: React.FC = () => {
                 });
                 setHelpConversation(parsedConversation);
             } catch (e) {
-                console.error('Error loading conversation from localStorage:', e);
+                console.error('Error loading conversation from sessionStorage:', e);
             }
         }
+
+        // Clear chat history when the page is unloaded or component unmounts
+        const handleBeforeUnload = () => {
+            // Clear sessionStorage when page is closed/refreshed
+            sessionStorage.removeItem('helpConversation');
+        };
+        
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
     }, []);
 
-    // Save conversation history to localStorage whenever it changes
+    // Save conversation history to sessionStorage (not localStorage) whenever it changes
     useEffect(() => {
         if (helpConversation.length > 0) {
-            localStorage.setItem('helpConversation', JSON.stringify(helpConversation));
+            sessionStorage.setItem('helpConversation', JSON.stringify(helpConversation));
         }
     }, [helpConversation]);
 
@@ -765,15 +777,15 @@ const DataAnalysisAssistant: React.FC = () => {
                                                 onClick={() => {
                                                     setHelpConversation([]);
                                                     setHelpResponse(null);
-                                                    localStorage.removeItem('helpConversation');
+                                                    sessionStorage.removeItem('helpConversation');
                                                 }}
                                             >
                                                 Start New Chat
                                             </button>
                                             <span className="conversation-info">
                                                 {helpConversation.length > 0 && 
-                                                    localStorage.getItem('helpConversation') ? 
-                                                    '(Includes messages from previous sessions)' : ''}
+                                                    sessionStorage.getItem('helpConversation') ? 
+                                                    '(Includes messages from current session)' : ''}
                                             </span>
                                         </div>
                                         
@@ -856,8 +868,8 @@ const DataAnalysisAssistant: React.FC = () => {
                                                     setHelpResponse(null);
                                                     setHelpQuestion('');
                                                     helpInputRef.current?.focus();
-                                                    // Also clear localStorage when clearing conversation
-                                                    localStorage.removeItem('helpConversation');
+                                                    // Also clear sessionStorage when clearing conversation
+                                                    sessionStorage.removeItem('helpConversation');
                                                 }}
                                             >
                                                 Clear Conversation
