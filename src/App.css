@@ -793,76 +793,96 @@ label.choose-file-button {
   line-height: 1.4;
 }
 
-/* Help context file upload styling */
+/* Remove old help context container styles */
 .help-context-file-container {
-  margin-bottom: 10px;
-  padding: 0;
-  border: none;
-  background-color: transparent;
+  display: none; 
 }
 
-.context-file-label {
-  display: none;
+/* Styling for the new controls container */
+.help-controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px; /* Add space above the controls */
+  margin-bottom: 10px; /* Space below controls before tip */
 }
 
-.context-file-input-container {
-  display: none;
+/* Adjust existing button container */
+.help-button-container {
+  display: flex;
+  gap: 15px;
+  /* Remove justify-content: space-between; if it exists */
+  /* Remove margin-bottom if it exists */
 }
 
-/* NEW Simplified Upload Button Style */
-.help-context-file-container.simplified {
+/* Styling for the new file upload area */
+.file-upload-area {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 15px;
 }
 
-.upload-file-button {
-  display: inline-flex;
+.upload-file-icon-button {
+  display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
   background-color: #f0f0f0;
   color: #555;
-  padding: 8px 15px;
   border: 1px solid #ccc;
-  border-radius: 20px;
   cursor: pointer;
-  font-size: 14px;
   transition: all 0.2s;
-  max-width: calc(100% - 40px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.upload-file-button:hover {
+.upload-file-icon-button:hover {
   background-color: #e0e0e0;
   border-color: #bbb;
+  color: #333;
 }
 
-.upload-file-button svg {
-  flex-shrink: 0;
+.upload-file-icon-button svg {
+  display: block; /* Ensure SVG fits well */
 }
 
-/* Adjust remove button for simplified view */
-.context-file-remove.small {
+.uploaded-file-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #e9ecef;
+  padding: 3px 8px;
+  border-radius: 15px;
+  font-size: 12px;
+  max-width: 180px; /* Limit width */
+}
+
+.uploaded-file-name {
+  color: #495057;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.context-file-remove.icon-style {
   background: none;
   border: none;
-  color: #999;
-  font-size: 20px;
+  color: #6c757d;
+  font-size: 16px;
   cursor: pointer;
-  padding: 0 5px;
+  padding: 0;
   line-height: 1;
   transition: color 0.2s;
 }
 
-.context-file-remove.small:hover {
-  color: #ff5252;
+.context-file-remove.icon-style:hover {
+  color: #dc3545; /* Red hover for remove */
 }
 
-/* Remove old file info style */
-.context-file-info {
-  display: none;
+/* Remove styles that are no longer needed */
+.help-context-file-container.simplified,
+.upload-file-button,
+.context-file-remove.small {
+    display: none !important;
 }
 
 .help-textarea {
@@ -876,13 +896,6 @@ label.choose-file-button {
   margin-bottom: 10px;
   box-sizing: border-box;
   min-height: 50px;
-}
-
-.help-button-container {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 10px;
-  justify-content: space-between;
 }
 
 .submit-help-button {
