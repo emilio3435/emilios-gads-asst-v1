@@ -1652,3 +1652,60 @@ label.choose-file-button {
   position: absolute;
   left: -15px;
 }
+
+/* Improved nested content styling */
+.analysis ul li ul,
+.analysis ol li ol,
+.analysis ul li ol,
+.analysis ol li ul {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+/* Specific styles for priority sections */
+.analysis p + p,
+.analysis li p {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+/* Fix for headings that appear to be labels */
+.analysis p strong {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+/* Improved spacing for sections like "Cost Driver:" */
+.analysis h4, 
+.analysis h5,
+.analysis h6 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #333;
+  text-align: left;
+}
+
+/* Ensure enough space below section headings */
+.analysis h3 + p {
+  margin-top: 16px;
+}
+
+/* Better spacing for lists that follow headings */
+.analysis h3 + ul,
+.analysis h3 + ol {
+  margin-top: 16px;
+}
+
+/* No margin for empty paragraphs */
+.analysis p:empty {
+  margin: 0;
+  padding: 0;
+  height: 0;
+}
+
+/* Add space at the top for nested lists */
+.analysis li > ul, 
+.analysis li > ol {
+  margin-top: 10px;
+}

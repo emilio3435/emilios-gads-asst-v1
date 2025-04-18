@@ -58,7 +58,16 @@ HTML RESPONSE FORMAT (for the HTML Analysis part):
   [Insert detailed data-driven findings with supporting evidence and implications]
   
   <h3>Strategic Recommendations</h3>
-  [Insert prioritized, actionable recommendations with expected outcomes]
+  <p><strong>1. Budget Allocation Review:</strong></p>
+  <ul>
+    <li><strong>Short-term:</strong> [Short term recommendation]</li>
+    <li><strong>Long-term:</strong> [Long term recommendation]</li>
+  </ul>
+  
+  <p><strong>2. Campaign Optimization:</strong></p>
+  <ul>
+    <li><strong>Specific Action:</strong> [Action details]</li>
+  </ul>
   
   <h3>Additional Considerations</h3>
   [Insert relevant factors that may impact analysis or implementation]
