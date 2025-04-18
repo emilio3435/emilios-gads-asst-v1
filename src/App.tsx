@@ -25,27 +25,13 @@ function App() {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
     const [helpQuestion, setHelpQuestion] = useState<string>('');
-    const [helpResponse, setHelpResponse] = useState<string | null>(null);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
     const [showKpiRecommendation, setShowKpiRecommendation] = useState<boolean>(false);
     const [helpContextFile, setHelpContextFile] = useState<File | null>(null);
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
-    const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-                setIsExportMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
 
     // Focus on help input when modal opens
     useEffect(() => {
@@ -192,6 +178,9 @@ function App() {
             // Add conversation history to help provide context
             formData.append('conversationHistory', JSON.stringify(helpConversation));
             
+            // Add selected model ID to use the same model as the analysis
+            formData.append('modelId', selectedModelId);
+            
             // Append the context file if it exists
             if (helpContextFile) {
                 formData.append('contextFile', helpContextFile);
@@ -240,7 +229,6 @@ function App() {
             
             // Update conversation with the AI response
             setHelpConversation([...updatedConversation, newAiMessage]);
-            setHelpResponse(sanitizedHtml);
         } catch (error: any) {
             console.error('Error getting help:', error);
             const errorMessage = `<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`;
@@ -254,7 +242,6 @@ function App() {
             };
             
             setHelpConversation([...updatedConversation, newErrorMessage]);
-            setHelpResponse(cleanedErrorMessage);
         } finally {
             setIsHelpLoading(false);
             setHelpQuestion(''); // Clear the question input for the next question
@@ -273,57 +260,6 @@ function App() {
             link.href = url;
             link.download = 'analysis.rtf';
             link.click();
-        }
-    };
-
-    const handleExportToGmail = () => {
-        if (analysisResult && rawAnalysisResult) {
-            try {
-                // Create a well-formatted email body with campaign info and analysis
-                let emailContent = `Campaign Analysis: ${selectedTactics} - ${selectedKPIs}\n\n`;
-                
-                // Add campaign information
-                emailContent += `CAMPAIGN INFORMATION:\n`;
-                emailContent += `Tactic: ${selectedTactics}\n`;
-                emailContent += `KPI: ${selectedKPIs}\n`;
-                if (fileName) emailContent += `File: ${fileName}\n`;
-                if (currentSituation) emailContent += `Current Situation: ${currentSituation}\n`;
-                if (desiredOutcome) emailContent += `Desired Outcome: ${desiredOutcome}\n\n`;
-                
-                // Add the raw analysis text without HTML tags
-                emailContent += `ANALYSIS RESULTS:\n\n${rawAnalysisResult}\n\n`;
-                
-                // Add attribution
-                if (modelName) {
-                    emailContent += `\nAnalysis powered by ${modelName}`;
-                }
-                
-                // Add campaign date
-                const today = new Date();
-                emailContent += `\nAnalysis Date: ${today.toLocaleDateString()}`;
-                
-                // Check if content is too long for most email clients (typically ~100KB limit)
-                // Use a more conservative 50KB limit to be safe
-                if (emailContent.length > 50000) {
-                    // Truncate the content and add a note about using RTF export for full content
-                    const truncatedContent = emailContent.substring(0, 49000) + 
-                        "\n\n[NOTE: This analysis has been truncated due to email size limitations. " +
-                        "For the complete analysis, please use the 'Export to RTF' option.]";
-                    emailContent = truncatedContent;
-                }
-                
-                // Encode the subject and body for the mailto URL
-                const subject = encodeURIComponent(`Campaign Analysis: ${selectedTactics} - ${selectedKPIs}`);
-                const body = encodeURIComponent(emailContent);
-                
-                // Open the default email client with the pre-filled email
-                window.location.href = `mailto:?subject=${subject}&body=${body}`;
-            } catch (error) {
-                console.error('Error formatting email content:', error);
-                alert('An error occurred while preparing the email. Please try again.');
-            }
-        } else {
-            alert("No analysis result available to export.");
         }
     };
 
@@ -554,6 +490,16 @@ function App() {
                     </div>
                     
                     <div className="input-section">
+                        {/* Re-added Download button (exports to RTF) */}
+                        <button className="export-button" onClick={handleExportToRtf}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download
+                        </button> 
+
                         <button
                             className="help-button"
                             onClick={() => setShowHelpModal(true)}
@@ -565,26 +511,6 @@ function App() {
                             </svg>
                             Get Help
                         </button>
-                        <div className="export-container">
-                            <button className="export-button" onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                Download
-                            </button>
-                            {isExportMenuOpen && (
-                                <div className="export-menu" ref={exportMenuRef}>
-                                    <button onClick={() => { handleExportToRtf(); setIsExportMenuOpen(false); }}>
-                                        Export to RTF
-                                    </button>
-                                    <button onClick={() => { handleExportToGmail(); setIsExportMenuOpen(false); }}>
-                                        Export to Email
-                                    </button>
-                                </div>
-                            )}
-                        </div>
                     </div>
                     
                     {/* Prompt Modal (no changes needed) */}
@@ -745,7 +671,6 @@ function App() {
                                                 className="clear-help-button"
                                                 onClick={() => {
                                                     setHelpConversation([]);
-                                                    setHelpResponse(null);
                                                     setHelpQuestion('');
                                                     helpInputRef.current?.focus();
                                                 }}
@@ -863,9 +788,8 @@ function App() {
                     value={selectedModelId}
                     onChange={handleModelChange}
                 >
-                    <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-                    <option value="gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
-                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                    <option value="gemini-2.5-pro-preview-03-25">Better (More Detailed)</option>
+                    <option value="gemini-2.0-flash">Faster (More Concise)</option>
                 </select>
             </div>
             {selectedKPIs === 'CPA' && (
