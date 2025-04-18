@@ -153,9 +153,18 @@ input[type='file'] {
 }
 
 .back-button-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   text-align: left;
-  margin-bottom: 20px;
-  padding: 20px 0 0 20px;
+  margin-bottom: 30px;
+  padding: 20px 20px 15px 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  width: 100%;
+  background-color: white;
+  z-index: 10;
+  position: relative;
 }
 
 .back-button {
@@ -171,6 +180,7 @@ input[type='file'] {
   transition: all 0.3s;
   font-size: 0.95em;
   text-align: center;
+  margin-bottom: 0;
 }
 
 .back-button:hover {
@@ -182,7 +192,11 @@ input[type='file'] {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 0;
+  background-color: #f9f9f9;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border-left: 3px solid #5029a7;
 }
 
 .info-item {
@@ -258,8 +272,13 @@ input[type='file'] {
 
 .input-section {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   gap: 15px;
+  margin-top: 20px;
   margin-bottom: 30px;
+  width: 100%;
 }
 
 .show-input-button, .export-button {
@@ -308,12 +327,12 @@ input[type='file'] {
 }
 
 .export-button {
-  background-color: #FE5000;
+  background-color: #FE7333;
   color: white;
 }
 
 .export-button:hover {
-  background-color: #e64500;
+  background-color: #e05a1e;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
@@ -324,6 +343,9 @@ input[type='file'] {
   align-items: center;
   max-width: 900px;
   margin: 0 auto;
+  padding-top: 0;
+  position: relative;
+  z-index: 5;
 }
 
 .results-display {
@@ -331,6 +353,7 @@ input[type='file'] {
   padding: 30px;
   border-radius: 10px;
   background-color: white;
+  margin-top: 0;
   margin-bottom: 30px;
   color: #333;
   text-align: left;
@@ -1140,4 +1163,29 @@ label.choose-file-button {
   color: #888;
   text-align: right;
   margin: 5px 0 0 0;
+}
+
+/* New style for Show Input Data link */
+.show-input-link {
+  background: none;
+  border: none;
+  color: #5029a7; 
+  text-decoration: underline;
+  font-size: 12px; /* Smaller font size */
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.show-input-link:hover {
+  color: #3a1e7a;
+}
+
+/* Wrapper for the main action buttons */
+.main-action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Gap between Help and Download buttons */
+    width: 100%; /* Ensure wrapper takes width for centering */
 }

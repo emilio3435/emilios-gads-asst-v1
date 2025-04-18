@@ -29,28 +29,15 @@ function App() {
     const [error, setError] = useState<string | null>(null);
     const [targetCPA, setTargetCPA] = useState<number | null>(null);
     const [targetROAS, setTargetROAS] = useState<number | null>(null);
-    const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
     const [helpQuestion, setHelpQuestion] = useState<string>('');
     // Replace single response with chat history
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
+    const [helpResponse, setHelpResponse] = useState<string | null>(null);
     
-    const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-                setIsExportMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
 
     // Focus on help input when modal opens
     useEffect(() => {
@@ -230,57 +217,6 @@ function App() {
             link.href = url;
             link.download = 'analysis.rtf';
             link.click();
-        }
-    };
-
-    const handleExportToGmail = () => {
-        if (analysisResult && rawAnalysisResult) {
-            try {
-                // Create a well-formatted email body with campaign info and analysis
-                let emailContent = `Campaign Analysis: ${selectedTactics} - ${selectedKPIs}\n\n`;
-                
-                // Add campaign information
-                emailContent += `CAMPAIGN INFORMATION:\n`;
-                emailContent += `Tactic: ${selectedTactics}\n`;
-                emailContent += `KPI: ${selectedKPIs}\n`;
-                if (fileName) emailContent += `File: ${fileName}\n`;
-                if (currentSituation) emailContent += `Current Situation: ${currentSituation}\n`;
-                if (desiredOutcome) emailContent += `Desired Outcome: ${desiredOutcome}\n\n`;
-                
-                // Add the raw analysis text without HTML tags
-                emailContent += `ANALYSIS RESULTS:\n\n${rawAnalysisResult}\n\n`;
-                
-                // Add attribution
-                if (modelName) {
-                    emailContent += `\nAnalysis powered by ${modelName}`;
-                }
-                
-                // Add campaign date
-                const today = new Date();
-                emailContent += `\nAnalysis Date: ${today.toLocaleDateString()}`;
-                
-                // Check if content is too long for most email clients (typically ~100KB limit)
-                // Use a more conservative 50KB limit to be safe
-                if (emailContent.length > 50000) {
-                    // Truncate the content and add a note about using RTF export for full content
-                    const truncatedContent = emailContent.substring(0, 49000) + 
-                        "\n\n[NOTE: This analysis has been truncated due to email size limitations. " +
-                        "For the complete analysis, please use the 'Export to RTF' option.]";
-                    emailContent = truncatedContent;
-                }
-                
-                // Encode the subject and body for the mailto URL
-                const subject = encodeURIComponent(`Campaign Analysis: ${selectedTactics} - ${selectedKPIs}`);
-                const body = encodeURIComponent(emailContent);
-                
-                // Open the default email client with the pre-filled email
-                window.location.href = `mailto:?subject=${subject}&body=${body}`;
-            } catch (error) {
-                console.error('Error formatting email content:', error);
-                alert('An error occurred while preparing the email. Please try again.');
-            }
-        } else {
-            alert("No analysis result available to export.");
         }
     };
 
@@ -482,27 +418,27 @@ function App() {
                         </svg>
                         Back to Form
                     </button>
+                    <div className="campaign-info">
+                        <div className="info-item">
+                            <span className="info-label">TACTIC:</span>
+                            <span className="info-value">{selectedTactics}</span>
+                        </div>
+                        <div className="info-item">
+                            <span className="info-label">KPI:</span>
+                            <span className="info-value">{selectedKPIs}</span>
+                        </div>
+                        {fileName && (
+                            <div className="info-item">
+                                <span className="info-label">FILE:</span>
+                                <span className="info-value">{fileName}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">
-                        <div className="prompt-display-box">
-                            <div className="campaign-info">
-                                <div className="info-item">
-                                    <span className="info-label">Tactic:</span>
-                                    <span className="info-value">{selectedTactics}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="info-label">KPI:</span>
-                                    <span className="info-value">{selectedKPIs}</span>
-                                </div>
-                                {fileName && (
-                                    <div className="info-item">
-                                        <span className="info-label">File:</span>
-                                        <span className="info-value">{fileName}</span>
-                                    </div>
-                                )}
-                            </div>
-                            {(currentSituation || desiredOutcome) && (
+                        {(currentSituation || desiredOutcome) && (
+                            <div className="prompt-display-box">
                                 <div className="campaign-context">
                                     {currentSituation && (
                                         <div className="context-item">
@@ -517,8 +453,8 @@ function App() {
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                         
                         {/* Analysis results */}
                         {analysisResult ? (
@@ -538,47 +474,33 @@ function App() {
                     </div>
                     
                     <div className="input-section">
+                        <div className="main-action-buttons">
+                            <button
+                                className="help-button"
+                                onClick={() => setShowHelpModal(true)}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                                Get Help
+                            </button>
+                            <button className="export-button" onClick={handleExportToRtf}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                Download
+                            </button>
+                        </div>
                         <button
-                            className="show-input-button"
+                            className="show-input-link"
                             onClick={() => setShowPrompt(true)}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                            Show Input Data
+                            Show Input Data Sent to LLM
                         </button>
-                        <button
-                            className="help-button"
-                            onClick={() => setShowHelpModal(true)}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                            Get Help
-                        </button>
-                        <div className="export-container">
-                            <button className="export-button" onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                Export
-                            </button>
-                            {isExportMenuOpen && (
-                                <div className="export-menu" ref={exportMenuRef}>
-                                    <button onClick={() => { handleExportToRtf(); setIsExportMenuOpen(false); }}>
-                                        Export to RTF
-                                    </button>
-                                    <button onClick={() => { handleExportToGmail(); setIsExportMenuOpen(false); }}>
-                                        Export to Email
-                                    </button>
-                                </div>
-                            )}
-                        </div>
                     </div>
                     
                     {/* Prompt Modal (no changes needed) */}
