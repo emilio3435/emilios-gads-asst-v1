@@ -925,9 +925,11 @@ label.choose-file-button {
 }
 
 .submit-help-button:disabled {
-  background-color: #ccc;
+  background-color: #FADECF; /* Lighter, muted orange for disabled state */
+  color: #FEA880; /* Even lighter orange for text */
   cursor: not-allowed;
   transform: none;
+  box-shadow: none; /* Remove shadow when disabled */
 }
 
 .help-loading {
