@@ -177,51 +177,31 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log(finalPrompt);
     console.log('--- End Prompt ---');
     
-    // Determine which model to use
-    // 1. Use requested modelId from the client if provided
-    // 2. Otherwise fall back to environment variable
-    // 3. If neither exists, use the default
-    const envModelName = process.env.GEMINI_MODEL_NAME;
-    const defaultModelName = 'gemini-2.5-pro-preview-03-25';
-    const modelName = requestedModelId || envModelName || defaultModelName;
+    // Determine which model to use FOR ANALYSIS - PRIORITIZE CUSTOM GEM
+    const customGemId = process.env.CUSTOM_GEM_ID;
+    let modelName;
     
-    // Configure provider-specific options
-    let provider = 'google';
-    if (modelName.includes('claude')) {
-      provider = 'anthropic';
-    } else if (modelName.includes('gpt')) {
-      provider = 'openai';
+    if (customGemId) {
+        modelName = customGemId;
+        console.log(`Using CUSTOM Gem for analysis: ${modelName}`);
+    } else {
+        // Fallback logic if CUSTOM_GEM_ID is not set
+        const envModelName = process.env.GEMINI_MODEL_NAME;
+        const defaultModelName = 'gemini-2.5-pro-preview-03-25'; // Updated default
+        modelName = envModelName || defaultModelName;
+        console.warn('CUSTOM_GEM_ID not found in .env, falling back to standard model for analysis:', modelName);
     }
     
-    console.log(`Using model: ${modelName} (provider: ${provider})`);
+    // Provider is always Google for Gemini models
+    const provider = 'google'; 
     
-    // Use appropriate provider API
+    console.log(`Initializing model for analysis: ${modelName}`);
+    
+    // Initialize the model
     let result;
     try {
-      if (provider === 'google') {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        result = await callModelWithRetry(model, finalPrompt);
-      } else {
-        // For demonstration - in production you'd implement the other provider APIs
-        console.log(`Using mock implementation for ${provider} provider`);
-        // Mock implementation for other providers
-        result = {
-          response: {
-            text: () => `<div class="analysis">
-              <h2>Campaign Analysis (${provider} ${modelName})</h2>
-              <p>This is a mock response for ${modelName} since the actual API integration is not implemented.</p>
-              <p>In a production environment, this would call the ${provider} API with the appropriate model.</p>
-              <h3>Implementation Guide</h3>
-              <p>To implement this properly:</p>
-              <ol>
-                <li>Add the ${provider} API client library</li>
-                <li>Configure authentication</li>
-                <li>Make the appropriate API call</li>
-              </ol>
-            </div>`
-          }
-        };
-      }
+      const model = genAI.getGenerativeModel({ model: modelName });
+      result = await callModelWithRetry(model, finalPrompt);
     } catch (error) {
       console.error('Error calling model:', error);
       return res.status(500).json({ error: `Error calling ${modelName}: ${error.message}` });
