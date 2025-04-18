@@ -31,7 +31,7 @@ function App() {
     const [helpContextFile, setHelpContextFile] = useState<File | null>(null);
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
-    const [selectedModelId, setSelectedModelId] = useState<string>('gemini-1.5-pro-preview-0409');
+    const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -914,9 +914,9 @@ function App() {
                     value={selectedModelId}
                     onChange={handleModelChange}
                 >
-                    <option value="gemini-1.5-pro-preview-0409">Gemini 1.5 Pro (Latest)</option>
-                    <option value="gemini-1.5-flash-preview-0514">Gemini 1.5 Flash (Fast)</option>
-                    <option value="gemini-1.0-pro">Gemini 1.0 Pro (Stable)</option>
+                    <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+                    <option value="gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                 </select>
             </div>
             {selectedKPIs === 'CPA' && (

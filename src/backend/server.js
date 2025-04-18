@@ -107,7 +107,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     const currentSituation = req.body.currentSituation || 'Not provided';
     const desiredOutcome = req.body.desiredOutcome || 'Not provided';
     // Extract modelId from the request, default to a stable model if not provided
-    const requestedModelId = req.body.modelId || 'gemini-1.0-pro'; 
+    const requestedModelId = req.body.modelId || 'gemini-2.0-flash'; // Changed default
 
     let tacticsString = '';
     if (Array.isArray(tactics)) {
@@ -220,9 +220,9 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     
     // --- Use the requested model ID --- 
     const allowedModels = [
-        'gemini-1.5-pro-preview-0409',
-        'gemini-1.5-flash-preview-0514',
-        'gemini-1.0-pro'
+        'gemini-2.5-pro-preview-03-25',
+        'gemini-2.5-flash-preview',
+        'gemini-2.0-flash'
     ];
 
     let modelName;
@@ -230,20 +230,20 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         modelName = requestedModelId;
     } else {
         console.warn(`Requested model ${requestedModelId} not allowed or invalid. Falling back to default.`);
-        modelName = 'gemini-1.0-pro'; // Fallback to default stable model
+        modelName = 'gemini-2.0-flash'; // Fallback to default
     }
     
     // Determine display name based on model used
     let displayModelName;
     switch (modelName) {
-        case 'gemini-1.5-pro-preview-0409':
-            displayModelName = "Audacy AI (Gemini 1.5 Pro)";
+        case 'gemini-2.5-pro-preview-03-25':
+            displayModelName = "Audacy AI (Gemini 2.5 Pro Preview)";
             break;
-        case 'gemini-1.5-flash-preview-0514':
-            displayModelName = "Audacy AI (Gemini 1.5 Flash)";
+        case 'gemini-2.5-flash-preview':
+            displayModelName = "Audacy AI (Gemini 2.5 Flash Preview)";
             break;
-        case 'gemini-1.0-pro':
-            displayModelName = "Audacy AI (Gemini 1.0 Pro)";
+        case 'gemini-2.0-flash':
+            displayModelName = "Audacy AI (Gemini 2.0 Flash)";
             break;
         default:
             displayModelName = "Audacy AI"; // Generic fallback
