@@ -15,6 +15,11 @@ const DataAnalysisAssistant: React.FC = () => {
     const [desiredOutcome, setDesiredOutcome] = useState<string>('');
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
     const [rawAnalysisResult, setRawAnalysisResult] = useState<string | null>(null);
+    const [executiveSummary, setExecutiveSummary] = useState<string | null>(null);
+    const [keyFindings, setKeyFindings] = useState<string | null>(null);
+    const [storyAngles, setStoryAngles] = useState<string | null>(null);
+    const [supportingData, setSupportingData] = useState<string | null>(null);
+    const [recommendationsResult, setRecommendationsResult] = useState<string | null>(null);
     const [promptSent, setPromptSent] = useState<string | null>(null);
     const [modelName, setModelName] = useState<string | null>(null);
     const [showPrompt, setShowPrompt] = useState<boolean>(false);
@@ -383,6 +388,12 @@ const DataAnalysisAssistant: React.FC = () => {
         setPromptSent(null);
         setModelName(null);
         setShowResults(false);
+        // Clear previous structured results
+        setExecutiveSummary(null);
+        setKeyFindings(null);
+        setStoryAngles(null);
+        setSupportingData(null);
+        setRecommendationsResult(null);
 
         if (!file) {
             setError('Please upload a file for analysis.');
@@ -429,9 +440,24 @@ const DataAnalysisAssistant: React.FC = () => {
             }
 
             const data = await response.json();
-            const sanitizedHtml = DOMPurify.sanitize(data.html);
-            setAnalysisResult(sanitizedHtml);
-            setRawAnalysisResult(data.raw);
+
+            // --- EDIT: Handle structured analysis results ---
+            if (data.structuredAnalysis) {
+                setExecutiveSummary(data.structuredAnalysis.executiveSummary ? DOMPurify.sanitize(data.structuredAnalysis.executiveSummary) : null);
+                setKeyFindings(data.structuredAnalysis.keyFindings ? DOMPurify.sanitize(data.structuredAnalysis.keyFindings) : null);
+                setStoryAngles(data.structuredAnalysis.storyAngles ? DOMPurify.sanitize(data.structuredAnalysis.storyAngles) : null);
+                setSupportingData(data.structuredAnalysis.supportingData ? DOMPurify.sanitize(data.structuredAnalysis.supportingData) : null);
+                setRecommendationsResult(data.structuredAnalysis.recommendations ? DOMPurify.sanitize(data.structuredAnalysis.recommendations) : null);
+            } else {
+                // Fallback or handle error if structured data is missing
+                console.warn("Structured analysis data not found in API response. Displaying raw HTML.");
+                const sanitizedHtml = DOMPurify.sanitize(data.html); // Keep fallback?
+                setAnalysisResult(sanitizedHtml); // Or set an error/message
+            }
+            // --- END EDIT ---
+
+            // Still set raw and prompt/model info
+            setRawAnalysisResult(data.raw); // Keep for context/export
             setPromptSent(data.prompt);
             setModelName(data.modelName);
             setShowResults(true);
@@ -476,7 +502,7 @@ const DataAnalysisAssistant: React.FC = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M19 12H5M12 19l-7-7 7-7"/>
                         </svg>
-                        Back to Input Form
+                        Back to Marketing Asst.
                     </button>
                     <div className="navigation-info">
                         <span className="nav-step">Input</span>
@@ -522,13 +548,48 @@ const DataAnalysisAssistant: React.FC = () => {
                         </div>
                         
                         {/* Analysis results */}
-                        {analysisResult ? (
-                            <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
-                        ) : (
-                            <div className="no-results">
-                                <p>No analysis result available.</p>
-                            </div>
-                        )}
+                        <div className="analysis-section">
+                            {executiveSummary && (
+                                <>
+                                    <h2>Executive Summary</h2>
+                                    <div dangerouslySetInnerHTML={{ __html: executiveSummary }} />
+                                </>
+                            )}
+                            {keyFindings && (
+                                <>
+                                    <h2>Key Findings</h2>
+                                    <div dangerouslySetInnerHTML={{ __html: keyFindings }} />
+                                </>
+                            )}
+                            {storyAngles && (
+                                <>
+                                    <h2>Potential Story Angle(s)</h2>
+                                    <div dangerouslySetInnerHTML={{ __html: storyAngles }} />
+                                </>
+                            )}
+                            {supportingData && (
+                                <>
+                                    <h2>Supporting Data</h2>
+                                    <div dangerouslySetInnerHTML={{ __html: supportingData }} />
+                                </>
+                            )}
+                            {recommendationsResult && (
+                                <>
+                                    <h2>Actionable Recommendations</h2>
+                                    <div dangerouslySetInnerHTML={{ __html: recommendationsResult }} />
+                                </>
+                            )}
+                            {/* Fallback for old/unstructured data or if structured sections are missing */}
+                            {!executiveSummary && !keyFindings && !storyAngles && !supportingData && !recommendationsResult && analysisResult && (
+                                <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
+                            )}
+                            {/* Message if no results at all */}
+                            {!executiveSummary && !keyFindings && !storyAngles && !supportingData && !recommendationsResult && !analysisResult && (
+                                <div className="no-results">
+                                    <p>No analysis result available.</p>
+                                </div>
+                            )}
+                        </div>
                         
                         {/* Model attribution */}
                         {modelName && (
@@ -893,9 +954,8 @@ const DataAnalysisAssistant: React.FC = () => {
                             value={selectedModelId}
                             onChange={handleModelChange}
                         >
-                            <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-                            <option value="gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
-                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                            <option value="gemini-2.5-pro-preview-03-25">Better</option>
+                            <option value="gemini-2.0-flash">Faster</option>
                         </select>
                     </div>
                 )}
@@ -928,21 +988,26 @@ const DataAnalysisAssistant: React.FC = () => {
                 </div>
             )}
 
-            <button className="rounded-element" onClick={handleSubmit} disabled={isLoading}>
-                {isLoading ? '' : 'Analyze'}
-            </button>
-            {isLoading && (
+            {/* Completely revised loading/button UI section */}
+            {isLoading ? (
+                /* Only show the spinner when loading */
                 <div className="spinner-container">
                     <div className="spinner"></div>
                     <img src={audacyLogo} alt="Audacy Logo" className="spinner-logo" />
                     <p>Analyzing your data, please wait...</p>
                 </div>
+            ) : (
+                /* Show the button only when not loading */
+                <button className="rounded-element" onClick={handleSubmit}>
+                    Analyze
+                </button>
             )}
+
+            {/* Error messages */}
             {error && <div className="error-message">{error}</div>}
-            {isLoading && <div className="loading-indicator">Loading analysis...</div>}
             
             {/* Add View Analysis button when analysis result exists */}
-            {analysisResult && !showResults && (
+            {(executiveSummary || keyFindings || storyAngles || supportingData || recommendationsResult || analysisResult) && !showResults && (
                 <div className="input-to-analysis-navigation">
                     <div className="navigation-info">
                         <span className="nav-step active">Input</span>

@@ -382,13 +382,15 @@ input[type='file'] {
 }
 
 .results-display {
-  width: 100%;
-  padding: 25px 30px;
-  line-height: 1.5;
-  max-width: 800px;
-  margin: 0 auto;
-  color: #333;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   text-align: left;
+  overflow-y: auto;
+  flex-grow: 1;
+  padding-right: 30px;
 }
 
 .results-display h2:first-child {

@@ -20,7 +20,7 @@ dotenv.config({ path: path.join(__dirname, '.env') }); // Load .env file relativ
 // Define the prompt template (moved up for clarity)
 // Note: Enhanced instructions for Strategic Recommendations formatting
 const promptTemplate = `
-Analyze the provided campaign data and generate a comprehensive report.
+Analyze the provided campaign data and generate a user-friendly, actionable analysis.
 
 **Input Data:**
 *   **File Name:** {{fileName}}
@@ -35,44 +35,82 @@ Analyze the provided campaign data and generate a comprehensive report.
 
 **Instructions:**
 
-1.  **Understand the Goal:** Based on the selected tactic, KPIs, current situation, and desired outcome, identify the primary objective of the analysis.
-2.  **Analyze the Data:**
-    *   Thoroughly examine the provided data (\`{{dataString}}\`).
-    *   Identify key trends, patterns, outliers, and potential issues related to the selected KPIs and tactic.
-    *   Calculate relevant summary statistics or metrics if applicable (e.g., total spend, average CTR, conversion rate, ROAS).
-3.  **Generate Insights:** Explain the findings clearly. What does the data reveal about the campaign's performance concerning the goals? Highlight both positive and negative aspects.
-4.  **Provide Strategic Recommendations:** Based on the analysis, offer specific, actionable recommendations. Format these using appropriate HTML headings (\`<h2>\`, \`<h3>\`) and bullet points (\`<ul>\`, \`<li>\`) for clarity.
-    *   Keep recommendations directly relevant to achieving the desired outcome.
-    *   Explain the rationale behind each recommendation in clear, conversational language.
-5.  **Structure the Output:** Organize the analysis into logical sections using clear headings (<h2>, <h3>, etc.) and paragraphs (<p>). Use lists (<ul>, <ol>, <li>) for itemized information where appropriate. Ensure the entire analysis output is valid HTML suitable for direct rendering in a web application.
-6.  **Consider the Tactic:** Tailor the analysis and recommendations specifically to the selected digital tactic (\`{{tacticsString}}\`). If the tactic is "SEM", focus on keywords, ad groups, bids, quality score, etc. If "Display", focus on placements, creatives, targeting, frequency.
-7.  **Data Table (Optional but Recommended):** If presenting summary data or specific data points in a table is beneficial, generate data for a table. Format this data as a JSON array of objects enclosed in \`---TABLE_DATA_START---\` and \`---TABLE_DATA_END---\`. Each object in the array represents a row, with keys as column headers (e.g., \`[{ "Campaign": "X", "Spend": 100, "Conversions": 5 }, { ... }]\`). If no table is suitable, omit this section including the delimiters.
-8.  **Tone:** Maintain a professional, analytical, and helpful tone.
-9. **Output Delimiters:** Ensure the final output contains the primary analysis formatted as HTML enclosed in \`---HTML_ANALYSIS_START---\` and \`---HTML_ANALYSIS_END---\`. Place the optional table data section *after* the HTML section if included.
+You are analyzing this data for an Account Executive (AE) with a radio advertising background who needs to interpret the digital marketing data for clients. Your analysis MUST be:
 
-**Final Output Structure Example:**
+1. **Simple and Digestible:** Use plain language that avoids technical jargon. When you must use a digital marketing term, briefly explain it in parentheses using radio terminology when possible.
+
+2. **Structured in these exact sections:**
+   * **Executive Summary:** (1-2 sentences max) Summarize key takeaway in the simplest possible terms.
+   * **Key Findings:** (3-5 bullet points max) List the most important insights in clear, simple language.
+   * **Story Angles:** Suggest 2-3 specific narrative hooks connecting data to client goals that the AE can use when speaking with clients. Use radio analogies where applicable (e.g., "Just like how drive-time radio ads reach commuters, these mobile ads reached users during peak shopping hours").
+   * **Supporting Data:** Briefly list only the most critical metrics that back up your findings. Present numbers in context (e.g., "3.1% CTR, which is 2x the industry average").
+   * **Actionable Recommendations:** Provide 3-5 clear, specific, step-by-step suggestions to improve results. Each MUST include WHAT to do, WHY it would help, and HOW to implement it.
+
+3. **Action-Oriented:** Focus on what can be done differently to improve performance. Recommendations should be:
+   * Specific (not "improve targeting" but "add these 3 interest categories to your audience")
+   * Practical (can be implemented without extensive technical knowledge)
+   * Prioritized (indicate which actions will likely have the biggest impact)
+   * Contextual (explain why each recommendation matters for the campaign's goals)
+
+4. **Formatted:** Use clear HTML formatting. Use short paragraphs, bullet points, and simple tables when needed. Make the output highly scannable.
+
+5. **Client-Ready:** The AE should be able to use your analysis directly with clients without further translation or interpretation.
+
+**Output Structure Requirements:**
+Format your output with structured HTML that aligns with each of the sections described above.
 
 ---HTML_ANALYSIS_START---
-<h2>Analysis Summary</h2>
-<p>Overall findings...</p>
-<h2>Detailed Findings</h2>
-<h3>Performance Metric 1</h3>
-<p>Details...</p>
-<ul><li>Point 1</li><li>Point 2</li></ul>
-<h2>Strategic Recommendations</h2>
-<h3>Recommendation Title 1</h3>
-<p>Explanation...</p>
-<ul><li>Actionable step 1 (e.g., Short-term: Implement X)</li><li>Actionable step 2 (e.g., Long-term: Integrate Y)</li></ul>
-<h3>Recommendation Title 2</h3>
-<p>Explanation...</p>
-<ul><li>Actionable step 1</li></ul>
+<section class="executive-summary">
+  <h2>Executive Summary</h2>
+  <p>[1-2 sentence plain language summary]</p>
+</section>
+
+<section class="key-findings">
+  <h2>Key Findings</h2>
+  <ul>
+    <li>[Clear, simple finding #1]</li>
+    <li>[Clear, simple finding #2]</li>
+    <!-- 3-5 bullet points maximum -->
+  </ul>
+</section>
+
+<section class="story-angles">
+  <h2>Potential Story Angle(s)</h2>
+  <div class="story">
+    <h3>[Story Title 1]</h3>
+    <p>[Simple narrative that connects data to client goals with radio analogy]</p>
+  </div>
+  <div class="story">
+    <h3>[Story Title 2]</h3>
+    <p>[Simple narrative that connects data to client goals with radio analogy]</p>
+  </div>
+</section>
+
+<section class="supporting-data">
+  <h2>Supporting Data</h2>
+  <ul>
+    <li>[Key metric 1 with context]</li>
+    <li>[Key metric 2 with context]</li>
+    <!-- Focus on clarity over comprehensiveness -->
+  </ul>
+</section>
+
+<section class="recommendations">
+  <h2>Actionable Recommendations</h2>
+  <div class="recommendation">
+    <h3>[Recommendation Title 1]</h3>
+    <p>[Why this matters in simple terms]</p>
+    <ul>
+      <li>Specific action to take</li>
+      <li>Expected outcome</li>
+      <li>How to implement</li>
+    </ul>
+  </div>
+  <!-- Repeat for 3-5 recommendations -->
+</section>
 ---HTML_ANALYSIS_END---
 
----TABLE_DATA_START---
-[ ... table data JSON array ... ]
----TABLE_DATA_END---
-
-Now, perform the analysis based on the provided data and instructions.
+Ensure your analysis delivers meaningful, easy-to-understand insights focused on what the AE can actually do with this information to improve results.
 `;
 
 // Create Express app
@@ -314,7 +352,6 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
     // --- Parse the response based on delimiters --- 
     let htmlAnalysis = '';
-    let tableData = [];
     let rawText = ''; // For the text version of the HTML analysis
 
     try {
@@ -336,40 +373,22 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
             console.warn('Could not find HTML analysis part in response.');
             // Fallback: Assume the whole response is HTML if delimiters are missing
             htmlAnalysis = fullResponseText.trim(); 
-             rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
+            rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
         }
-
-        const tableMatch = fullResponseText.match(/---TABLE_DATA_START---([\s\S]*?)---TABLE_DATA_END---/);
-        if (tableMatch && tableMatch[1]) {
-            try {
-                tableData = JSON.parse(tableMatch[1].trim());
-                console.log('Parsed Table Data:', tableData);
-            } catch (jsonError) {
-                console.error('Error parsing table JSON data:', jsonError);
-                console.error('Problematic table JSON string:', tableMatch[1].trim());
-                tableData = []; // Send empty array on parse failure
-            }
-        } else {
-            console.warn('Could not find table data part in response.');
-        }
-
     } catch (parsingError) {
         console.error('Error parsing response sections:', parsingError);
         // Use the full response as HTML as a fallback if parsing fails catastrophically
         htmlAnalysis = fullResponseText.trim();
         rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
-        tableData = [];
     }
     // --------------------------------------------
 
     console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
-    console.log('Final Table Data:', tableData);
 
     // Send structured response to client
     res.json({
       html: htmlAnalysis, // The main HTML analysis
       raw: rawText,       // Raw text version of the HTML analysis
-      tableData: tableData, // Parsed table data JSON
       prompt: finalPrompt,  // Send the final generated prompt
       modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
     });
