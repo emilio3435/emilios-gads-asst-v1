@@ -30,6 +30,7 @@ function App() {
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
+    const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
     // Focus on help input when modal opens
@@ -397,6 +398,10 @@ function App() {
         cleaned = cleaned.replace(/^\s+/, '');
         
         return cleaned;
+    };
+
+    const handleAdvancedOptionsToggle = () => {
+        setShowAdvancedOptions(!showAdvancedOptions);
     };
 
     if (showResults) {
@@ -769,19 +774,6 @@ function App() {
                             />
                         </div>
                     )}
-
-                    <div className="select-container model-select-container">
-                        <label htmlFor="model-list">Select Analysis Model:</label>
-                        <select
-                            id="model-list"
-                            className="model-list"
-                            value={selectedModelId}
-                            onChange={handleModelChange}
-                        >
-                            <option value="gemini-2.5-pro-preview-03-25">Better (More Detailed)</option>
-                            <option value="gemini-2.0-flash">Faster (More Concise)</option>
-                        </select>
-                    </div>
                 </div>
             </div>
 
@@ -795,6 +787,35 @@ function App() {
                     placeholder="Describe your current marketing situation and goals..."
                     rows={3}
                 />
+            </div>
+
+            {/* ADD the advanced options toggle and conditional model selection here */}
+            <div className="advanced-options-section">
+                <div className="advanced-options-toggle">
+                    <label className="toggle-label">
+                        <input
+                            type="checkbox"
+                            checked={showAdvancedOptions}
+                            onChange={handleAdvancedOptionsToggle}
+                        />
+                        <span className="toggle-text">Show Advanced Options</span>
+                    </label>
+                </div>
+
+                {showAdvancedOptions && (
+                    <div className="select-container model-select-container advanced-model-select">
+                        <label htmlFor="model-list">Select Analysis Model:</label>
+                        <select
+                            id="model-list"
+                            className="model-list"
+                            value={selectedModelId}
+                            onChange={handleModelChange}
+                        >
+                            <option value="gemini-2.5-pro-preview-03-25">Better (More Detailed)</option>
+                            <option value="gemini-2.0-flash">Faster (More Concise)</option>
+                        </select>
+                    </div>
+                )}
             </div>
 
             <button className="rounded-element submit-button" onClick={handleSubmit} disabled={isLoading}>

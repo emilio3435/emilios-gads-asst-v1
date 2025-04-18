@@ -33,6 +33,7 @@ const DataAnalysisAssistant: React.FC = () => {
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
+    const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -463,6 +464,10 @@ const DataAnalysisAssistant: React.FC = () => {
         return cleaned;
     };
 
+    const handleAdvancedOptionsToggle = () => {
+        setShowAdvancedOptions(!showAdvancedOptions);
+    };
+
     if (showResults) {
         return (
             <div className="App">
@@ -845,19 +850,57 @@ const DataAnalysisAssistant: React.FC = () => {
                     <option value="Conversions">Conversions</option>
                 </select>
             </div>
-            <div className="select-container model-select-container">
-                <label htmlFor="model-list">Select Analysis Model:</label>
-                <select
-                    id="model-list"
-                    className="model-list"
-                    value={selectedModelId}
-                    onChange={handleModelChange}
-                >
-                    <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
-                    <option value="gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
-                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                </select>
+
+            <div className="text-area-container">
+                <label htmlFor="currentSituation">Current Situation:</label>
+                <textarea
+                    id="currentSituation"
+                    className="text-area"
+                    value={currentSituation}
+                    onChange={handleSituationChange}
+                    placeholder="Describe your current marketing situation..."
+                />
             </div>
+            <div className="text-area-container">
+                <label htmlFor="desiredOutcome">Desired Outcome:</label>
+                <textarea
+                    id="desiredOutcome"
+                    className="text-area"
+                    value={desiredOutcome}
+                    onChange={handleOutcomeChange}
+                    placeholder="Describe your desired outcome..."
+                />
+            </div>
+
+            <div className="advanced-options-section">
+                <div className="advanced-options-toggle">
+                    <label className="toggle-label">
+                        <input
+                            type="checkbox"
+                            checked={showAdvancedOptions}
+                            onChange={handleAdvancedOptionsToggle}
+                        />
+                        <span className="toggle-text">Show Advanced Options</span>
+                    </label>
+                </div>
+
+                {showAdvancedOptions && (
+                    <div className="select-container model-select-container advanced-model-select">
+                        <label htmlFor="model-list">Select Analysis Model:</label>
+                        <select
+                            id="model-list"
+                            className="model-list"
+                            value={selectedModelId}
+                            onChange={handleModelChange}
+                        >
+                            <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+                            <option value="gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                        </select>
+                    </div>
+                )}
+            </div>
+
             {selectedKPIs === 'CPA' && (
                 <div className="input-container">
                     <label htmlFor="targetCPA">Target CPA:</label>
@@ -884,26 +927,7 @@ const DataAnalysisAssistant: React.FC = () => {
                     />
                 </div>
             )}
-            <div className="text-area-container">
-                <label htmlFor="currentSituation">Current Situation:</label>
-                <textarea
-                    id="currentSituation"
-                    className="text-area"
-                    value={currentSituation}
-                    onChange={handleSituationChange}
-                    placeholder="Describe your current marketing situation..."
-                />
-            </div>
-            <div className="text-area-container">
-                <label htmlFor="desiredOutcome">Desired Outcome:</label>
-                <textarea
-                    id="desiredOutcome"
-                    className="text-area"
-                    value={desiredOutcome}
-                    onChange={handleOutcomeChange}
-                    placeholder="Describe your desired outcome..."
-                />
-            </div>
+
             <button className="rounded-element" onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? '' : 'Analyze'}
             </button>
