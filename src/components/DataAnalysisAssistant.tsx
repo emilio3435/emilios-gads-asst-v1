@@ -72,7 +72,7 @@ const DataAnalysisAssistant: React.FC = () => {
 
     // Load conversation history from sessionStorage when component mounts
     useEffect(() => {
-        const savedConversation = sessionStorage.getItem('helpConversation');
+        const savedConversation = sessionStorage.getItem('dataAnalysisConversation');
         if (savedConversation) {
             try {
                 // Parse the conversation and convert string timestamps back to Date objects
@@ -87,24 +87,12 @@ const DataAnalysisAssistant: React.FC = () => {
                 console.error('Error loading conversation from sessionStorage:', e);
             }
         }
-
-        // Clear chat history when the page is unloaded or component unmounts
-        const handleBeforeUnload = () => {
-            // Clear sessionStorage when page is closed/refreshed
-            sessionStorage.removeItem('helpConversation');
-        };
-        
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
     }, []);
 
     // Save conversation history to sessionStorage (not localStorage) whenever it changes
     useEffect(() => {
         if (helpConversation.length > 0) {
-            sessionStorage.setItem('helpConversation', JSON.stringify(helpConversation));
+            sessionStorage.setItem('dataAnalysisConversation', JSON.stringify(helpConversation));
         }
     }, [helpConversation]);
 
@@ -777,14 +765,14 @@ const DataAnalysisAssistant: React.FC = () => {
                                                 onClick={() => {
                                                     setHelpConversation([]);
                                                     setHelpResponse(null);
-                                                    sessionStorage.removeItem('helpConversation');
+                                                    sessionStorage.removeItem('dataAnalysisConversation');
                                                 }}
                                             >
                                                 Start New Chat
                                             </button>
                                             <span className="conversation-info">
                                                 {helpConversation.length > 0 && 
-                                                    sessionStorage.getItem('helpConversation') ? 
+                                                    sessionStorage.getItem('dataAnalysisConversation') ? 
                                                     '(Includes messages from current session)' : ''}
                                             </span>
                                         </div>
@@ -850,7 +838,7 @@ const DataAnalysisAssistant: React.FC = () => {
                                                         setHelpResponse(null);
                                                         setHelpQuestion('');
                                                         helpInputRef.current?.focus();
-                                                        sessionStorage.removeItem('helpConversation');
+                                                        sessionStorage.removeItem('dataAnalysisConversation');
                                                     }}
                                                 >
                                                     Clear Conversation

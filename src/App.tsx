@@ -66,18 +66,6 @@ function App() {
                 console.error('Error loading conversation from sessionStorage:', e);
             }
         }
-
-        // Clear chat history when the page is unloaded or component unmounts
-        const handleBeforeUnload = () => {
-            // Clear sessionStorage when page is closed/refreshed
-            sessionStorage.removeItem('helpConversation');
-        };
-        
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
     }, []);
 
     // Save conversation history to sessionStorage whenever it changes
