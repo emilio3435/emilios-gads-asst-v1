@@ -298,10 +298,10 @@ input[type='file'] {
 
 .input-section {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 15px;
+  gap: 40px;
   margin-top: 20px;
   margin-bottom: 30px;
   width: 100%;
@@ -309,58 +309,52 @@ input[type='file'] {
   box-sizing: border-box;
 }
 
-.show-input-button, .export-button {
+.show-input-button, .export-button, .help-button {
+  min-width: 160px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   border: none;
   border-radius: 25px;
   cursor: pointer;
   transition: all 0.3s;
   font-size: 0.95em;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .help-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 0.95em;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  background-color: #FE7333;
+  background-color: #7A3BCB;
   color: white;
 }
 
 .help-button:hover {
-  background-color: #e05a1e;
+  background-color: #6732aa;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .show-input-button {
-  background-color: #5029a7;
+  background-color: #078574;
   color: white;
 }
 
 .show-input-button:hover {
-  background-color: #3a1e7a;
+  background-color: #056b5d;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .export-button {
-  background-color: #FE7333;
+  background-color: #FE5000;
   color: white;
 }
 
 .export-button:hover {
-  background-color: #e05a1e;
+  background-color: #e04500;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
@@ -1391,8 +1385,9 @@ label.choose-file-button {
 .main-action-buttons {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 40px;
     width: 100%;
+    margin: 20px 0;
 }
 
 @media (max-width: 768px) {
