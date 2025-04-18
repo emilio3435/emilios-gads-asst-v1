@@ -8,29 +8,37 @@ body {
 
 .App {
   text-align: center;
-  max-width: 900px;
+  max-width: 800px;
   width: 100%;
-  margin: 20px auto;
-  padding: 0;
+  margin: 0 auto;
+  padding: 30px;
   background-color: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 /* Apply a container style to the input form version of App as well */
 .App:not(:has(.analysis-page-container)) {
   padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  gap: 15px;
 }
 
 .audacy-logo {
-  height: 50px;
-  margin-bottom: 20px;
+  width: 160px;
+  height: auto;
+  margin-bottom: 5px;
 }
 
 h1 {
-  color: #5029a7;
-  margin-bottom: 30px;
+  font-size: 22px;
+  margin: 0 0 10px 0;
 }
 
 label {
@@ -50,16 +58,18 @@ input[type='file'] {
 }
 
 .file-name {
-  margin-bottom: 10px;
-  font-style: italic;
-  font-size: 0.9em;
-  color: #777;
+  font-size: 14px;
+  color: #666;
+  margin: 5px 0;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .file-name span {
-  font-style: normal;
   font-weight: bold;
-  color: #5029a7;
 }
 
 .tactics-list, .kpi-list {
@@ -668,6 +678,8 @@ input[type='file'] {
   color: #333;
 }
 
+/* Removing unused export menu styles */
+/*
 .export-container {
   position: relative;
   display: inline-block;
@@ -675,16 +687,16 @@ input[type='file'] {
 
 .export-menu {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   right: 0;
   background-color: white;
   border: 1px solid #eee;
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  z-index: 10;
+  z-index: 100;
   min-width: 180px;
   overflow: hidden;
-  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .export-menu button {
@@ -708,6 +720,7 @@ input[type='file'] {
 .export-menu button:not(:last-child) {
   border-bottom: 1px solid #eee;
 }
+*/
 
 /* Make buttons even more attractive */
 button.rounded-element, 
@@ -1779,4 +1792,175 @@ label.choose-file-button {
   background-color: #5029a7;
   color: white;
   transform: scale(1.1);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.select-container {
+  margin-bottom: 10px;
+}
+
+.select-container label {
+  display: block;
+  margin-bottom: 3px;
+  font-weight: 600;
+  color: #555;
+  font-size: 0.9em;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: white;
+  color: black;
+  font-size: 0.95em;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  background-size: 16px 12px;
+  appearance: none;
+}
+
+select:hover {
+  border-color: #007bff;
+}
+
+select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+}
+
+.text-area-container {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.text-area-container label {
+  display: block;
+  text-align: left;
+  margin-bottom: 3px;
+  font-weight: 600;
+  color: #555;
+  font-size: 0.9em;
+}
+
+.text-area {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  resize: vertical;
+  background-color: white;
+  color: black;
+  font-size: 0.95em;
+  transition: border-color 0.3s;
+}
+
+.text-area:focus {
+  border-color: #5029a7;
+  outline: none;
+}
+
+.choose-file-button {
+  background-color: #5029a7;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 0.9em;
+  text-align: center;
+  margin-bottom: 0;
+}
+
+.choose-file-button:hover {
+  background-color: #3a1e7a;
+}
+
+.remove-file-button {
+  background-color: #f0f0f0;
+  color: #555;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: all 0.2s;
+  margin-top: 0;
+}
+
+.remove-file-button:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.submit-button {
+  background-color: #5029a7;
+  color: white;
+  padding: 10px 30px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 1em;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 200px;
+}
+
+.submit-button:hover {
+  background-color: #3a1e7a;
+}
+
+.submit-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  
+  .App {
+    padding: 15px;
+  }
+  
+  .file-upload-section {
+    padding: 10px;
+  }
+  
+  .choose-file-button {
+    width: 100%;
+  }
+
+  .text-area {
+    min-height: 80px;
+  }
 }

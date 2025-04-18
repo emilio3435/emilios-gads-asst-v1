@@ -2,15 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
-import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
-import './App.css';
+import { Link } from 'react-router-dom';
+import audacyLogo from '../assets/audacy-logo.png';
+import '../App.css';
 
-function App() {
+const DataAnalysisAssistant: React.FC = () => {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
     const [selectedKPIs, setSelectedKPIs] = useState<string>('');
     const [file, setFile] = useState<File | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [currentSituation, setCurrentSituation] = useState<string>('');
+    const [desiredOutcome, setDesiredOutcome] = useState<string>('');
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
     const [rawAnalysisResult, setRawAnalysisResult] = useState<string | null>(null);
     const [promptSent, setPromptSent] = useState<string | null>(null);
@@ -24,13 +26,27 @@ function App() {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
     const [helpQuestion, setHelpQuestion] = useState<string>('');
+    const [helpResponse, setHelpResponse] = useState<string | null>(null);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
     const [showKpiRecommendation, setShowKpiRecommendation] = useState<boolean>(false);
     const [helpContextFile, setHelpContextFile] = useState<File | null>(null);
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
+    const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+                setIsExportMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Focus on help input when modal opens
     useEffect(() => {
@@ -125,6 +141,10 @@ function App() {
         setCurrentSituation(event.target.value);
     };
 
+    const handleOutcomeChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setDesiredOutcome(event.target.value);
+    };
+
     const handleHelpQuestionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setHelpQuestion(event.target.value);
     };
@@ -168,12 +188,10 @@ function App() {
             formData.append('kpi', selectedKPIs || '');
             formData.append('fileName', fileName || '');
             formData.append('currentSituation', currentSituation || '');
+            formData.append('desiredOutcome', desiredOutcome || '');
             
             // Add conversation history to help provide context
             formData.append('conversationHistory', JSON.stringify(helpConversation));
-            
-            // Add selected model ID to use the same model as the analysis
-            formData.append('modelId', selectedModelId);
             
             // Append the context file if it exists
             if (helpContextFile) {
@@ -198,31 +216,19 @@ function App() {
             }
 
             const data = await response.json();
-            console.log('Raw response object from /api/get-help:', data); // Log the whole object
-            
-            // Get the response text, defaulting to an empty string if missing
-            const rawResponseText = data.response || ''; 
-            console.log('Raw response text:', rawResponseText); 
-
-            // Sanitize the HTML received from the backend
-            let sanitizedHtml = DOMPurify.sanitize(rawResponseText); 
-            console.log('Sanitized HTML:', sanitizedHtml); // Log after sanitize
-
-            // Clean potential markdown artifacts (like ```html)
-            // It's often better to do this *before* sanitizing if the goal is just to remove the backticks
-            // However, let's keep the current order for now unless issues persist
+            let sanitizedHtml = DOMPurify.sanitize(data.html || data.response);
             sanitizedHtml = cleanMarkdownCodeBlocks(sanitizedHtml);
-            console.log('Cleaned HTML:', sanitizedHtml); // Log after cleaning markdown
             
-            // Add AI response to conversation state
+            // Add AI response to conversation
             const newAiMessage = {
                 type: 'assistant',
-                content: sanitizedHtml, // Store the cleaned, sanitized HTML
+                content: sanitizedHtml,
                 timestamp: new Date()
             };
             
             // Update conversation with the AI response
             setHelpConversation([...updatedConversation, newAiMessage]);
+            setHelpResponse(sanitizedHtml);
         } catch (error: any) {
             console.error('Error getting help:', error);
             const errorMessage = `<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`;
@@ -236,6 +242,7 @@ function App() {
             };
             
             setHelpConversation([...updatedConversation, newErrorMessage]);
+            setHelpResponse(cleanedErrorMessage);
         } finally {
             setIsHelpLoading(false);
             setHelpQuestion(''); // Clear the question input for the next question
@@ -254,6 +261,57 @@ function App() {
             link.href = url;
             link.download = 'analysis.rtf';
             link.click();
+        }
+    };
+
+    const handleExportToGmail = () => {
+        if (analysisResult && rawAnalysisResult) {
+            try {
+                // Create a well-formatted email body with campaign info and analysis
+                let emailContent = `Campaign Analysis: ${selectedTactics} - ${selectedKPIs}\n\n`;
+                
+                // Add campaign information
+                emailContent += `CAMPAIGN INFORMATION:\n`;
+                emailContent += `Tactic: ${selectedTactics}\n`;
+                emailContent += `KPI: ${selectedKPIs}\n`;
+                if (fileName) emailContent += `File: ${fileName}\n`;
+                if (currentSituation) emailContent += `Current Situation: ${currentSituation}\n`;
+                if (desiredOutcome) emailContent += `Desired Outcome: ${desiredOutcome}\n\n`;
+                
+                // Add the raw analysis text without HTML tags
+                emailContent += `ANALYSIS RESULTS:\n\n${rawAnalysisResult}\n\n`;
+                
+                // Add attribution
+                if (modelName) {
+                    emailContent += `\nAnalysis powered by ${modelName}`;
+                }
+                
+                // Add campaign date
+                const today = new Date();
+                emailContent += `\nAnalysis Date: ${today.toLocaleDateString()}`;
+                
+                // Check if content is too long for most email clients (typically ~100KB limit)
+                // Use a more conservative 50KB limit to be safe
+                if (emailContent.length > 50000) {
+                    // Truncate the content and add a note about using RTF export for full content
+                    const truncatedContent = emailContent.substring(0, 49000) + 
+                        "\n\n[NOTE: This analysis has been truncated due to email size limitations. " +
+                        "For the complete analysis, please use the 'Export to RTF' option.]";
+                    emailContent = truncatedContent;
+                }
+                
+                // Encode the subject and body for the mailto URL
+                const subject = encodeURIComponent(`Campaign Analysis: ${selectedTactics} - ${selectedKPIs}`);
+                const body = encodeURIComponent(emailContent);
+                
+                // Open the default email client with the pre-filled email
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            } catch (error) {
+                console.error('Error formatting email content:', error);
+                alert('An error occurred while preparing the email. Please try again.');
+            }
+        } else {
+            alert("No analysis result available to export.");
         }
     };
 
@@ -335,11 +393,17 @@ function App() {
             return;
         }
 
+        if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx') && !file.name.endsWith('.pdf')) {
+            setError('Invalid file type selected. Please choose a CSV, XLSX, or PDF file.');
+            return;
+        }
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('tactics', JSON.stringify(selectedTactics));
         formData.append('kpis', JSON.stringify(selectedKPIs));
         formData.append('currentSituation', currentSituation);
+        formData.append('desiredOutcome', desiredOutcome);
         formData.append('targetCPA', JSON.stringify(targetCPA));
         formData.append('targetROAS', JSON.stringify(targetROAS));
         formData.append('modelId', selectedModelId);
@@ -434,6 +498,22 @@ function App() {
                                     </div>
                                 )}
                             </div>
+                            {(currentSituation || desiredOutcome) && (
+                                <div className="campaign-context">
+                                    {currentSituation && (
+                                        <div className="context-item">
+                                            <span className="context-label">Current Situation:</span>
+                                            <p className="context-value">{currentSituation}</p>
+                                        </div>
+                                    )}
+                                    {desiredOutcome && (
+                                        <div className="context-item">
+                                            <span className="context-label">Desired Outcome:</span>
+                                            <p className="context-value">{desiredOutcome}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         
                         {/* Analysis results */}
@@ -448,30 +528,22 @@ function App() {
                         {/* Model attribution */}
                         {modelName && (
                             <div className="model-attribution">
-                                <p>Analysis by <strong>{modelName}</strong>
-                                  <span 
-                                    className="show-input-icon" 
-                                    title="Show input data & prompt sent to AI" 
-                                    onClick={() => setShowPrompt(true)}
-                                  >
-                                    ?
-                                  </span>
-                                </p>
+                                <p>Analysis by <strong>{modelName}</strong></p>
                             </div>
                         )}
                     </div>
                     
                     <div className="input-section">
-                        {/* Re-added Download button (exports to RTF) */}
-                        <button className="export-button" onClick={handleExportToRtf}>
+                        <button
+                            className="show-input-button"
+                            onClick={() => setShowPrompt(true)}
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
-                            Download
-                        </button> 
-
+                            Show Input Data
+                        </button>
                         <button
                             className="help-button"
                             onClick={() => setShowHelpModal(true)}
@@ -483,6 +555,26 @@ function App() {
                             </svg>
                             Get Help
                         </button>
+                        <div className="export-container">
+                            <button className="export-button" onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Download
+                            </button>
+                            {isExportMenuOpen && (
+                                <div className="export-menu" ref={exportMenuRef}>
+                                    <button onClick={() => { handleExportToRtf(); setIsExportMenuOpen(false); }}>
+                                        Export to RTF
+                                    </button>
+                                    <button onClick={() => { handleExportToGmail(); setIsExportMenuOpen(false); }}>
+                                        Export to Email
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     
                     {/* Prompt Modal (no changes needed) */}
@@ -568,7 +660,7 @@ function App() {
                                 {helpConversation.length > 0 && (
                                     <div className="help-conversation">
                                         {helpConversation.map((message, index) => (
-                                            <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
+                                            <div key={index} className="conversation-message">
                                                 <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
                                                     {message.type === 'user' ? (
                                                         <p>{message.content}</p>
@@ -643,6 +735,7 @@ function App() {
                                                 className="clear-help-button"
                                                 onClick={() => {
                                                     setHelpConversation([]);
+                                                    setHelpResponse(null);
                                                     setHelpQuestion('');
                                                     helpInputRef.current?.focus();
                                                 }}
@@ -675,132 +768,145 @@ function App() {
         <div className="App">
             <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
             <h1>Marketing Assistant</h1>
-            
-            <div className="file-upload-section">
-                <input
-                    type="file"
-                    id="fileInput"
-                    accept=".csv, .xlsx, .pdf"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                />
-                <label htmlFor="fileInput" className="choose-file-button">
-                    Choose File
-                </label>
-                {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
-                {file && (
-                    <button className="remove-file-button" onClick={() => { setFile(null); setFileName(null); }}>
-                        Remove File
-                    </button>
-                )}
-                {fileName === null && file === null && <p className="file-name">Please select a CSV, XLSX, or PDF file.</p>}
+            <input
+                type="file"
+                id="fileInput"
+                accept=".csv, .xlsx, .pdf"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+            />
+            <label htmlFor="fileInput" className="choose-file-button rounded-element">
+                Choose File
+            </label>
+            {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
+            {file && (
+                <button className="remove-file-button rounded-element" onClick={() => { setFile(null); setFileName(null); }}>
+                    Remove File
+                </button>
+            )}
+            {fileName === null && file === null && <p className="file-name">Please select a CSV, XLSX, or PDF file.</p>}
+            <br />
+            <div className="select-container">
+                <label htmlFor="tactics-list">Select Tactic:</label>
+                <select
+                    id="tactics-list"
+                    className="tactics-list"
+                    value={selectedTactics}
+                    onChange={handleTacticChange}
+                    required
+                >
+                    <option value="" disabled>Select Tactic</option>
+                    <option value="SEM">SEM</option>
+                    <option value="SEO">SEO</option>
+                    <option value="Display Ads">Display Ads</option>
+                    <option value="Video Display Ads">Video Display Ads</option>
+                    <option value="YouTube">YouTube</option>
+                    <option value="OTT">OTT</option>
+                    <option value="Social Ads">Social Ads</option>
+                    <option value="Email eDirect">Email eDirect</option>
+                    <option value="Amazon DSP">Amazon DSP</option>
+                </select>
             </div>
-
-            <div className="form-grid">
-                <div className="form-column">
-                    <div className="select-container">
-                        <label htmlFor="tactics-list">Select Tactic:</label>
-                        <select
-                            id="tactics-list"
-                            className="tactics-list"
-                            value={selectedTactics}
-                            onChange={handleTacticChange}
-                            required
-                        >
-                            <option value="" disabled>Select Tactic</option>
-                            <option value="SEM">SEM</option>
-                            <option value="SEO">SEO</option>
-                            <option value="Display Ads">Display Ads</option>
-                            <option value="Video Display Ads">Video Display Ads</option>
-                            <option value="YouTube">YouTube</option>
-                            <option value="OTT">OTT</option>
-                            <option value="Social Ads">Social Ads</option>
-                            <option value="Email eDirect">Email eDirect</option>
-                            <option value="Amazon DSP">Amazon DSP</option>
-                        </select>
+            {selectedTactics && getRecommendationMessage(selectedTactics) && showKpiRecommendation && (
+                <div className="kpi-recommendation-popup">
+                    <div className="kpi-recommendation-content">
+                        <div className="kpi-recommendation-header">
+                            <span>Recommended KPIs</span>
+                            <button 
+                                className="kpi-recommendation-close"
+                                onClick={() => setShowKpiRecommendation(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="kpi-recommendation-body">
+                            {getRecommendationMessage(selectedTactics)}
+                        </div>
                     </div>
                 </div>
-
-                <div className="form-column">
-                    <div className="select-container">
-                        <label htmlFor="kpi-list">Select KPI:</label>
-                        <select
-                            id="kpi-list"
-                            className="kpi-list"
-                            value={selectedKPIs}
-                            onChange={handleKPIChange}
-                            required
-                        >
-                            <option value="" disabled>Select KPI</option>
-                            <option value="ROAS">ROAS</option>
-                            <option value="CPA">CPA</option>
-                            <option value="CTR">CTR</option>
-                            <option value="CPC">CPC</option>
-                            <option value="Conversion Rate">Conversion Rate</option>
-                            <option value="Impressions">Impressions</option>
-                            <option value="Clicks">Clicks</option>
-                            <option value="Conversions">Conversions</option>
-                        </select>
-                    </div>
-
-                    {selectedKPIs === 'CPA' && (
-                        <div className="input-container">
-                            <label htmlFor="targetCPA">Target CPA:</label>
-                            <input
-                                type="number"
-                                id="targetCPA"
-                                value={targetCPA !== null ? targetCPA : ''}
-                                onChange={handleTargetCPAChange}
-                                placeholder="Enter Target CPA"
-                                className="text-input"
-                            />
-                        </div>
-                    )}
-                    {selectedKPIs === 'ROAS' && (
-                        <div className="input-container">
-                            <label htmlFor="targetROAS">Target ROAS:</label>
-                            <input
-                                type="number"
-                                id="targetROAS"
-                                value={targetROAS !== null ? targetROAS : ''}
-                                onChange={handleTargetROASChange}
-                                placeholder="Enter Target ROAS"
-                                className="text-input"
-                            />
-                        </div>
-                    )}
-
-                    <div className="select-container model-select-container">
-                        <label htmlFor="model-list">Select Analysis Model:</label>
-                        <select
-                            id="model-list"
-                            className="model-list"
-                            value={selectedModelId}
-                            onChange={handleModelChange}
-                        >
-                            <option value="gemini-2.5-pro-preview-03-25">Better (More Detailed)</option>
-                            <option value="gemini-2.0-flash">Faster (More Concise)</option>
-                        </select>
-                    </div>
-                </div>
+            )}
+            <div className="select-container">
+                <label htmlFor="kpi-list">Select KPI:</label>
+                <select
+                    id="kpi-list"
+                    className="kpi-list"
+                    value={selectedKPIs}
+                    onChange={handleKPIChange}
+                    required
+                >
+                    <option value="" disabled>Select KPI</option>
+                    <option value="ROAS">ROAS</option>
+                    <option value="CPA">CPA</option>
+                    <option value="CTR">CTR</option>
+                    <option value="CPC">CPC</option>
+                    <option value="Conversion Rate">Conversion Rate</option>
+                    <option value="Impressions">Impressions</option>
+                    <option value="Clicks">Clicks</option>
+                    <option value="Conversions">Conversions</option>
+                </select>
             </div>
-
+            <div className="select-container model-select-container">
+                <label htmlFor="model-list">Select Analysis Model:</label>
+                <select
+                    id="model-list"
+                    className="model-list"
+                    value={selectedModelId}
+                    onChange={handleModelChange}
+                >
+                    <option value="gemini-2.5-pro-preview-03-25">Gemini 2.5 Pro Preview</option>
+                    <option value="gemini-2.5-flash-preview">Gemini 2.5 Flash Preview</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                </select>
+            </div>
+            {selectedKPIs === 'CPA' && (
+                <div className="input-container">
+                    <label htmlFor="targetCPA">Target CPA:</label>
+                    <input
+                        type="number"
+                        id="targetCPA"
+                        value={targetCPA !== null ? targetCPA : ''}
+                        onChange={handleTargetCPAChange}
+                        placeholder="Enter Target CPA"
+                        className="text-input"
+                    />
+                </div>
+            )}
+            {selectedKPIs === 'ROAS' && (
+                <div className="input-container">
+                    <label htmlFor="targetROAS">Target ROAS:</label>
+                    <input
+                        type="number"
+                        id="targetROAS"
+                        value={targetROAS !== null ? targetROAS : ''}
+                        onChange={handleTargetROASChange}
+                        placeholder="Enter Target ROAS"
+                        className="text-input"
+                    />
+                </div>
+            )}
             <div className="text-area-container">
-                <label htmlFor="currentSituation">Current Situation & Goals:</label>
+                <label htmlFor="currentSituation">Current Situation:</label>
                 <textarea
                     id="currentSituation"
                     className="text-area"
                     value={currentSituation}
                     onChange={handleSituationChange}
-                    placeholder="Describe your current marketing situation and goals..."
-                    rows={3}
+                    placeholder="Describe your current marketing situation..."
                 />
             </div>
-
-            <button className="rounded-element submit-button" onClick={handleSubmit} disabled={isLoading}>
+            <div className="text-area-container">
+                <label htmlFor="desiredOutcome">Desired Outcome:</label>
+                <textarea
+                    id="desiredOutcome"
+                    className="text-area"
+                    value={desiredOutcome}
+                    onChange={handleOutcomeChange}
+                    placeholder="Describe your desired outcome..."
+                />
+            </div>
+            <button className="rounded-element" onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? '' : 'Analyze'}
             </button>
-
             {isLoading && (
                 <div className="spinner-container">
                     <div className="spinner"></div>
@@ -809,6 +915,7 @@ function App() {
                 </div>
             )}
             {error && <div className="error-message">{error}</div>}
+            {isLoading && <div className="loading-indicator">Loading analysis...</div>}
             
             {/* Add View Analysis button when analysis result exists */}
             {analysisResult && !showResults && (
@@ -827,4 +934,4 @@ function App() {
     );
 }
 
-export default App;
+export default DataAnalysisAssistant;

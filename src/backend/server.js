@@ -41,28 +41,14 @@ Analyze the provided campaign data and generate a comprehensive report.
     *   Identify key trends, patterns, outliers, and potential issues related to the selected KPIs and tactic.
     *   Calculate relevant summary statistics or metrics if applicable (e.g., total spend, average CTR, conversion rate, ROAS).
 3.  **Generate Insights:** Explain the findings clearly. What does the data reveal about the campaign's performance concerning the goals? Highlight both positive and negative aspects.
-4.  **Provide Strategic Recommendations:** Based on the analysis, offer specific, actionable recommendations.
-    *   **Formatting for Strategic Recommendations:**
-        *   Use a main heading (like \`<h2>\`) for "Strategic Recommendations".
-        *   For *each* individual recommendation:
-            *   Use a sub-heading (like \`<h3>\`) for the recommendation's title (e.g., "Optimize 'Boost Checking' Campaign").
-            *   Use clear paragraphs (\`<p>\`) for any introductory or explanatory text for the recommendation.
-            *   Use bullet points (\`<ul>\` and \`<li>\`) for specific, actionable steps related to that recommendation.
-            *   **NEVER use any of these robotic-sounding prefixes** in your text:
-                * "Action/Aspect X:" 
-                * "Recommendation X Title:"
-                * "Short-term:" or "Long-term:" as standalone labels
-                * Any numbering scheme like "Action 1:", "Step 2:", etc.
-            *   Instead, write in natural language. For example, instead of "Action 1: Increase bid adjustments", write "• Increase bid adjustments for top-performing keywords by 15-20%"
-            *   If timing is relevant, integrate it naturally: "• Implement a new testing strategy within the next 30 days" instead of "Short-term: Implement testing"
+4.  **Provide Strategic Recommendations:** Based on the analysis, offer specific, actionable recommendations. Format these using appropriate HTML headings (\`<h2>\`, \`<h3>\`) and bullet points (\`<ul>\`, \`<li>\`) for clarity.
     *   Keep recommendations directly relevant to achieving the desired outcome.
     *   Explain the rationale behind each recommendation in clear, conversational language.
 5.  **Structure the Output:** Organize the analysis into logical sections using clear headings (<h2>, <h3>, etc.) and paragraphs (<p>). Use lists (<ul>, <ol>, <li>) for itemized information where appropriate. Ensure the entire analysis output is valid HTML suitable for direct rendering in a web application.
 6.  **Consider the Tactic:** Tailor the analysis and recommendations specifically to the selected digital tactic (\`{{tacticsString}}\`). If the tactic is "SEM", focus on keywords, ad groups, bids, quality score, etc. If "Display", focus on placements, creatives, targeting, frequency.
-7.  **Data Visualization (Optional but Recommended):** If the data lends itself to visualization (e.g., time series, comparisons), generate data suitable for a simple chart (e.g., bar, line). Format this data as a JSON object enclosed in \`---CHART_DATA_START---\` and \`---CHART_DATA_END---\`. The JSON should follow a format usable by charting libraries like Chart.js (e.g., \`{ labels: [...], datasets: [{ label: '...', data: [...] }] }\`). If no chart is suitable, omit this section including the delimiters.
-8.  **Data Table (Optional but Recommended):** If presenting summary data or specific data points in a table is beneficial, generate data for a table. Format this data as a JSON array of objects enclosed in \`---TABLE_DATA_START---\` and \`---TABLE_DATA_END---\`. Each object in the array represents a row, with keys as column headers (e.g., \`[{ "Campaign": "X", "Spend": 100, "Conversions": 5 }, { ... }]\`). If no table is suitable, omit this section including the delimiters.
-9.  **Tone:** Maintain a professional, analytical, and helpful tone.
-10. **Output Delimiters:** Ensure the final output contains the primary analysis formatted as HTML enclosed in \`---HTML_ANALYSIS_START---\` and \`---HTML_ANALYSIS_END---\`. Place the optional chart and table data sections *after* the HTML section if included.
+7.  **Data Table (Optional but Recommended):** If presenting summary data or specific data points in a table is beneficial, generate data for a table. Format this data as a JSON array of objects enclosed in \`---TABLE_DATA_START---\` and \`---TABLE_DATA_END---\`. Each object in the array represents a row, with keys as column headers (e.g., \`[{ "Campaign": "X", "Spend": 100, "Conversions": 5 }, { ... }]\`). If no table is suitable, omit this section including the delimiters.
+8.  **Tone:** Maintain a professional, analytical, and helpful tone.
+9. **Output Delimiters:** Ensure the final output contains the primary analysis formatted as HTML enclosed in \`---HTML_ANALYSIS_START---\` and \`---HTML_ANALYSIS_END---\`. Place the optional table data section *after* the HTML section if included.
 
 **Final Output Structure Example:**
 
@@ -82,10 +68,6 @@ Analyze the provided campaign data and generate a comprehensive report.
 <ul><li>Actionable step 1</li></ul>
 ---HTML_ANALYSIS_END---
 
----CHART_DATA_START---
-{ ... chart data JSON ... }
----CHART_DATA_END---
-
 ---TABLE_DATA_START---
 [ ... table data JSON array ... ]
 ---TABLE_DATA_END---
@@ -95,7 +77,8 @@ Now, perform the analysis based on the provided data and instructions.
 
 // Create Express app
 const app = express();
-const port = 5002;
+const DEFAULT_PORT = 5002;
+const MAX_PORT_ATTEMPTS = 10;
 
 // Middleware setup
 app.use(cors()); // Allow cross-origin requests
@@ -289,7 +272,6 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     // --- Use the requested model ID --- 
     const allowedModels = [
         'gemini-2.5-pro-preview-03-25',
-        'gemini-2.5-flash-preview',
         'gemini-2.0-flash'
     ];
 
@@ -306,9 +288,6 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     switch (modelName) {
         case 'gemini-2.5-pro-preview-03-25':
             displayModelName = "Audacy AI (Gemini 2.5 Pro Preview)";
-            break;
-        case 'gemini-2.5-flash-preview':
-            displayModelName = "Audacy AI (Gemini 2.5 Flash Preview)";
             break;
         case 'gemini-2.0-flash':
             displayModelName = "Audacy AI (Gemini 2.0 Flash)";
@@ -335,7 +314,6 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
     // --- Parse the response based on delimiters --- 
     let htmlAnalysis = '';
-    let chartData = {};
     let tableData = [];
     let rawText = ''; // For the text version of the HTML analysis
 
@@ -361,20 +339,6 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
              rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
         }
 
-        const chartMatch = fullResponseText.match(/---CHART_DATA_START---([\s\S]*?)---CHART_DATA_END---/);
-        if (chartMatch && chartMatch[1]) {
-            try {
-                chartData = JSON.parse(chartMatch[1].trim());
-                console.log('Parsed Chart Data:', chartData);
-            } catch (jsonError) {
-                console.error('Error parsing chart JSON data:', jsonError);
-                console.error('Problematic chart JSON string:', chartMatch[1].trim());
-                chartData = {}; // Send empty object on parse failure
-            }
-        } else {
-            console.warn('Could not find chart data part in response.');
-        }
-
         const tableMatch = fullResponseText.match(/---TABLE_DATA_START---([\s\S]*?)---TABLE_DATA_END---/);
         if (tableMatch && tableMatch[1]) {
             try {
@@ -394,20 +358,17 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         // Use the full response as HTML as a fallback if parsing fails catastrophically
         htmlAnalysis = fullResponseText.trim();
         rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
-        chartData = {};
         tableData = [];
     }
     // --------------------------------------------
 
     console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
-    console.log('Final Chart Data:', chartData);
     console.log('Final Table Data:', tableData);
 
     // Send structured response to client
     res.json({
       html: htmlAnalysis, // The main HTML analysis
       raw: rawText,       // Raw text version of the HTML analysis
-      chartData: chartData, // Parsed chart data JSON
       tableData: tableData, // Parsed table data JSON
       prompt: finalPrompt,  // Send the final generated prompt
       modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
@@ -436,7 +397,8 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
       fileName,
       currentSituation,
       desiredOutcome,
-      conversationHistory: conversationHistoryJson
+      conversationHistory: conversationHistoryJson,
+      modelId // Extract modelId from the request
     } = req.body;
 
     const contextFile = req.file; // Get the uploaded file
@@ -563,21 +525,27 @@ Respond in a friendly, helpful manner. If you don't know the answer, acknowledge
 
     console.log("Help prompt:", promptForHelp);
 
-    try {
-      // Use a default or specific model for help requests if desired
-      // Using the default model configured earlier for consistency
-      const model = genAI.getGenerativeModel({ model: process.env.GEMINI_DEFAULT_MODEL || 'gemini-2.0-flash' });
-      const result = await callModelWithRetry(model, promptForHelp);
-      const response = await result.response;
-      const responseText = response.text();
-      
-      console.log('Raw help response from Gemini:', responseText);
-
-      res.json({ response: responseText });
-    } catch (error) {
-      console.error('Error getting help from model:', error);
-      res.status(500).json({ error: `Error getting help: ${error.message}` });
+    // Validate the requested model ID
+    const allowedModels = [
+      'gemini-2.5-pro-preview-03-25',
+      'gemini-2.0-flash' // Removed flash-preview earlier
+    ];
+    let helpModelId = 'gemini-2.0-flash'; // Default fallback
+    if (modelId && allowedModels.includes(modelId)) {
+      helpModelId = modelId;
+    } else if (modelId) {
+      console.warn(`Requested model ${modelId} for help not allowed or invalid. Falling back to default.`);
     }
+
+    console.log(`Using model for help: ${helpModelId}`);
+    const model = genAI.getGenerativeModel({ model: helpModelId });
+    const result = await callModelWithRetry(model, promptForHelp);
+    const response = await result.response;
+    const responseText = response.text();
+    
+    console.log('Raw help response from Gemini:', responseText);
+
+    res.json({ response: responseText });
   } catch (error) {
     console.error('--- Error in /get-help ---');
     console.error(error);
@@ -585,14 +553,42 @@ Respond in a friendly, helpful manner. If you don't know the answer, acknowledge
   }
 });
 
-// Start the server
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${port}`);
-}).on('error', (error) => {
-  console.error('--- Server startup error ---');
-  console.error(error);
-  process.exit(1);
-});
+// Function to find an available port
+const findAvailablePort = async (startPort, maxAttempts) => {
+  for (let port = startPort; port < startPort + maxAttempts; port++) {
+    try {
+      await new Promise((resolve, reject) => {
+        const server = app.listen(port)
+          .once('error', reject)
+          .once('listening', () => {
+            server.close();
+            resolve();
+          });
+      });
+      return port;
+    } catch (err) {
+      if (err.code !== 'EADDRINUSE') throw err;
+      console.log(`Port ${port} is in use, trying another one...`);
+    }
+  }
+  throw new Error(`Could not find an available port after ${maxAttempts} attempts`);
+};
+
+// Start server with port fallback logic
+const startServer = async () => {
+  try {
+    const port = await findAvailablePort(DEFAULT_PORT, MAX_PORT_ATTEMPTS);
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`Server running on http://0.0.0.0:${port}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
+
+// Initialize server
+startServer();
 
 // Global error handlers
 process.on('uncaughtException', (error) => {
