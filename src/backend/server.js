@@ -16,16 +16,81 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') }); // Load .env file relative to this file
 
-// --- Load Prompt Template --- 
-let promptTemplate = '';
-try {
-  promptTemplate = fs.readFileSync(path.join(__dirname, 'prompt_template.txt'), 'utf8');
-  console.log('Prompt template loaded successfully.');
-} catch (err) {
-  console.error('Error reading prompt template file:', err);
-  process.exit(1); // Exit if template can't be read
-}
-// ------------------------
+// Define the prompt template (moved up for clarity)
+// Note: Enhanced instructions for Strategic Recommendations formatting
+const promptTemplate = `
+Analyze the provided campaign data and generate a comprehensive report.
+
+**Input Data:**
+*   **File Name:** {{fileName}}
+*   **Selected Tactic:** {{tacticsString}}
+*   **Selected KPIs:** {{kpisString}}
+*   **Current Situation/Goal:** {{currentSituation}}
+*   **Desired Outcome/Goal:** {{desiredOutcome}}
+*   **Data Content:**
+    \`\`\`json
+    {{dataString}}
+    \`\`\`
+
+**Instructions:**
+
+1.  **Understand the Goal:** Based on the selected tactic, KPIs, current situation, and desired outcome, identify the primary objective of the analysis.
+2.  **Analyze the Data:**
+    *   Thoroughly examine the provided data (\`{{dataString}}\`).
+    *   Identify key trends, patterns, outliers, and potential issues related to the selected KPIs and tactic.
+    *   Calculate relevant summary statistics or metrics if applicable (e.g., total spend, average CTR, conversion rate, ROAS).
+3.  **Generate Insights:** Explain the findings clearly. What does the data reveal about the campaign's performance concerning the goals? Highlight both positive and negative aspects.
+4.  **Provide Strategic Recommendations:** Based on the analysis, offer specific, actionable recommendations.
+    *   **Formatting for Strategic Recommendations:**
+        *   Use a main heading (like \`<h2>\`) for "Strategic Recommendations".
+        *   For *each* individual recommendation:
+            *   Use a sub-heading (like \`<h3>\`) for the recommendation's title (e.g., "Optimize 'Boost Checking' Campaign").
+            *   Use clear paragraphs (\`<p>\`) for any introductory or explanatory text for the recommendation.
+            *   Use bullet points (\`<ul>\` and \`<li>\`) for specific, actionable steps related to that recommendation.
+            *   **NEVER use any of these robotic-sounding prefixes** in your text:
+                * "Action/Aspect X:" 
+                * "Recommendation X Title:"
+                * "Short-term:" or "Long-term:" as standalone labels
+                * Any numbering scheme like "Action 1:", "Step 2:", etc.
+            *   Instead, write in natural language. For example, instead of "Action 1: Increase bid adjustments", write "• Increase bid adjustments for top-performing keywords by 15-20%"
+            *   If timing is relevant, integrate it naturally: "• Implement a new testing strategy within the next 30 days" instead of "Short-term: Implement testing"
+    *   Keep recommendations directly relevant to achieving the desired outcome.
+    *   Explain the rationale behind each recommendation in clear, conversational language.
+5.  **Structure the Output:** Organize the analysis into logical sections using clear headings (<h2>, <h3>, etc.) and paragraphs (<p>). Use lists (<ul>, <ol>, <li>) for itemized information where appropriate. Ensure the entire analysis output is valid HTML suitable for direct rendering in a web application.
+6.  **Consider the Tactic:** Tailor the analysis and recommendations specifically to the selected digital tactic (\`{{tacticsString}}\`). If the tactic is "SEM", focus on keywords, ad groups, bids, quality score, etc. If "Display", focus on placements, creatives, targeting, frequency.
+7.  **Data Visualization (Optional but Recommended):** If the data lends itself to visualization (e.g., time series, comparisons), generate data suitable for a simple chart (e.g., bar, line). Format this data as a JSON object enclosed in \`---CHART_DATA_START---\` and \`---CHART_DATA_END---\`. The JSON should follow a format usable by charting libraries like Chart.js (e.g., \`{ labels: [...], datasets: [{ label: '...', data: [...] }] }\`). If no chart is suitable, omit this section including the delimiters.
+8.  **Data Table (Optional but Recommended):** If presenting summary data or specific data points in a table is beneficial, generate data for a table. Format this data as a JSON array of objects enclosed in \`---TABLE_DATA_START---\` and \`---TABLE_DATA_END---\`. Each object in the array represents a row, with keys as column headers (e.g., \`[{ "Campaign": "X", "Spend": 100, "Conversions": 5 }, { ... }]\`). If no table is suitable, omit this section including the delimiters.
+9.  **Tone:** Maintain a professional, analytical, and helpful tone.
+10. **Output Delimiters:** Ensure the final output contains the primary analysis formatted as HTML enclosed in \`---HTML_ANALYSIS_START---\` and \`---HTML_ANALYSIS_END---\`. Place the optional chart and table data sections *after* the HTML section if included.
+
+**Final Output Structure Example:**
+
+---HTML_ANALYSIS_START---
+<h2>Analysis Summary</h2>
+<p>Overall findings...</p>
+<h2>Detailed Findings</h2>
+<h3>Performance Metric 1</h3>
+<p>Details...</p>
+<ul><li>Point 1</li><li>Point 2</li></ul>
+<h2>Strategic Recommendations</h2>
+<h3>Recommendation Title 1</h3>
+<p>Explanation...</p>
+<ul><li>Actionable step 1 (e.g., Short-term: Implement X)</li><li>Actionable step 2 (e.g., Long-term: Integrate Y)</li></ul>
+<h3>Recommendation Title 2</h3>
+<p>Explanation...</p>
+<ul><li>Actionable step 1</li></ul>
+---HTML_ANALYSIS_END---
+
+---CHART_DATA_START---
+{ ... chart data JSON ... }
+---CHART_DATA_END---
+
+---TABLE_DATA_START---
+[ ... table data JSON array ... ]
+---TABLE_DATA_END---
+
+Now, perform the analysis based on the provided data and instructions.
+`;
 
 // Create Express app
 const app = express();
