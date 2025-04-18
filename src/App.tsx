@@ -5,6 +5,18 @@ import DOMPurify from 'dompurify';
 import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
 
+// Available LLM models for comparison
+const AVAILABLE_MODELS = [
+    { id: 'gemini-2.5-pro-preview-03-25', name: 'Gemini 2.5 Pro', provider: 'Google' },
+    { id: 'gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro', provider: 'Google' },
+    { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash', provider: 'Google' },
+    { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', provider: 'Anthropic' },
+    { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet', provider: 'Anthropic' },
+    { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', provider: 'Anthropic' },
+    { id: 'gpt-4-turbo-preview', name: 'GPT-4 Turbo', provider: 'OpenAI' },
+    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI' }
+];
+
 function App() {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
     const [selectedKPIs, setSelectedKPIs] = useState<string>('');
@@ -27,6 +39,14 @@ function App() {
     const [helpQuestion, setHelpQuestion] = useState<string>('');
     const [helpResponse, setHelpResponse] = useState<string | null>(null);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
+    
+    // Multi-LLM comparison state
+    const [selectedModels, setSelectedModels] = useState<string[]>(['gemini-2.5-pro-preview-03-25']);
+    const [modelResults, setModelResults] = useState<{[key: string]: {html: string, raw: string, modelName: string}}>({}); 
+    const [activeModelTab, setActiveModelTab] = useState<string>('');
+    const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
+    const [isLoadingModels, setIsLoadingModels] = useState<{[key: string]: boolean}>({});
+    
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -364,6 +384,8 @@ function App() {
         setAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
+        setActiveModelTab('');
+        setModelResults({});
         setShowResults(false);
 
         if (!file) {
@@ -381,43 +403,115 @@ function App() {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('tactics', JSON.stringify(selectedTactics));
-        formData.append('kpis', JSON.stringify(selectedKPIs));
-        formData.append('currentSituation', currentSituation);
-        formData.append('desiredOutcome', desiredOutcome);
-        formData.append('targetCPA', JSON.stringify(targetCPA));
-        formData.append('targetROAS', JSON.stringify(targetROAS));
-
+        // Set loading states for all selected models
+        const loadingState: {[key: string]: boolean} = {};
+        selectedModels.forEach(model => {
+            loadingState[model] = true;
+        });
+        setIsLoadingModels(loadingState);
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
-                body: formData,
+            // Process each selected model
+            const modelPromises = selectedModels.map(async (modelId) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('tactics', JSON.stringify(selectedTactics));
+                formData.append('kpis', JSON.stringify(selectedKPIs));
+                formData.append('currentSituation', currentSituation);
+                formData.append('desiredOutcome', desiredOutcome);
+                formData.append('targetCPA', JSON.stringify(targetCPA));
+                formData.append('targetROAS', JSON.stringify(targetROAS));
+                formData.append('modelId', modelId); // Send selected model ID
+
+                try {
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        let errorDetails = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorDetails = errorData.error || errorData.details || errorDetails;
+                        } catch (e) {
+                            // Ignore if response body is not JSON
+                        }
+                        throw new Error(errorDetails);
+                    }
+
+                    const data = await response.json();
+                    const sanitizedHtml = DOMPurify.sanitize(data.html);
+
+                    // Store results for this model
+                    return {
+                        modelId,
+                        result: {
+                            html: sanitizedHtml,
+                            raw: data.raw,
+                            modelName: data.modelName || modelId
+                        }
+                    };
+                } catch (error: any) {
+                    console.error(`Error during analysis with model ${modelId}:`, error);
+                    return {
+                        modelId,
+                        error: error.message || 'An unexpected error occurred'
+                    };
+                } finally {
+                    // Update loading state for this model
+                    setIsLoadingModels(prev => ({
+                        ...prev,
+                        [modelId]: false
+                    }));
+                }
             });
 
-            if (!response.ok) {
-                let errorDetails = `HTTP error! status: ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorDetails = errorData.error || errorData.details || errorDetails;
-                } catch (e) {
-                    // Ignore if response body is not JSON
+            // Wait for all model results
+            const results = await Promise.all(modelPromises);
+            
+            // Process results
+            const modelResultsMap: {[key: string]: {html: string, raw: string, modelName: string}} = {};
+            let hasSuccessfulResult = false;
+            let promptFound = false;
+            
+            results.forEach(result => {
+                if ('result' in result && result.result) {
+                    modelResultsMap[result.modelId] = result.result;
+                    
+                    // Store prompt data from the first successful result
+                    if (!promptFound && 'prompt' in result.result) {
+                        setPromptSent(result.result.prompt as string);
+                        promptFound = true;
+                    }
+                    
+                    hasSuccessfulResult = true;
+                    
+                    // Set the first successful result as the active tab
+                    if (!activeModelTab) {
+                        setActiveModelTab(result.modelId);
+                    }
                 }
-                throw new Error(errorDetails);
+            });
+            
+            // Store all results
+            setModelResults(modelResultsMap);
+            
+            // Set data for compatibility with single-model view
+            if (hasSuccessfulResult && activeModelTab && modelResultsMap[activeModelTab]) {
+                setAnalysisResult(modelResultsMap[activeModelTab].html);
+                setRawAnalysisResult(modelResultsMap[activeModelTab].raw);
+                setModelName(modelResultsMap[activeModelTab].modelName);
             }
-
-            const data = await response.json();
-            const sanitizedHtml = DOMPurify.sanitize(data.html);
-            setAnalysisResult(sanitizedHtml);
-            setRawAnalysisResult(data.raw);
-            setPromptSent(data.prompt);
-            setModelName(data.modelName);
-            setShowResults(true);
+            
+            if (hasSuccessfulResult) {
+                setShowResults(true);
+            } else {
+                setError('All model analyses failed. Please try again.');
+            }
         } catch (error: any) {
-            console.error('Error during analysis:', error);
+            console.error('Error during multi-model analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
             setShowResults(false);
         } finally {
@@ -427,6 +521,21 @@ function App() {
 
     const handleBackToForm = () => {
         setShowResults(false);
+    };
+
+    const handleModelSelectionChange = (modelId: string) => {
+        setSelectedModels(prevSelectedModels => {
+            if (prevSelectedModels.includes(modelId)) {
+                // If already selected, remove it (unless it's the last one)
+                if (prevSelectedModels.length > 1) {
+                    return prevSelectedModels.filter(id => id !== modelId);
+                }
+                return prevSelectedModels;
+            } else {
+                // Add the model
+                return [...prevSelectedModels, modelId];
+            }
+        });
     };
 
     if (showResults) {
@@ -477,13 +586,78 @@ function App() {
                             )}
                         </div>
                         
-                        {/* Analysis results */}
-                        {analysisResult ? (
-                            <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
-                        ) : (
-                            <div className="no-results">
-                                <p>No analysis result available.</p>
+                        {/* Model Tabs for multiple results */}
+                        {selectedModels.length > 1 && Object.keys(modelResults).length > 0 && (
+                            <div className="model-tabs-container">
+                                <div className="model-comparison-controls">
+                                    <div className="compare-toggle">
+                                        <input 
+                                            type="checkbox" 
+                                            id="compare-toggle" 
+                                            checked={isCompareMode}
+                                            onChange={() => setIsCompareMode(!isCompareMode)}
+                                        />
+                                        <label htmlFor="compare-toggle">Show all results side-by-side</label>
+                                    </div>
+                                </div>
+                                
+                                {!isCompareMode && (
+                                    <div className="model-tabs">
+                                        {Object.keys(modelResults).map(modelId => {
+                                            const modelInfo = AVAILABLE_MODELS.find(m => m.id === modelId) || 
+                                                { name: modelResults[modelId].modelName, provider: 'Unknown' };
+                                            
+                                            return (
+                                                <div 
+                                                    key={modelId}
+                                                    className={`model-tab ${activeModelTab === modelId ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setActiveModelTab(modelId);
+                                                        setAnalysisResult(modelResults[modelId].html);
+                                                        setRawAnalysisResult(modelResults[modelId].raw);
+                                                        setModelName(modelResults[modelId].modelName);
+                                                    }}
+                                                >
+                                                    {modelInfo.name}
+                                                    <span className="provider">({modelInfo.provider})</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
+                        )}
+                        
+                        {/* Analysis results - Either single tab view or comparison view */}
+                        {isCompareMode ? (
+                            // Comparison view - all models side by side
+                            <div className="comparison-view">
+                                {Object.keys(modelResults).map(modelId => {
+                                    const modelInfo = AVAILABLE_MODELS.find(m => m.id === modelId) || 
+                                        { name: modelResults[modelId].modelName, provider: 'Unknown' };
+                                        
+                                    return (
+                                        <div className="model-result-panel" key={modelId}>
+                                            <div className="model-result-header">
+                                                {modelInfo.name} ({modelInfo.provider})
+                                            </div>
+                                            <div 
+                                                className="model-result-content"
+                                                dangerouslySetInnerHTML={{ __html: modelResults[modelId].html }}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            // Single model view (the active tab)
+                            analysisResult ? (
+                                <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
+                            ) : (
+                                <div className="no-results">
+                                    <p>No analysis result available.</p>
+                                </div>
+                            )
                         )}
                         
                         {/* Model attribution */}
@@ -778,6 +952,33 @@ function App() {
                     />
                 </div>
             )}
+            <div className="model-selection-container">
+                <label>Select AI Models for Analysis:</label>
+                <div className="model-options">
+                    {AVAILABLE_MODELS.map(model => (
+                        <div key={model.id} className="model-option">
+                            <input
+                                type="checkbox"
+                                id={`model-${model.id}`}
+                                checked={selectedModels.includes(model.id)}
+                                onChange={() => handleModelSelectionChange(model.id)}
+                            />
+                            <label htmlFor={`model-${model.id}`} className="model-label">
+                                <span className="model-name">{model.name}</span>
+                                <span className="model-provider">{model.provider}</span>
+                            </label>
+                        </div>
+                    ))}
+                </div>
+                <div className="model-selection-info">
+                    <p>
+                        <strong>{selectedModels.length}</strong> model{selectedModels.length !== 1 ? 's' : ''} selected. 
+                        {selectedModels.length > 1 && (
+                            <span> Multi-model analysis will take longer to complete.</span>
+                        )}
+                    </p>
+                </div>
+            </div>
             <style>{`
                 .recommendation-message {
                     background-color: #FE7333;

@@ -51,6 +51,47 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
+// Helper function to call models with retry logic
+async function callModelWithRetry(model, prompt, maxRetries = 5) {
+  let retryCount = 0;
+  let result;
+  
+  while (retryCount < maxRetries) {
+    try {
+      console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call API`);
+      result = await model.generateContent(prompt);
+      console.log('API call successful!');
+      return result;
+    } catch (error) {
+      console.error(`Error on attempt ${retryCount + 1}:`, error);
+      
+      // If this is a 429 resource exhaustion error or a 503 unavailable error
+      if (error.message && (error.message.includes('429') || error.message.includes('503'))) {
+        retryCount++;
+        
+        if (retryCount >= maxRetries) {
+          throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
+        }
+        
+        // Exponential backoff with jitter
+        const baseDelay = 1000; // 1 second
+        const maxDelay = 30000; // 30 seconds
+        const delay = Math.min(maxDelay, baseDelay * Math.pow(2, retryCount - 1));
+        const jitter = delay * 0.1 * Math.random(); // Add 0-10% jitter
+        const waitTime = delay + jitter;
+        
+        console.log(`Retrying in ${Math.round(waitTime / 1000)} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        // For other errors, don't retry
+        throw error;
+      }
+    }
+  }
+  
+  throw new Error(`Failed after ${maxRetries} attempts`);
+}
+
 // POST endpoint for analyzing marketing data
 app.post('/analyze', upload.single('file'), async (req, res) => {
   console.log('--- New request to /analyze ---');
@@ -64,6 +105,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     const kpis = req.body.kpis ? JSON.parse(req.body.kpis) : [];
     const currentSituation = req.body.currentSituation || 'Not provided';
     const desiredOutcome = req.body.desiredOutcome || 'Not provided';
+    const requestedModelId = req.body.modelId || null; // Get requested model from client
 
     let tacticsString = '';
     if (Array.isArray(tactics)) {
@@ -135,46 +177,54 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log(finalPrompt);
     console.log('--- End Prompt ---');
     
-    // Call Gemini API
-    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro-preview-03-25';
-    console.log(`Using Gemini model: ${modelName}`);
-    const model = genAI.getGenerativeModel({ model: modelName });
+    // Determine which model to use
+    // 1. Use requested modelId from the client if provided
+    // 2. Otherwise fall back to environment variable
+    // 3. If neither exists, use the default
+    const envModelName = process.env.GEMINI_MODEL_NAME;
+    const defaultModelName = 'gemini-2.5-pro-preview-03-25';
+    const modelName = requestedModelId || envModelName || defaultModelName;
     
-    // Add retry logic with exponential backoff for API calls
-    const maxRetries = 5;
-    let retryCount = 0;
+    // Configure provider-specific options
+    let provider = 'google';
+    if (modelName.includes('claude')) {
+      provider = 'anthropic';
+    } else if (modelName.includes('gpt')) {
+      provider = 'openai';
+    }
+    
+    console.log(`Using model: ${modelName} (provider: ${provider})`);
+    
+    // Use appropriate provider API
     let result;
-    
-    while (retryCount < maxRetries) {
-      try {
-        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API`);
-        result = await model.generateContent(finalPrompt);
-        break; // If successful, exit the loop
-      } catch (error) {
-        console.error(`Error on attempt ${retryCount + 1}:`, error);
-        
-        // If this is a 429 resource exhaustion error or a 503 unavailable error
-        if (error.message && (error.message.includes('429') || error.message.includes('503'))) {
-          retryCount++;
-          
-          if (retryCount >= maxRetries) {
-            throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
+    try {
+      if (provider === 'google') {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        result = await callModelWithRetry(model, finalPrompt);
+      } else {
+        // For demonstration - in production you'd implement the other provider APIs
+        console.log(`Using mock implementation for ${provider} provider`);
+        // Mock implementation for other providers
+        result = {
+          response: {
+            text: () => `<div class="analysis">
+              <h2>Campaign Analysis (${provider} ${modelName})</h2>
+              <p>This is a mock response for ${modelName} since the actual API integration is not implemented.</p>
+              <p>In a production environment, this would call the ${provider} API with the appropriate model.</p>
+              <h3>Implementation Guide</h3>
+              <p>To implement this properly:</p>
+              <ol>
+                <li>Add the ${provider} API client library</li>
+                <li>Configure authentication</li>
+                <li>Make the appropriate API call</li>
+              </ol>
+            </div>`
           }
-          
-          // Exponential backoff with jitter
-          const baseDelay = 1000; // 1 second
-          const maxDelay = 30000; // 30 seconds
-          const delay = Math.min(maxDelay, baseDelay * Math.pow(2, retryCount - 1));
-          const jitter = delay * 0.1 * Math.random(); // Add 0-10% jitter
-          const waitTime = delay + jitter;
-          
-          console.log(`Retrying in ${Math.round(waitTime / 1000)} seconds...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        } else {
-          // For other errors, don't retry
-          throw error;
-        }
+        };
       }
+    } catch (error) {
+      console.error('Error calling model:', error);
+      return res.status(500).json({ error: `Error calling ${modelName}: ${error.message}` });
     }
     
     const response = await result.response;
@@ -227,7 +277,8 @@ app.post('/get-help', express.json(), async (req, res) => {
       kpi,
       fileName,
       currentSituation,
-      desiredOutcome
+      desiredOutcome,
+      modelId
     } = req.body;
 
     // Basic validation
@@ -267,46 +318,43 @@ FORMAT YOUR RESPONSE AS HTML, with proper headings, paragraphs, and lists as app
     console.log(helpPrompt);
     console.log('--- End Help Prompt ---');
 
-    // Get the model to use - same as the analysis endpoint
-    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro-preview-03-25';
-    console.log(`Using Gemini model for help: ${modelName}`);
-    const model = genAI.getGenerativeModel({ model: modelName });
-
-    // Add retry logic with exponential backoff for API calls
-    const maxRetries = 3;
-    let retryCount = 0;
+    // Determine which model to use
+    const envModelName = process.env.GEMINI_MODEL_NAME;
+    const defaultModelName = 'gemini-2.5-pro-preview-03-25';
+    const modelName = modelId || envModelName || defaultModelName;
+    
+    // Configure provider-specific options  
+    let provider = 'google';
+    if (modelName.includes('claude')) {
+      provider = 'anthropic';
+    } else if (modelName.includes('gpt')) {
+      provider = 'openai';
+    }
+    
+    console.log(`Using model for help: ${modelName} (provider: ${provider})`);
+    
+    // Use appropriate provider API
     let result;
-
-    while (retryCount < maxRetries) {
-      try {
-        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API for help`);
-        result = await model.generateContent(helpPrompt);
-        break; // If successful, exit the loop
-      } catch (error) {
-        console.error(`Error on attempt ${retryCount + 1}:`, error);
-
-        // If this is a 429 resource exhaustion error or a 503 unavailable error
-        if (error.message && (error.message.includes('429') || error.message.includes('503'))) {
-          retryCount++;
-
-          if (retryCount >= maxRetries) {
-            throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
+    try {
+      if (provider === 'google') {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        result = await callModelWithRetry(model, helpPrompt, 3);
+      } else {
+        // Mock implementation for other providers
+        console.log(`Using mock implementation for ${provider} provider`);
+        result = {
+          response: {
+            text: () => `<div class="help-response">
+              <h2>Follow-up Answer (${provider} ${modelName})</h2>
+              <p>This is a mock response for ${modelName} since the actual API integration is not implemented.</p>
+              <p>In a production environment, this would use the ${provider} API with the appropriate model to answer your question.</p>
+            </div>`
           }
-
-          // Exponential backoff with jitter
-          const baseDelay = 1000; // 1 second
-          const maxDelay = 10000; // 10 seconds
-          const delay = Math.min(maxDelay, baseDelay * Math.pow(2, retryCount - 1));
-          const jitter = delay * 0.1 * Math.random(); // Add 0-10% jitter
-          const waitTime = delay + jitter;
-
-          console.log(`Retrying in ${Math.round(waitTime / 1000)} seconds...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        } else {
-          // For other errors, don't retry
-          throw error;
-        }
+        };
       }
+    } catch (error) {
+      console.error('Error calling model for help:', error);
+      return res.status(500).json({ error: `Error calling ${modelName}: ${error.message}` });
     }
 
     const response = await result.response;
