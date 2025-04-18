@@ -886,7 +886,7 @@ label.choose-file-button {
 }
 
 .submit-help-button {
-  background-color: #FE5000;
+  background-color: #FE5000; /* Audacy Orange */
   color: white;
   border: none;
   border-radius: 25px;
@@ -897,9 +897,9 @@ label.choose-file-button {
 }
 
 .clear-help-button {
-  background-color: #f0f0f0;
-  color: #555;
-  border: 1px solid #ddd;
+  background-color: #FFF0E6; /* Light Audacy Orange */
+  color: #FE5000; /* Audacy Orange text */
+  border: 1px solid #FADECF; /* Orange border */
   border-radius: 25px;
   padding: 8px 16px;
   font-size: 14px;
@@ -908,8 +908,8 @@ label.choose-file-button {
 }
 
 .clear-help-button:hover {
-  background-color: #e6e6e6;
-  color: #333;
+  background-color: #FADECF; /* Darker shade on hover */
+  color: #e64500;
 }
 
 .keyboard-tip {
@@ -920,7 +920,7 @@ label.choose-file-button {
 }
 
 .submit-help-button:hover {
-  background-color: #e64500;
+  background-color: #e64500; /* Darker Audacy Orange */
   transform: translateY(-2px);
 }
 
