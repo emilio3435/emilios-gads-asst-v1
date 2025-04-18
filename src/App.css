@@ -1711,6 +1711,7 @@ label.choose-file-button {
 /* Ensure enough space below section headings */
 .analysis h3 + p {
   margin-top: 16px;
+  color: #333; /* Ensure TL;DR paragraph text is dark */
 }
 
 /* Better spacing for lists that follow headings */
