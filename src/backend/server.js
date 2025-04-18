@@ -5,6 +5,7 @@ import multer from 'multer'; // For handling file uploads
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { PDFDocument } from 'pdf-lib'; // Replace pdf-parse with pdf-lib
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'; // Use pdfjs-dist
 import * as dotenv from 'dotenv';
 import fs from 'fs'; // Import file system module
 import path from 'path'; // Import path module
@@ -225,43 +226,45 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         dataString = JSON.stringify(excelData, null, 2);
         console.log('Excel parsed successfully.');
       } else if (lowerCaseFileName.endsWith('.pdf')) {
-        console.log('Parsing PDF file...');
+        console.log('Parsing PDF file with pdfjs-dist...');
         try {
-          // Load PDF with pdf-lib
-          const pdfDoc = await PDFDocument.load(fileBuffer);
-          
-          // Get total pages
-          const pageCount = pdfDoc.getPageCount();
-          console.log(`PDF has ${pageCount} pages`);
-          
-          // We can't directly extract text with pdf-lib, so we'll send page info
-          dataString = `PDF file with ${pageCount} pages. File name: ${fileName}`;
-          
-          // Add metadata info if available
-          const { title, author, subject, keywords, creator } = pdfDoc.getTitle() ? 
-            { 
-              title: pdfDoc.getTitle() || 'N/A', 
-              author: pdfDoc.getAuthor() || 'N/A',
-              subject: pdfDoc.getSubject() || 'N/A',
-              keywords: pdfDoc.getKeywords() || 'N/A',
-              creator: pdfDoc.getCreator() || 'N/A'
-            } : 
-            { title: 'N/A', author: 'N/A', subject: 'N/A', keywords: 'N/A', creator: 'N/A' };
-            
-          if (title !== 'N/A') {
-            dataString += `\nTitle: ${title}`;
-          }
-          if (author !== 'N/A') {
-            dataString += `\nAuthor: ${author}`;
-          }
-          if (subject !== 'N/A') {
-            dataString += `\nSubject: ${subject}`;
+          // Configure pdfjs-dist worker (important for Node.js environment)
+          // Note: Adjust the path if your node_modules structure is different
+          const workerSrcPath = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+          // console.log('Worker source path:', workerSrcPath); // Debug log
+          // pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrcPath;
+
+          // Load the PDF document
+          // Convert the Node.js Buffer from Multer to a Uint8Array for pdfjs-dist
+          const uint8Array = new Uint8Array(fileBuffer);
+          const loadingTask = pdfjsLib.getDocument({ data: uint8Array }); // Pass Uint8Array
+          const pdfDoc = await loadingTask.promise;
+          console.log(`PDF loaded successfully. Pages: ${pdfDoc.numPages}`);
+
+          let fullText = '';
+          for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map((item) => item.str).join(' ');
+            fullText += pageText + '\n'; // Add newline between pages
           }
           
-          console.log('PDF parsed successfully (metadata only).');
+          dataString = fullText.trim(); // Assign extracted text
+          
+          // Log extracted text length for confirmation
+          console.log(`PDF parsed successfully. Extracted ${dataString.length} characters.`);
+
         } catch (pdfError) {
-          console.error('PDF parsing error:', pdfError);
-          return res.status(400).json({ error: 'Failed to parse PDF file.', details: pdfError.message });
+          console.error('PDF parsing error with pdfjs-dist:', pdfError);
+          // Provide a more informative error message
+          let errorMessage = 'Failed to parse PDF file.';
+          if (pdfError instanceof Error) {
+            errorMessage += ` Details: ${pdfError.message}`;
+            if (pdfError.message.includes('Setting up fake worker failed') || pdfError.message.includes('pdf.worker.mjs')) {
+                 errorMessage += ' Check if the pdf.worker.mjs path is correct for your environment.';
+             }
+          }
+          return res.status(400).json({ error: errorMessage });
         }
       } else {
         console.log('Unsupported file type.');

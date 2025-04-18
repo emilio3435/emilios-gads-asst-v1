@@ -316,120 +316,58 @@ function App() {
 
     const formatCsvDataAsTable = (prompt: string | null) => {
         if (!prompt) return "";
-        
-        // Look for data sections in INPUT DATA or Campaign Data
-        const dataMatch = prompt.match(/(?:INPUT DATA:|Campaign Data:)(?:[\s\S]*?)(?:File Name:|Selected Tactic:|Campaign Data:)([\s\S]*?)(?=\n\n|$)/);
-        
+
+        // Regex to find the JSON data block specifically under 'Data Content:'
+        const dataBlockRegex = /(?:\*\*Data Content:\*\*\s*`{3}json\s*)([\s\S]*?)\s*`{3}/;
+        const dataMatch = prompt.match(dataBlockRegex);
+
         if (dataMatch && dataMatch[1]) {
-            // Extract just the data part
-            const dataSection = dataMatch[1].trim();
-            
-            // Check if it contains data in a format we can parse
-            const jsonMatches = dataSection.match(/\[\s*{[\s\S]*}\s*\]/);
-            
-            if (jsonMatches) {
-                try {
-                    // Try to parse the JSON data
-                    const jsonData = JSON.parse(jsonMatches[0]);
-                    
-                    // Create a scrollable container for the table
-                    let tableContainer = '<div class="csv-table-container">';
-                    let table = '<table class="csv-data-table">';
-                    
-                    // Create header row if data exists and has properties
-                    if (jsonData.length > 0) {
-                        table += '<thead><tr>';
-                        Object.keys(jsonData[0]).forEach(header => {
-                            table += `<th>${header}</th>`;
-                        });
-                        table += '</tr></thead>';
-                        
-                        // Create table body
-                        table += '<tbody>';
-                        jsonData.forEach((row: any) => {
-                            table += '<tr>';
-                            Object.values(row).forEach((value: any) => {
-                                // Handle null or undefined values
-                                const displayValue = value === null || value === undefined ? '' : value;
-                                table += `<td style="color: #333 !important;">${displayValue}</td>`;
-                            });
-                            table += '</tr>';
-                        });
-                        table += '</tbody>';
-                    }
-                    
-                    table += '</table></div>';
-                    
-                    // Add inline CSS for table styling with more explicit color rules
-                    tableContainer = '<style>' +
-                        '.csv-table-container { overflow-x: auto; margin: 10px 0; max-height: 400px; overflow-y: auto; color: #333; }' +
-                        '.csv-data-table { width: 100%; border-collapse: collapse; color: #333; }' +
-                        '.csv-data-table th, .csv-data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; color: #333 !important; }' +
-                        '.csv-data-table td { color: #333 !important; } ' + 
-                        '.csv-data-table thead { position: sticky; top: 0; background-color: #f2f2f2; }' +
-                        '.csv-data-table th { background-color: #f2f2f2; font-weight: bold; color: #333 !important; }' +
-                        '.csv-data-table tr:nth-child(even) { background-color: #f9f9f9; }' +
-                        '.csv-data-table tr:hover { background-color: #f0f0f0; }' +
-                        '</style>' + tableContainer;
-                    
-                    // Replace the JSON data with the formatted table
-                    return prompt.replace(jsonMatches[0], tableContainer);
-                } catch (e) {
-                    console.error('Error parsing JSON data:', e);
-                    return prompt;
-                }
-            }
-        }
-        
-        // Fall back to the original CSV parsing logic if JSON parsing fails
-        const csvDataMatch = prompt.match(/(?:INPUT DATA:|Campaign Data:)([\s\S]*?)(?=\n\n(?:[A-Z]|$)|$)/);
-        if (csvDataMatch) {
-            const csvData = csvDataMatch[1].trim();
+            const jsonDataString = dataMatch[1].trim();
             try {
-                const parsedData = Papa.parse(csvData, { header: true, skipEmptyLines: true });
-                if (parsedData.data.length > 0 && Object.keys(parsedData.data[0]).length > 1) {
+                // Parse the JSON data
+                const jsonData = JSON.parse(jsonDataString);
+
+                // Check if it's an array of objects (suitable for a table)
+                if (Array.isArray(jsonData) && jsonData.length > 0 && typeof jsonData[0] === 'object') {
                     // Create a scrollable container for the table
                     let tableContainer = '<div class="csv-table-container">';
                     let table = '<table class="csv-data-table">';
-                    
+
                     // Create header row
+                    const headers = Object.keys(jsonData[0]);
                     table += '<thead><tr>';
-                    Object.keys(parsedData.data[0]).forEach(header => {
-                        table += `<th style="color: #333 !important;">${header}</th>`;
+                    headers.forEach(header => {
+                        table += `<th>${header}</th>`;
                     });
                     table += '</tr></thead>';
-                    
+
                     // Create table body
                     table += '<tbody>';
-                    parsedData.data.forEach((row: any) => {
+                    jsonData.forEach((row: any) => {
                         table += '<tr>';
-                        Object.values(row).forEach((value: any) => {
+                        headers.forEach(header => {
+                            const value = row[header];
                             // Handle null or undefined values
                             const displayValue = value === null || value === undefined ? '' : value;
-                            table += `<td style="color: #333 !important;">${displayValue}</td>`;
+                            table += `<td>${displayValue}</td>`; // Removed inline style for cleaner CSS
                         });
                         table += '</tr>';
                     });
                     table += '</tbody></table></div>';
-                    
-                    // Add inline CSS for table styling with more explicit color rules
-                    tableContainer = '<style>' +
-                        '.csv-table-container { overflow-x: auto; margin: 10px 0; max-height: 400px; overflow-y: auto; color: #333; }' +
-                        '.csv-data-table { width: 100%; border-collapse: collapse; color: #333; }' +
-                        '.csv-data-table th, .csv-data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; color: #333 !important; }' +
-                        '.csv-data-table td { color: #333 !important; } ' + 
-                        '.csv-data-table thead { position: sticky; top: 0; background-color: #f2f2f2; }' +
-                        '.csv-data-table th { background-color: #f2f2f2; font-weight: bold; color: #333 !important; }' +
-                        '.csv-data-table tr:nth-child(even) { background-color: #f9f9f9; }' +
-                        '.csv-data-table tr:hover { background-color: #f0f0f0; }' +
-                        '</style>' + tableContainer;
-                    
-                    return prompt.replace(csvDataMatch[0], `<div style="color: #333; font-weight: bold;">INPUT DATA:</div>\n${tableContainer}`);
+
+                    // Replace the entire ```json ... ``` block with the table
+                    // We need to match the whole block including the backticks and 'json' label
+                    const fullBlockRegex = /(`{3}json\s*[\s\S]*?\s*`{3})/;
+                    return prompt.replace(fullBlockRegex, tableContainer);
                 }
             } catch (e) {
-                console.error('Error parsing CSV data:', e);
+                console.error('Error parsing JSON data within prompt:', e);
+                // If parsing fails, return the original prompt without modification
+                return prompt;
             }
         }
+
+        // If no JSON data block is found or parsing fails, return original prompt
         return prompt;
     };
 
