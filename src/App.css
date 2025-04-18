@@ -1708,10 +1708,14 @@ label.choose-file-button {
   text-align: left;
 }
 
-/* Ensure enough space below section headings */
-.analysis h3 + p {
+/* Ensure enough space below section headings AND set text color */
+.analysis h2 + p,
+.analysis h3 + p,
+.analysis h4 + p,
+.analysis h5 + p,
+.analysis h6 + p {
   margin-top: 16px;
-  color: #333; /* Ensure TL;DR paragraph text is dark */
+  color: #333; /* Ensure paragraph text after headings is dark */
 }
 
 /* Better spacing for lists that follow headings */
