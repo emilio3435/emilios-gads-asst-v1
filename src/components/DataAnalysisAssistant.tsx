@@ -31,6 +31,7 @@ const DataAnalysisAssistant: React.FC = () => {
     const [targetROAS, setTargetROAS] = useState<number | null>(null);
     const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
+    const [isChatMinimized, setIsChatMinimized] = useState<boolean>(true);
     const [helpQuestion, setHelpQuestion] = useState<string>('');
     const [helpResponse, setHelpResponse] = useState<string | null>(null);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
@@ -42,6 +43,7 @@ const DataAnalysisAssistant: React.FC = () => {
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const [fileReferencesRestored, setFileReferencesRestored] = useState<boolean>(false);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -57,12 +59,12 @@ const DataAnalysisAssistant: React.FC = () => {
 
     // Focus on help input when modal opens
     useEffect(() => {
-        if (showHelpModal && helpInputRef.current) {
+        if (showHelpModal && helpInputRef.current && !isChatMinimized) {
             setTimeout(() => {
                 helpInputRef.current?.focus();
             }, 100);
         }
-    }, [showHelpModal]);
+    }, [showHelpModal, isChatMinimized]);
 
     // Scroll to bottom of chat when conversation updates
     useEffect(() => {
@@ -71,9 +73,9 @@ const DataAnalysisAssistant: React.FC = () => {
         }
     }, [helpConversation]);
 
-    // Load conversation history from sessionStorage when component mounts
+    // Load conversation history from localStorage when component mounts
     useEffect(() => {
-        const savedConversation = sessionStorage.getItem('dataAnalysisConversation');
+        const savedConversation = localStorage.getItem('dataAnalysisConversation');
         if (savedConversation) {
             try {
                 // Parse the conversation and convert string timestamps back to Date objects
@@ -85,52 +87,144 @@ const DataAnalysisAssistant: React.FC = () => {
                 });
                 setHelpConversation(parsedConversation);
             } catch (e) {
-                console.error('Error loading conversation from sessionStorage:', e);
+                console.error('Error loading conversation from localStorage:', e);
             }
         }
     }, []);
 
-    // Save conversation history to sessionStorage (not localStorage) whenever it changes
+    // Save conversation history to localStorage whenever it changes
     useEffect(() => {
         if (helpConversation.length > 0) {
-            sessionStorage.setItem('dataAnalysisConversation', JSON.stringify(helpConversation));
+            localStorage.setItem('dataAnalysisConversation', JSON.stringify(helpConversation));
         }
     }, [helpConversation]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAnalysisResult(null);
-        setError(null);
-        if (event.target.files && event.target.files.length > 0) {
-            const selectedFile = event.target.files[0];
-            if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.pdf')) {
-                setFileName(selectedFile.name);
-                setError(null);
-            } else {
-                setFile(null);
-                setFileName(null);
-                setError('Unsupported file type. Please upload CSV, XLSX, or PDF.');
+    // Save helpContextFile information to localStorage whenever it changes
+    useEffect(() => {
+        if (helpContextFile) {
+            // We can't store the File object directly, but we can store the filename
+            localStorage.setItem('helpContextFileName', helpContextFileName || '');
+        }
+    }, [helpContextFile, helpContextFileName]);
+
+    // Save main file information to localStorage
+    useEffect(() => {
+        if (fileName) {
+            localStorage.setItem('fileName', fileName);
+        }
+    }, [fileName]);
+
+    // Load saved state from localStorage when component mounts
+    useEffect(() => {
+        try {
+            // Load other saved values
+            const savedTactics = localStorage.getItem('selectedTactics');
+            if (savedTactics) setSelectedTactics(savedTactics);
+            
+            const savedKPIs = localStorage.getItem('selectedKPIs');
+            if (savedKPIs) setSelectedKPIs(savedKPIs);
+            
+            const savedCurrentSituation = localStorage.getItem('currentSituation');
+            if (savedCurrentSituation) setCurrentSituation(savedCurrentSituation);
+            
+            const savedDesiredOutcome = localStorage.getItem('desiredOutcome');
+            if (savedDesiredOutcome) setDesiredOutcome(savedDesiredOutcome);
+
+            // Restore file references if they exist
+            const savedFileName = localStorage.getItem('fileName');
+            if (savedFileName) {
+                setFileName(savedFileName);
+                setFileReferencesRestored(true);
             }
-            setFile(selectedFile);
+
+            const savedContextFileName = localStorage.getItem('helpContextFileName');
+            if (savedContextFileName) {
+                setHelpContextFileName(savedContextFileName);
+                setFileReferencesRestored(true);
+            }
+            
+        } catch (e) {
+            console.error('Error loading state from localStorage:', e);
+        }
+    }, []);
+
+    // Save other important state to localStorage whenever they change
+    useEffect(() => {
+        if (selectedTactics) localStorage.setItem('selectedTactics', selectedTactics);
+        if (selectedKPIs) localStorage.setItem('selectedKPIs', selectedKPIs);
+        if (currentSituation) localStorage.setItem('currentSituation', currentSituation);
+        if (desiredOutcome) localStorage.setItem('desiredOutcome', desiredOutcome);
+        if (fileName) localStorage.setItem('fileName', fileName);
+        if (helpContextFileName) localStorage.setItem('helpContextFileName', helpContextFileName);
+    }, [selectedTactics, selectedKPIs, currentSituation, desiredOutcome, fileName, helpContextFileName]);
+
+    // Update the clearFile function to remove from localStorage too
+    const clearFile = () => {
+        setFile(null);
+        setFileName(null);
+        setAnalysisResult('');
+        setRawAnalysisResult('');
+        clearConversation();
+        setShowResults(false);
+        // Clear from localStorage
+        localStorage.removeItem('fileName');
+    };
+
+    // Update the clear context file function
+    const clearContextFile = () => {
+        setHelpContextFile(null);
+        setHelpContextFileName(null);
+        // Clear from localStorage
+        localStorage.removeItem('helpContextFileName');
+    };
+
+    // Toggle chat between minimized and expanded states
+    const toggleChatMinimized = () => {
+        if (isChatMinimized) {
+            setShowHelpModal(true);
+            setIsChatMinimized(false);
         } else {
-            setFile(null);
-            setFileName(null);
+            setIsChatMinimized(true);
         }
     };
 
-    const handleHelpContextFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files.length > 0) {
-            const selectedFile = event.target.files[0];
-            if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.pdf')) {
-                setHelpContextFileName(selectedFile.name);
-                setHelpContextFile(selectedFile);
-            } else {
-                setHelpContextFile(null);
-                setHelpContextFileName(null);
-                alert('Unsupported file type. Please upload CSV, XLSX, or PDF.');
-            }
+    const handleMinimizeChat = () => {
+        setIsChatMinimized(true);
+    };
+
+    const handleMaximizeChat = () => {
+        setShowHelpModal(true);
+        setIsChatMinimized(false);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setAnalysisResult(null);
+        setError(null);
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);
+            setFileName(selectedFile.name);
+            // Save file name to localStorage
+            localStorage.setItem('fileName', selectedFile.name);
+            setError(null);
+        } else {
+            setFile(null);
+            setFileName(null);
+            localStorage.removeItem('fileName');
+        }
+    };
+
+    const handleHelpContextFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            setHelpContextFile(selectedFile);
+            setHelpContextFileName(selectedFile.name);
+            // Save file name to localStorage
+            localStorage.setItem('helpContextFileName', selectedFile.name);
         } else {
             setHelpContextFile(null);
             setHelpContextFileName(null);
+            localStorage.removeItem('helpContextFileName');
         }
     };
 
@@ -286,9 +380,9 @@ const DataAnalysisAssistant: React.FC = () => {
         } finally {
             setIsHelpLoading(false);
             setHelpQuestion(''); // Clear the question input for the next question
-            // Clear the help context file after submission
-            setHelpContextFile(null);
-            setHelpContextFileName(null);
+            // The following lines were commented out to keep the help context file after submission
+            // setHelpContextFile(null);
+            // setHelpContextFileName(null);
         }
     };
 
@@ -529,6 +623,29 @@ const DataAnalysisAssistant: React.FC = () => {
         return cleaned;
     };
 
+    // Floating minimized chat icon
+    const renderMinimizedChat = () => {
+        if (!showHelpModal || isChatMinimized) {
+            return (
+                <button className="chat-minimized" onClick={handleMaximizeChat} aria-label="Open chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+            );
+        }
+        return null;
+    };
+
+    // Update the clear conversation function to also clear localStorage
+    const clearConversation = () => {
+        setHelpConversation([]);
+        setHelpResponse(null);
+        setHelpQuestion('');
+        helpInputRef.current?.focus();
+        localStorage.removeItem('dataAnalysisConversation');
+    };
+
     if (showResults) {
         return (
             <div className="App">
@@ -751,56 +868,60 @@ const DataAnalysisAssistant: React.FC = () => {
                         </div>
                     )}
                     
-                    {/* Help Modal */}
-                    {showHelpModal && (
-                        <div className="prompt-modal-overlay">
+                    {/* Help Modal - Updated with minimize functionality */}
+                    {showHelpModal && !isChatMinimized && (
+                        <div className={`prompt-modal-overlay ${isChatMinimized ? 'hidden' : 'visible'}`}>
                             <div className="prompt-modal help-modal">
-                                <h2>Chat with Audacy AI</h2>
-                                <button onClick={() => setShowHelpModal(false)} className="close-button">Close</button>
+                                <h2>
+                                    Chat with Audacy AI
+                                    <div>
+                                        <button onClick={handleMinimizeChat} className="minimize-button" title="Minimize chat">
+                                            <span>_</span>
+                                        </button>
+                                        <button onClick={() => setShowHelpModal(false)} className="close-button">×</button>
+                                    </div>
+                                </h2>
                                 
                                 {/* Conversation History */}
-                                {helpConversation.length > 0 && (
-                                    <div className="help-conversation" ref={chatContainerRef}>
-                                        <div className="conversation-controls">
-                                            <button 
-                                                className="new-chat-button"
-                                                onClick={() => {
-                                                    setHelpConversation([]);
-                                                    setHelpResponse(null);
-                                                    sessionStorage.removeItem('dataAnalysisConversation');
-                                                }}
-                                            >
-                                                Start New Chat
-                                            </button>
-                                            <span className="conversation-info">
-                                                {helpConversation.length > 0 && 
-                                                    sessionStorage.getItem('dataAnalysisConversation') ? 
-                                                    '(Includes messages from current session)' : ''}
-                                            </span>
-                                        </div>
-                                        
-                                        {helpConversation.map((message, index) => (
-                                            <div key={index} className="conversation-message">
-                                                <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
-                                                    {message.type === 'user' ? (
-                                                        <p>{message.content}</p>
-                                                    ) : (
-                                                        <div dangerouslySetInnerHTML={{ __html: cleanMarkdownCodeBlocks(message.content) }} />
-                                                    )}
-                                                </div>
-                                                <div className="message-time">
-                                                    {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                                </div>
+                                <div className="help-conversation" ref={chatContainerRef}>
+                                    {helpConversation.length > 0 ? (
+                                        <>
+                                            <div className="conversation-controls">
+                                                <span className="conversation-info">
+                                                    Includes context from previous interactions
+                                                </span>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
+                                            
+                                            {helpConversation.map((message, index) => (
+                                                <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
+                                                    <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
+                                                        {message.type === 'user' ? (
+                                                            <p>{message.content}</p>
+                                                        ) : (
+                                                            <div dangerouslySetInnerHTML={{ __html: cleanMarkdownCodeBlocks(message.content) }} />
+                                                        )}
+                                                    </div>
+                                                    <div className="message-time">
+                                                        {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </>
+                                    ) : (
+                                        <div className="empty-chat">
+                                            <p className="help-instructions">
+                                                Ask a specific question about the analysis or request additional information.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                                 
                                 <div className="help-form">
-                                    {helpConversation.length === 0 && (
-                                        <p className="help-instructions">
-                                            Ask a specific question about the analysis or request additional information based on the data.
-                                        </p>
+                                    {/* Add file reference restoration notice in the help modal too */}
+                                    {fileReferencesRestored && !helpContextFile && helpContextFileName && (
+                                        <div className="file-reference-notice prominent-notice">
+                                            <p><strong>Note:</strong> Your help context file reference has been restored, but you need to re-upload the actual file to use it.</p>
+                                        </div>
                                     )}
                                     
                                     {/* Keep input hidden, label will trigger it */}
@@ -818,7 +939,7 @@ const DataAnalysisAssistant: React.FC = () => {
                                         value={helpQuestion}
                                         onChange={handleHelpQuestionChange}
                                         onKeyDown={handleHelpKeyDown}
-                                        placeholder={helpConversation.length > 0 ? "Ask a follow-up question..." : "Example: Can you explain more about the CTR metrics? What other KPIs should I focus on?"}
+                                        placeholder={helpConversation.length > 0 ? "Ask a follow-up question..." : "How can I improve this campaign?"}
                                         rows={3}
                                     />
                                     
@@ -831,24 +952,9 @@ const DataAnalysisAssistant: React.FC = () => {
                                             >
                                                 {isHelpLoading ? 'Loading...' : 'Send'}
                                             </button>
-                                            
-                                            {helpConversation.length > 0 && (
-                                                <button 
-                                                    className="clear-help-button"
-                                                    onClick={() => {
-                                                        setHelpConversation([]);
-                                                        setHelpResponse(null);
-                                                        setHelpQuestion('');
-                                                        helpInputRef.current?.focus();
-                                                        sessionStorage.removeItem('dataAnalysisConversation');
-                                                    }}
-                                                >
-                                                    Clear Conversation
-                                                </button>
-                                            )}
                                         </div>
 
-                                        {/* File upload trigger moved here */} 
+                                        {/* File upload trigger */}
                                         <div className="file-upload-area">
                                             <label htmlFor="helpContextFile" className="upload-file-icon-button" title="Upload context file (optional)">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -868,21 +974,23 @@ const DataAnalysisAssistant: React.FC = () => {
                                         </div>
                                     </div>
                                     
-                                    <p className="keyboard-tip">
-                                        Pro tip: Press <strong>Ctrl+Enter</strong> to send your question quickly.
-                                    </p>
+                                    {!isHelpLoading && (
+                                        <p className="keyboard-tip">
+                                            Pro tip: Press <strong>Ctrl+Enter</strong> to send
+                                        </p>
+                                    )}
                                 </div>
                                 
                                 {isHelpLoading && (
                                     <div className="help-loading">
                                         <div className="spinner"></div>
-                                        <p>Processing your question...</p>
                                     </div>
                                 )}
                             </div>
                         </div>
                     )}
                 </div>
+                {renderMinimizedChat()}
             </div>
         );
     }
@@ -919,6 +1027,11 @@ const DataAnalysisAssistant: React.FC = () => {
             <label htmlFor="fileInput" className="choose-file-button rounded-element">
                 Choose File
             </label>
+            {fileReferencesRestored && !file && (
+                <div className="file-reference-notice prominent-notice">
+                    <p><strong>Note:</strong> Your file reference has been restored, but you need to re-upload the actual file to analyze it.</p>
+                </div>
+            )}
             {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
             {file && (
                 <button className="remove-file-button rounded-element" onClick={() => { setFile(null); setFileName(null); }}>
@@ -1066,6 +1179,7 @@ const DataAnalysisAssistant: React.FC = () => {
                     </button>
                 </div>
             )}
+            {renderMinimizedChat()}
         </div>
     );
 }

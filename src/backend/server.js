@@ -20,7 +20,7 @@ dotenv.config({ path: path.join(__dirname, '.env') }); // Load .env file relativ
 // Define the prompt template (moved up for clarity)
 // Note: Enhanced instructions for Strategic Recommendations formatting
 const promptTemplate = `
-Analyze the provided campaign data and generate a user-friendly, actionable analysis.
+Analyze the provided campaign data and generate a user-friendly, actionable analysis for Audacy sales representatives.
 
 **Input Data:**
 *   **File Name:** {{fileName}}
@@ -33,28 +33,49 @@ Analyze the provided campaign data and generate a user-friendly, actionable anal
     {{dataString}}
     \`\`\`
 
+**Audacy Brand & Sales Context:**
+You are an AI assistant for Audacy - a premier multi-platform audio content and entertainment company. 
+Audacy combines the power of radio, podcasting, digital, experiential, and premium live events to create 
+meaningful connections with consumers. Audacy sales representatives work with clients across industries to 
+develop effective advertising campaigns that span both traditional radio and digital audio channels.
+
+**Client Sales Assistant Role:**
+You are analyzing this data for an Audacy Account Executive (AE) who needs to interpret digital marketing data 
+for clients. Your goal is to help the AE demonstrate the value of Audacy's advertising solutions and identify 
+opportunities to expand or improve current campaigns. Focus on insights that showcase Audacy's unique value proposition 
+in the audio marketing landscape.
+
 **Instructions:**
 
-You are analyzing this data for an Account Executive (AE) with a radio advertising background who needs to interpret the digital marketing data for clients. Your analysis MUST be:
+Your analysis MUST be:
 
-1. **Simple and Digestible:** Use plain language that avoids technical jargon. When you must use a digital marketing term, briefly explain it in parentheses using radio terminology when possible.
+1. **Simple and Digestible:** Use plain language that avoids technical jargon. When you must use a digital marketing term, briefly explain it in parentheses using radio terminology when possible. Use Audacy-specific terminology where appropriate.
 
 2. **Structured in these exact sections:**
-   * **Executive Summary:** (1-2 sentences max) Summarize key takeaway in the simplest possible terms.
-   * **Key Findings:** (3-5 bullet points max) List the most important insights in clear, simple language.
-   * **Story Angles:** Suggest 2-3 specific narrative hooks connecting data to client goals that the AE can use when speaking with clients. Use radio analogies where applicable (e.g., "Just like how drive-time radio ads reach commuters, these mobile ads reached users during peak shopping hours").
+   * **Executive Summary:** (1-2 sentences max) Summarize key takeaway in the simplest possible terms, highlighting Audacy's value.
+   * **Key Findings:** (3-5 bullet points max) List the most important insights that connect to Audacy's audio solutions.
+   * **Story Angles:** Suggest 2-3 specific narrative hooks connecting data to client goals that the AE can use when speaking with clients. Use radio and audio analogies where applicable (e.g., "Just like how Audacy's drive-time radio ads reach commuters, these mobile ads reached users during peak shopping hours").
    * **Supporting Data:** Briefly list only the most critical metrics that back up your findings. Present numbers in context (e.g., "3.1% CTR, which is 2x the industry average").
-   * **Actionable Recommendations:** Provide 3-5 clear, specific, step-by-step suggestions to improve results. Each MUST include WHAT to do, WHY it would help, and HOW to implement it.
+   * **Actionable Recommendations:** Provide 3-5 clear, specific, step-by-step suggestions to improve results that leverage Audacy's unique capabilities. Each MUST include WHAT to do, WHY it would help, and HOW to implement it.
 
-3. **Action-Oriented:** Focus on what can be done differently to improve performance. Recommendations should be:
-   * Specific (not "improve targeting" but "add these 3 interest categories to your audience")
-   * Practical (can be implemented without extensive technical knowledge)
-   * Prioritized (indicate which actions will likely have the biggest impact)
-   * Contextual (explain why each recommendation matters for the campaign's goals)
+3. **Action-Oriented:** Focus on what can be done differently to improve performance. Recommendations should:
+   * Incorporate Audacy's audio marketing solutions
+   * Suggest cross-platform opportunities (radio + digital)
+   * Be specific (not "improve targeting" but "add these 3 interest categories to your audience")
+   * Be practical (can be implemented by the Audacy team)
+   * Be prioritized (indicate which actions will likely have the biggest impact)
+   * Be contextual (explain why each recommendation matters for the campaign's goals)
 
 4. **Formatted:** Use clear HTML formatting. Use short paragraphs, bullet points, and simple tables when needed. Make the output highly scannable.
 
 5. **Client-Ready:** The AE should be able to use your analysis directly with clients without further translation or interpretation.
+
+**Audacy Industry Expertise:**
+* For retail clients: Focus on foot traffic, in-store promotions, and seasonal campaign opportunities
+* For automotive clients: Emphasize local dealership promotions and test drive incentives
+* For entertainment clients: Highlight audience engagement and event promotion
+* For financial services: Focus on trust-building and demographic targeting
+* For B2B clients: Emphasize thought leadership and executive targeting
 
 **Output Structure Requirements:**
 Format your output with structured HTML that aligns with each of the sections described above.
@@ -62,14 +83,14 @@ Format your output with structured HTML that aligns with each of the sections de
 ---HTML_ANALYSIS_START---
 <section class="executive-summary">
   <h2>Executive Summary</h2>
-  <p>[1-2 sentence plain language summary]</p>
+  <p>[1-2 sentence plain language summary that incorporates Audacy's value]</p>
 </section>
 
 <section class="key-findings">
   <h2>Key Findings</h2>
   <ul>
-    <li>[Clear, simple finding #1]</li>
-    <li>[Clear, simple finding #2]</li>
+    <li>[Clear, simple finding #1 connecting to Audacy's solutions]</li>
+    <li>[Clear, simple finding #2 connecting to Audacy's solutions]</li>
     <!-- 3-5 bullet points maximum -->
   </ul>
 </section>
@@ -77,20 +98,20 @@ Format your output with structured HTML that aligns with each of the sections de
 <section class="story-angles">
   <h2>Potential Story Angle(s)</h2>
   <div class="story">
-    <h3>[Story Title 1]</h3>
-    <p>[Simple narrative that connects data to client goals with radio analogy]</p>
+    <h3>[Audacy-specific story title 1]</h3>
+    <p>[Simple narrative that connects data to client goals with Audacy-specific audio/radio analogy]</p>
   </div>
   <div class="story">
-    <h3>[Story Title 2]</h3>
-    <p>[Simple narrative that connects data to client goals with radio analogy]</p>
+    <h3>[Audacy-specific story title 2]</h3>
+    <p>[Simple narrative that connects data to client goals with Audacy-specific audio/radio analogy]</p>
   </div>
 </section>
 
 <section class="supporting-data">
   <h2>Supporting Data</h2>
   <ul>
-    <li>[Key metric 1 with context]</li>
-    <li>[Key metric 2 with context]</li>
+    <li>[Key metric 1 with context and Audacy insights]</li>
+    <li>[Key metric 2 with context and Audacy insights]</li>
     <!-- Focus on clarity over comprehensiveness -->
   </ul>
 </section>
@@ -98,20 +119,119 @@ Format your output with structured HTML that aligns with each of the sections de
 <section class="recommendations">
   <h2>Actionable Recommendations</h2>
   <div class="recommendation">
-    <h3>[Recommendation Title 1]</h3>
-    <p>[Why this matters in simple terms]</p>
+    <h3>[Audacy-specific recommendation title 1]</h3>
+    <p>[Why this matters in simple terms, with Audacy-specific value]</p>
     <ul>
-      <li>Specific action to take</li>
+      <li>Specific action to take using Audacy capabilities</li>
       <li>Expected outcome</li>
-      <li>How to implement</li>
+      <li>How Audacy's team can implement this</li>
     </ul>
   </div>
   <!-- Repeat for 3-5 recommendations -->
 </section>
 ---HTML_ANALYSIS_END---
 
-Ensure your analysis delivers meaningful, easy-to-understand insights focused on what the AE can actually do with this information to improve results.
+Ensure your analysis delivers meaningful, easy-to-understand insights focused on what the Audacy AE can actually do with this information to improve results and drive more business.
 `;
+
+// Define industry-specific context data for Audacy
+const audacyIndustryContext = {
+  retail: {
+    contextDetails: "Retail clients focus on driving store visits, product sales, and seasonal promotions. Audacy's audio solutions reach 92M combined monthly listeners who are not found on competing platforms (92% not on Amazon Music, 89% not on YouTube Music, 63% not on Spotify), providing exclusive audience access. Audacy's attribution suite connects audio campaigns directly to in-store visits and sales lift.",
+    specificTips: [
+      "Highlight Audacy's advanced targeting capabilities for specific retail demographics including 'In-Market' segments and 'Passionate About' segments",
+      "Emphasize attribution metrics that directly connect audio campaigns to in-store foot traffic with geofencing technology",
+      "Showcase how Audacy campaigns can be quickly adjusted for seasonal promotions with both streaming and podcast content",
+      "Note that 65% of Audacy's audience has household income of $50k+ and 31% has income of $100k+, making them valuable retail consumers"
+    ]
+  },
+  automotive: {
+    contextDetails: "Automotive clients need consistent brand presence and targeted local campaigns for dealerships. Audacy's exclusive audience (89% not found on YouTube Music, 67% not on Pandora/SXM) enables dealers to reach qualified auto intenders. The audience is older and more affluent (25-54, 55+), matching the prime demographic for auto purchases.",
+    specificTips: [
+      "Highlight Audacy's ability to target auto intenders through behavioral audio targeting - we have specific 'In Market for New Vehicle' and 'Car Intender' segments",
+      "Emphasize Audacy's cross-device attribution capabilities that connect audio advertising to dealership visits",
+      "Showcase how Audacy's combination of radio and digital audio creates surround-sound campaigns for sales events",
+      "Point out that Audacy's audio can engage consumers during the critical research and consideration phase of car buying"
+    ]
+  },
+  entertainment: {
+    contextDetails: "Entertainment clients (media, streaming, events) value Audacy's ability to reach entertainment-focused audiences across 92M monthly listeners, with deep podcast expertise including 26M podcast listeners and 25M+ weekly downloads. Audacy is a top podcast network with 7 shows in the Top 100.",
+    specificTips: [
+      "Emphasize Audacy's entertainment audience segments and 'Audio Rituals' data showing 47% of listeners plan their day around audio content",
+      "Highlight Audacy's content alignment opportunities for entertainment brands with our owned and operated premium podcast content",
+      "Suggest integrated promotions that leverage Audacy's on-air talent and live events for entertainment properties",
+      "Showcase Audacy's brand safety advantages with Sounder partnership that uses AI to ensure appropriate content alignment"
+    ]
+  },
+  financial: {
+    contextDetails: "Financial services clients (banking, insurance, investment) require trust-building campaigns and detailed demographic targeting for high-value services. Audacy's older, affluent audience (31% with $100k+ HHI, 45% college educated) provides an ideal match for financial services marketing.",
+    specificTips: [
+      "Focus on Audacy's ability to reach affluent, business-minded listeners who are active financial decision-makers",
+      "Highlight brand safety advantages of Audacy's premium content environment, especially important for financial brands",
+      "Emphasize how Audacy creates opportunities for detailed messaging on complex financial products through both streaming and podcasts",
+      "Showcase Audacy's 'Financial Market Followers,' 'Investors,' and 'Business Decision Maker' targeting segments"
+    ]
+  },
+  b2b: {
+    contextDetails: "B2B clients value Audacy's ability to reach business decision-makers during commute times and through business-focused content. With 92M combined monthly audience and 41% listening on mobile and 33% on smart speakers, Audacy reaches executives throughout their day with trusted content.",
+    specificTips: [
+      "Highlight targeting capabilities for reaching executives and business decision-makers, especially through LinkedIn and Elite Social B2B options",
+      "Focus on metrics that demonstrate quality over quantity for B2B lead generation using Audacy's attribution suite",
+      "Emphasize Audacy's business and news content environments for contextual relevance with decision-makers",
+      "Showcase Audacy's exclusive reach - 66% of Audacy listeners are not found on iHeart Radio Network"
+    ]
+  }
+};
+
+// Function to detect industry based on data content or current situation
+function getIndustryContext(dataString, currentSituation) {
+  // Industry detection keywords
+  const industryKeywords = {
+    retail: ['retail', 'store', 'shop', 'product', 'consumer', 'purchase', 'merchandise', 'inventory', 'sale', 'discount', 'ecommerce', 'customer'],
+    automotive: ['automotive', 'car', 'vehicle', 'dealership', 'auto', 'dealer', 'drive', 'test drive', 'model', 'manufacturer'],
+    entertainment: ['entertainment', 'movie', 'show', 'concert', 'event', 'stream', 'media', 'music', 'performance', 'festival', 'ticket'],
+    financial: ['financial', 'bank', 'insurance', 'invest', 'finance', 'loan', 'mortgage', 'credit', 'wealth', 'money', 'banking'],
+    b2b: ['b2b', 'business', 'solution', 'enterprise', 'corporate', 'company', 'professional', 'service', 'client', 'industry']
+  };
+
+  // Combine data and situation text for analysis
+  const combinedText = (dataString || '') + ' ' + (currentSituation || '');
+  const lowerCaseText = combinedText.toLowerCase();
+  
+  // Count keyword matches for each industry
+  const industryCounts = {};
+  
+  for (const [industry, keywords] of Object.entries(industryKeywords)) {
+    industryCounts[industry] = 0;
+    for (const keyword of keywords) {
+      // Count occurrences of each keyword
+      const regex = new RegExp('\\b' + keyword + '\\b', 'gi');
+      const matches = lowerCaseText.match(regex);
+      if (matches) {
+        industryCounts[industry] += matches.length;
+      }
+    }
+  }
+  
+  // Find industry with most keyword matches
+  let detectedIndustry = null;
+  let maxCount = 0;
+  
+  for (const [industry, count] of Object.entries(industryCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      detectedIndustry = industry;
+    }
+  }
+  
+  // Only return detected industry if we have a significant number of matches
+  if (maxCount >= 1) {
+    return audacyIndustryContext[detectedIndustry];
+  }
+  
+  // Default to generic context if no clear industry detected
+  return null;
+}
 
 // Create Express app
 const app = express();
@@ -253,7 +373,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
           // Note: Adjust the path if your node_modules structure is different
           const workerSrcPath = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
           // console.log('Worker source path:', workerSrcPath); // Debug log
-          // pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrcPath;
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrcPath;
 
           // Load the PDF document
           // Convert the Node.js Buffer from Multer to a Uint8Array for pdfjs-dist
@@ -292,14 +412,47 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         return res.status(400).json({ error: 'Unsupported file type. Please upload CSV, XLSX, or PDF.' });
       }
 
+      // After processing the file and before constructing the prompt
+      // Detect industry context based on data content
+      const industryContext = getIndustryContext(dataString, currentSituation);
+      let industryContextString = '';
+      
+      if (industryContext) {
+        console.log('Detected industry context:', Object.keys(audacyIndustryContext).find(key => audacyIndustryContext[key] === industryContext));
+        
+        // Format industry context for prompt
+        industryContextString = `
+**Industry-Specific Context:**
+${industryContext.contextDetails}
+
+**Audacy Industry Tips:**
+${industryContext.specificTips.map(tip => `- ${tip}`).join('\n')}
+`;
+      }
+
       // Construct prompt from template and replace placeholders
       finalPrompt = promptTemplate
         .replace('{{fileName}}', fileName)
-        .replace('{{dataString}}', dataString) // dataString now contains JSON string or PDF text
+        .replace('{{dataString}}', dataString)
         .replace('{{tacticsString}}', tacticsString)
         .replace('{{kpisString}}', kpisString)
         .replace('{{currentSituation}}', currentSituation || 'Not provided')
         .replace('{{desiredOutcome}}', desiredOutcome || 'Not provided');
+        
+      // Add industry context if detected
+      if (industryContextString) {
+        // Add industry context before the Output Structure Requirements section
+        const outputSectionMarker = "**Output Structure Requirements:**";
+        if (finalPrompt.includes(outputSectionMarker)) {
+          finalPrompt = finalPrompt.replace(
+            outputSectionMarker,
+            `${industryContextString}\n\n${outputSectionMarker}`
+          );
+        } else {
+          // Append to the end if marker not found
+          finalPrompt += `\n\n${industryContextString}`;
+        }
+      }
     }
     
     // Log the prompt sent to Gemini
@@ -455,6 +608,8 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
           additionalContext = `\n\n--- Additional Context File (${contextFile.originalname}) ---\n${JSON.stringify(excelData, null, 2)}`;
         } else if (lowerCaseFileName.endsWith('.pdf')) {
           const uint8Array = new Uint8Array(fileBuffer);
+          // Configure PDF.js worker
+          pdfjsLib.GlobalWorkerOptions.workerSrc = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
           const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
           const pdfDoc = await loadingTask.promise;
           let fullText = '';
@@ -519,7 +674,7 @@ ${previousConversationFormatted}${campaignContext}${additionalContext ? `===== A
 CURRENT QUESTION: ${req.body.question}
 
 RESPONSE GUIDELINES:
-Answer first, answer clearly. Keep it brief and directly address the user's question. Use HTML only (no <html> / <body> tags).
+Answer first, answer clearly. Use HTML only (no <html> / <body> tags).
 
 Purpose         Tag
 Section heading <h3>

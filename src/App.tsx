@@ -274,9 +274,9 @@ function App() {
         } finally {
             setIsHelpLoading(false);
             setHelpQuestion(''); // Clear the question input for the next question
-            // Clear the help context file after submission
-            setHelpContextFile(null);
-            setHelpContextFileName(null);
+            // Don't clear the help context file after submission
+            // setHelpContextFile(null);
+            // setHelpContextFileName(null);
         }
     };
 
