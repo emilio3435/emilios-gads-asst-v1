@@ -197,7 +197,7 @@ const DataAnalysisAssistant: React.FC = () => {
             formData.append('desiredOutcome', desiredOutcome || '');
             
             // Add conversation history to help provide context
-            formData.append('conversationHistory', JSON.stringify(helpConversation));
+            formData.append('conversationHistory', JSON.stringify(updatedConversation));
             
             // Append the context file if it exists
             if (helpContextFile) {

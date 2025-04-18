@@ -171,7 +171,7 @@ function App() {
             formData.append('currentSituation', currentSituation || '');
             
             // Add conversation history to help provide context
-            formData.append('conversationHistory', JSON.stringify(helpConversation));
+            formData.append('conversationHistory', JSON.stringify(updatedConversation));
             
             // Add selected model ID to use the same model as the analysis
             formData.append('modelId', selectedModelId);
