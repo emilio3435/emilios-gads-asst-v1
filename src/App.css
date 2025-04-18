@@ -398,7 +398,7 @@ input[type='file'] {
   color: #5029a7;
   font-size: 24px;
   margin-top: 24px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   padding-bottom: 10px;
   border-bottom: 2px solid #5029a7;
   text-align: left;
@@ -410,7 +410,7 @@ input[type='file'] {
   color: #FE5000;
   font-size: 20px;
   margin-top: 24px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   position: relative;
   display: block;
   text-align: left;
@@ -424,13 +424,12 @@ input[type='file'] {
   height: 2px;
   background-color: #FE5000;
   position: absolute;
-  bottom: -3px;
+  bottom: -5px;
   left: 0;
 }
 
 .analysis p {
   line-height: 1.6;
-  margin-top: 8px;
   margin-bottom: 16px;
   color: #333;
   font-size: 15px;
@@ -438,46 +437,37 @@ input[type='file'] {
 }
 
 .analysis ul, .analysis ol {
-  margin-top: 8px;
   margin-bottom: 20px;
   padding-left: 25px;
   text-align: left;
 }
 
 .analysis li {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   line-height: 1.5;
   text-align: left;
   position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
 }
 
+/* Remove the complex flex and value-span styles */
 .analysis li .value-span {
-  margin-left: 10px;
-  font-weight: bold;
-  white-space: nowrap;
-  text-align: left;
-  flex-shrink: 0;
+  display: inline;
+  font-weight: inherit;
+  white-space: normal;
+  margin-left: 0;
 }
 
 .analysis ul.inline-values li {
-  justify-content: flex-start;
+  display: list-item;
 }
 
 .analysis ul li {
-  list-style-type: none;
-  padding-left: 6px;
+  list-style-type: disc;
+  padding-left: 0;
 }
 
 .analysis ul li::before {
-  content: "•";
-  color: #5029a7;
-  font-weight: bold;
-  position: absolute;
-  left: -15px;
-  top: 1px;
+  content: none;
 }
 
 .analysis ol {
@@ -485,18 +475,12 @@ input[type='file'] {
 }
 
 .analysis ol li {
-  list-style-type: none;
-  counter-increment: item;
-  justify-content: flex-start;
+  list-style-type: decimal;
+  counter-increment: none;
 }
 
 .analysis ol li::before {
-  content: counter(item) ".";
-  color: #5029a7;
-  font-weight: bold;
-  position: absolute;
-  left: -20px;
-  top: 1px;
+  content: none;
 }
 
 .results-display table {
