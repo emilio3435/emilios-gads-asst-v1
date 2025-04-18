@@ -3,7 +3,8 @@ import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { Link } from 'react-router-dom';
-import audacyLogo from '../assets/audacy-logo.png';
+import audacyLogo from '../assets/audacy-logo.png'; // Square logo
+import audacyLogoHoriz from '../assets/audacy_logo_horiz_color_rgb.png'; // Horizontal logo
 import '../App.css';
 
 const DataAnalysisAssistant: React.FC = () => {
@@ -543,6 +544,7 @@ const DataAnalysisAssistant: React.FC = () => {
                         <span className="nav-arrow">→</span>
                         <span className="nav-step active">Analysis</span>
                     </div>
+                    <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" />
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">

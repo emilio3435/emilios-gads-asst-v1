@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
-import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
+import audacyLogo from './assets/audacy-logo.png';
+import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
 
 function App() {
@@ -453,6 +454,7 @@ function App() {
                         <span className="nav-arrow">→</span>
                         <span className="nav-step active">Analysis</span>
                     </div>
+                    <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" />
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">

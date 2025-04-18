@@ -198,6 +198,7 @@ input[type='file'] {
   text-align: left;
   margin-bottom: 0;
   padding: 20px 20px 15px 20px;
+  padding-top: 65px;
   border-bottom: 1px solid #eee;
   padding-bottom: 15px;
   width: 100%;
@@ -205,6 +206,28 @@ input[type='file'] {
   z-index: 10;
   position: relative;
   box-sizing: border-box;
+}
+
+/* Update navigation-info to prevent overlap with centered logo */
+.navigation-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #666;
+  margin-left: auto; /* Push to right side */
+  padding-right: 20px; /* Add some padding on the right */
+}
+
+/* New style for the top-right logo */
+.results-header-logo {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 40px;
+  width: auto;
+  z-index: 100;
 }
 
 .back-button {
@@ -221,6 +244,13 @@ input[type='file'] {
   font-size: 0.95em;
   text-align: center;
   margin-bottom: 0;
+  margin-right: 0;
+  background-color: #f9f9f9;
+  padding: 10px 15px;
+  border-radius: 8px;
+  max-width: 100%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid #ddd; /* Add a slightly darker border */
 }
 
 .back-button:hover {
@@ -383,15 +413,11 @@ input[type='file'] {
 }
 
 .results-display {
-  padding: 20px;
-  border-radius: 8px;
-  background-color: #ffffff;
-  margin-top: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  width: 100%;
+  box-sizing: border-box;
   text-align: left;
+  background-color: #fff;
   overflow-y: auto;
-  flex-grow: 1;
-  padding-right: 30px;
 }
 
 .results-display h2:first-child {
@@ -406,13 +432,16 @@ input[type='file'] {
 }
 
 .prompt-display-box {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
   border-radius: 8px;
-  background-color: white;
+  padding: 15px 20px;
   margin-bottom: 25px;
-  width: 100%;
   text-align: left;
-  box-sizing: border-box;
-  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .prompt-display-box p {
@@ -1593,14 +1622,6 @@ label.choose-file-button {
 .view-analysis-button::before {
   content: "↗";
   font-size: 1.2em;
-}
-
-.navigation-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: #666;
 }
 
 .nav-step {
