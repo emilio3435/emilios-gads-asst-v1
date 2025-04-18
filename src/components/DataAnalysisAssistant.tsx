@@ -39,6 +39,7 @@ const DataAnalysisAssistant: React.FC = () => {
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
     const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
+    const [useConversationHistory, setUseConversationHistory] = useState<boolean>(true);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -223,7 +224,12 @@ const DataAnalysisAssistant: React.FC = () => {
             formData.append('desiredOutcome', desiredOutcome || '');
             
             // Add conversation history to help provide context
-            formData.append('conversationHistory', JSON.stringify(updatedConversation));
+            if (useConversationHistory) {
+                formData.append('conversationHistory', JSON.stringify(updatedConversation));
+            } else {
+                // Send only the current question (empty history)
+                formData.append('conversationHistory', JSON.stringify([newUserMessage]));
+            }
             
             // Append the context file if it exists
             if (helpContextFile) {
@@ -751,6 +757,24 @@ const DataAnalysisAssistant: React.FC = () => {
                                 {/* Conversation History */}
                                 {helpConversation.length > 0 && (
                                     <div className="help-conversation">
+                                        <div className="conversation-controls">
+                                            <button 
+                                                className="new-chat-button"
+                                                onClick={() => {
+                                                    setHelpConversation([]);
+                                                    setHelpResponse(null);
+                                                    localStorage.removeItem('helpConversation');
+                                                }}
+                                            >
+                                                Start New Chat
+                                            </button>
+                                            <span className="conversation-info">
+                                                {helpConversation.length > 0 && 
+                                                    localStorage.getItem('helpConversation') ? 
+                                                    '(Includes messages from previous sessions)' : ''}
+                                            </span>
+                                        </div>
+                                        
                                         {helpConversation.map((message, index) => (
                                             <div key={index} className="conversation-message">
                                                 <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
@@ -774,6 +798,23 @@ const DataAnalysisAssistant: React.FC = () => {
                                             Ask a specific question about the analysis or request additional information based on the data.
                                         </p>
                                     )}
+                                    
+                                    {/* Add conversation history toggle */}
+                                    <div className="conversation-history-toggle">
+                                        <label className="toggle-label">
+                                            <input
+                                                type="checkbox"
+                                                checked={useConversationHistory}
+                                                onChange={() => setUseConversationHistory(!useConversationHistory)}
+                                            />
+                                            <span className="toggle-text">Use conversation history for context</span>
+                                        </label>
+                                        <span className="toggle-hint">
+                                            {useConversationHistory ? 
+                                                "AI will remember previous exchanges" : 
+                                                "AI will only see current question"}
+                                        </span>
+                                    </div>
                                     
                                     {/* Add file upload for additional context */}
                                     <div className="help-context-file-container">

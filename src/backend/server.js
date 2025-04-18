@@ -481,16 +481,23 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
         JSON.parse(req.body.conversationHistory) : [];
         
       if (conversationHistory && conversationHistory.length > 0) {
-        const previousMessages = conversationHistory.slice(0, -1);
-        
-        if (previousMessages.length > 0) {
-          previousConversationFormatted = "===== CONVERSATION HISTORY =====\n";
-          previousMessages.forEach(message => {
-            const textContent = message.content.replace(/<\/?[^>]+(>|$)/g, "");
-            const role = message.type === 'user' ? 'USER' : 'ASSISTANT';
-            previousConversationFormatted += `${role}: ${textContent}\n\n`;
-          });
-          previousConversationFormatted += "===== END OF CONVERSATION HISTORY =====\n\n";
+        // Check if this is only the current message (history disabled)
+        if (conversationHistory.length === 1) {
+          console.log("Conversation history disabled - using only current question");
+          previousConversationFormatted = ''; // Skip conversation history section
+        } else {
+          // Normal case - use conversation history
+          const previousMessages = conversationHistory.slice(0, -1);
+          
+          if (previousMessages.length > 0) {
+            previousConversationFormatted = "===== CONVERSATION HISTORY =====\n";
+            previousMessages.forEach(message => {
+              const textContent = message.content.replace(/<\/?[^>]+(>|$)/g, "");
+              const role = message.type === 'user' ? 'USER' : 'ASSISTANT';
+              previousConversationFormatted += `${role}: ${textContent}\n\n`;
+            });
+            previousConversationFormatted += "===== END OF CONVERSATION HISTORY =====\n\n";
+          }
         }
       }
     } catch (error) {
