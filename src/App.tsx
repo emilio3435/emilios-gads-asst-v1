@@ -30,6 +30,7 @@ function App() {
     const [showKpiRecommendation, setShowKpiRecommendation] = useState<boolean>(false);
     const [helpContextFile, setHelpContextFile] = useState<File | null>(null);
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
+    const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -161,7 +162,17 @@ function App() {
         }
 
         setIsHelpLoading(true);
-        setHelpResponse(null);
+        
+        // Add user question to conversation immediately
+        const newUserMessage = {
+            type: 'user',
+            content: helpQuestion,
+            timestamp: new Date()
+        };
+        
+        // Update conversation with the new message
+        const updatedConversation = [...helpConversation, newUserMessage];
+        setHelpConversation(updatedConversation);
 
         try {
             // Create FormData to support file uploads
@@ -176,6 +187,9 @@ function App() {
             formData.append('fileName', fileName || '');
             formData.append('currentSituation', currentSituation || '');
             formData.append('desiredOutcome', desiredOutcome || '');
+            
+            // Add conversation history to help provide context
+            formData.append('conversationHistory', JSON.stringify(helpConversation));
             
             // Append the context file if it exists
             if (helpContextFile) {
@@ -201,12 +215,33 @@ function App() {
 
             const data = await response.json();
             const sanitizedHtml = DOMPurify.sanitize(data.html || data.response);
+            
+            // Add AI response to conversation
+            const newAiMessage = {
+                type: 'assistant',
+                content: sanitizedHtml,
+                timestamp: new Date()
+            };
+            
+            // Update conversation with the AI response
+            setHelpConversation([...updatedConversation, newAiMessage]);
             setHelpResponse(sanitizedHtml);
         } catch (error: any) {
             console.error('Error getting help:', error);
-            setHelpResponse(`<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`);
+            const errorMessage = `<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`;
+            
+            // Add error message to conversation
+            const newErrorMessage = {
+                type: 'assistant',
+                content: errorMessage,
+                timestamp: new Date()
+            };
+            
+            setHelpConversation([...updatedConversation, newErrorMessage]);
+            setHelpResponse(errorMessage);
         } finally {
             setIsHelpLoading(false);
+            setHelpQuestion(''); // Clear the question input for the next question
             // Clear the help context file after submission
             setHelpContextFile(null);
             setHelpContextFileName(null);
@@ -659,13 +694,35 @@ function App() {
                     {showHelpModal && (
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal help-modal">
-                                <h2>Ask for Additional Help</h2>
+                                <h2>Chat with EmilioAI</h2>
                                 <button onClick={() => setShowHelpModal(false)} className="close-button">Close</button>
                                 
+                                {/* Conversation History */}
+                                {helpConversation.length > 0 && (
+                                    <div className="help-conversation">
+                                        {helpConversation.map((message, index) => (
+                                            <div key={index} className="conversation-message">
+                                                <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
+                                                    {message.type === 'user' ? (
+                                                        <p>{message.content}</p>
+                                                    ) : (
+                                                        <div dangerouslySetInnerHTML={{ __html: message.content }} />
+                                                    )}
+                                                </div>
+                                                <div className="message-time">
+                                                    {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
                                 <div className="help-form">
-                                    <p className="help-instructions">
-                                        Ask a specific question about the analysis or request additional information based on the data.
-                                    </p>
+                                    {helpConversation.length === 0 && (
+                                        <p className="help-instructions">
+                                            Ask a specific question about the analysis or request additional information based on the data.
+                                        </p>
+                                    )}
                                     
                                     {/* Add file upload for additional context */}
                                     <div className="help-context-file-container">
@@ -701,35 +758,36 @@ function App() {
                                         value={helpQuestion}
                                         onChange={handleHelpQuestionChange}
                                         onKeyDown={handleHelpKeyDown}
-                                        placeholder="Example: Can you explain more about the CTR metrics? What other KPIs should I focus on? How should I implement the first recommendation?"
-                                        rows={4}
+                                        placeholder={helpConversation.length > 0 ? "Ask a follow-up question..." : "Example: Can you explain more about the CTR metrics? What other KPIs should I focus on?"}
+                                        rows={3}
                                     />
                                     
                                     <div className="help-button-container">
                                         <button 
                                             className="submit-help-button"
                                             onClick={handleGetHelp}
-                                            disabled={isHelpLoading}
+                                            disabled={isHelpLoading || !helpQuestion.trim()}
                                         >
-                                            {isHelpLoading ? 'Loading...' : 'Submit Question'}
+                                            {isHelpLoading ? 'Loading...' : 'Send'}
                                         </button>
                                         
-                                        {helpResponse && (
+                                        {helpConversation.length > 0 && (
                                             <button 
                                                 className="clear-help-button"
                                                 onClick={() => {
+                                                    setHelpConversation([]);
                                                     setHelpResponse(null);
                                                     setHelpQuestion('');
                                                     helpInputRef.current?.focus();
                                                 }}
                                             >
-                                                Clear & Ask New Question
+                                                Clear Conversation
                                             </button>
                                         )}
                                     </div>
                                     
                                     <p className="keyboard-tip">
-                                        Pro tip: Press <strong>Ctrl+Enter</strong> to submit your question quickly.
+                                        Pro tip: Press <strong>Ctrl+Enter</strong> to send your question quickly.
                                     </p>
                                 </div>
                                 
@@ -737,16 +795,6 @@ function App() {
                                     <div className="help-loading">
                                         <div className="spinner"></div>
                                         <p>Processing your question...</p>
-                                    </div>
-                                )}
-                                
-                                {helpResponse && (
-                                    <div className="help-response">
-                                        <h3>Response:</h3>
-                                        <div 
-                                            className="help-response-content"
-                                            dangerouslySetInnerHTML={{ __html: helpResponse }}
-                                        />
                                     </div>
                                 )}
                             </div>
