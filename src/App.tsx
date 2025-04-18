@@ -754,26 +754,6 @@ function App() {
 
             <h1>Marketing Assistant</h1>
             
-            <div className="file-upload-section">
-                <input
-                    type="file"
-                    id="fileInput"
-                    accept=".csv, .xlsx, .pdf"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                />
-                <label htmlFor="fileInput" className="choose-file-button">
-                    Choose File
-                </label>
-                {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
-                {file && (
-                    <button className="remove-file-button" onClick={() => { setFile(null); setFileName(null); }}>
-                        Remove File
-                    </button>
-                )}
-                {fileName === null && file === null && <p className="file-name">Please select a CSV, XLSX, or PDF file.</p>}
-            </div>
-
             <div className="form-grid">
                 <div className="form-column">
                     <div className="select-container">
@@ -860,6 +840,27 @@ function App() {
                     placeholder="Describe your current marketing situation and goals..."
                     rows={3}
                 />
+            </div>
+            
+            {/* Moved file upload section below Current Situation & Goals */}
+            <div className="file-upload-section">
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".csv, .xlsx, .pdf"
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                />
+                <label htmlFor="fileInput" className="choose-file-button">
+                    Choose File
+                </label>
+                {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
+                {file && (
+                    <button className="remove-file-button" onClick={() => { setFile(null); setFileName(null); }}>
+                        Remove File
+                    </button>
+                )}
+                {fileName === null && file === null && <p className="file-name">Please select a CSV, XLSX, or PDF file.</p>}
             </div>
 
             <button className="rounded-element submit-button" onClick={handleSubmit} disabled={isLoading}>
