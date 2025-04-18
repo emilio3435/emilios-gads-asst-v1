@@ -5,17 +5,12 @@ import DOMPurify from 'dompurify';
 import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
 
-// Available LLM models for comparison
-const AVAILABLE_MODELS = [
-    { id: 'gemini-2.5-pro-preview-03-25', name: 'Gemini 2.5 Pro', provider: 'Google' },
-    { id: 'gemini-1.5-pro-latest', name: 'Gemini 1.5 Pro', provider: 'Google' },
-    { id: 'gemini-1.5-flash-latest', name: 'Gemini 1.5 Flash', provider: 'Google' },
-    { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', provider: 'Anthropic' },
-    { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet', provider: 'Anthropic' },
-    { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', provider: 'Anthropic' },
-    { id: 'gpt-4-turbo-preview', name: 'GPT-4 Turbo', provider: 'OpenAI' },
-    { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI' }
-];
+// Define a type for chat messages
+interface ChatMessage {
+    type: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
+}
 
 function App() {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
@@ -37,18 +32,13 @@ function App() {
     const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
     const [helpQuestion, setHelpQuestion] = useState<string>('');
-    const [helpResponse, setHelpResponse] = useState<string | null>(null);
+    // Replace single response with chat history
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
-    
-    // Multi-LLM comparison state
-    const [selectedModels, setSelectedModels] = useState<string[]>(['gemini-2.5-pro-preview-03-25']);
-    const [modelResults, setModelResults] = useState<{[key: string]: {html: string, raw: string, modelName: string}}>({}); 
-    const [activeModelTab, setActiveModelTab] = useState<string>('');
-    const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
-    const [isLoadingModels, setIsLoadingModels] = useState<{[key: string]: boolean}>({});
     
     const exportMenuRef = useRef<HTMLDivElement>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -152,29 +142,34 @@ function App() {
             return;
         }
 
+        // Add the user's question to the chat history
+        const newUserMessage: ChatMessage = {
+            type: 'user',
+            content: helpQuestion,
+            timestamp: new Date()
+        };
+        
+        const updatedChatHistory = [...chatHistory, newUserMessage];
+        setChatHistory(updatedChatHistory);
         setIsHelpLoading(true);
-        setHelpResponse(null);
 
         try {
-            // Prepare data for the help request
-            const helpData = {
-                originalPrompt: promptSent,
-                originalAnalysis: rawAnalysisResult,
-                question: helpQuestion,
-                tactic: selectedTactics,
-                kpi: selectedKPIs,
-                fileName: fileName,
-                currentSituation: currentSituation,
-                desiredOutcome: desiredOutcome
-            };
-
-            // Send the help request to the server
             const response = await fetch('/api/get-help', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(helpData)
+                body: JSON.stringify({
+                    question: helpQuestion,
+                    originalPrompt: promptSent,
+                    originalAnalysis: rawAnalysisResult,
+                    fileName: fileName,
+                    tactic: selectedTactics,
+                    kpi: selectedKPIs,
+                    currentSituation: currentSituation,
+                    desiredOutcome: desiredOutcome,
+                    conversationHistory: chatHistory // Send conversation history to the API
+                })
             });
 
             if (!response.ok) {
@@ -190,10 +185,37 @@ function App() {
 
             const data = await response.json();
             const sanitizedHtml = DOMPurify.sanitize(data.html || data.response);
-            setHelpResponse(sanitizedHtml);
+            
+            // Add the AI's response to the chat history
+            const newAssistantMessage: ChatMessage = {
+                type: 'assistant',
+                content: sanitizedHtml,
+                timestamp: new Date()
+            };
+            
+            setChatHistory([...updatedChatHistory, newAssistantMessage]);
+            
+            // Clear the input field for the next question
+            setHelpQuestion('');
+            
+            // Scroll to the bottom of the chat container
+            setTimeout(() => {
+                if (chatContainerRef.current) {
+                    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                }
+            }, 100);
         } catch (error: any) {
             console.error('Error getting help:', error);
-            setHelpResponse(`<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`);
+            const errorMessage = `<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`;
+            
+            // Add the error message to the chat history
+            const errorAssistantMessage: ChatMessage = {
+                type: 'assistant',
+                content: errorMessage,
+                timestamp: new Date()
+            };
+            
+            setChatHistory([...updatedChatHistory, errorAssistantMessage]);
         } finally {
             setIsHelpLoading(false);
         }
@@ -384,8 +406,6 @@ function App() {
         setAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
-        setActiveModelTab('');
-        setModelResults({});
         setShowResults(false);
 
         if (!file) {
@@ -403,115 +423,44 @@ function App() {
             return;
         }
 
-        // Set loading states for all selected models
-        const loadingState: {[key: string]: boolean} = {};
-        selectedModels.forEach(model => {
-            loadingState[model] = true;
-        });
-        setIsLoadingModels(loadingState);
         setIsLoading(true);
 
         try {
-            // Process each selected model
-            const modelPromises = selectedModels.map(async (modelId) => {
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('tactics', JSON.stringify(selectedTactics));
-                formData.append('kpis', JSON.stringify(selectedKPIs));
-                formData.append('currentSituation', currentSituation);
-                formData.append('desiredOutcome', desiredOutcome);
-                formData.append('targetCPA', JSON.stringify(targetCPA));
-                formData.append('targetROAS', JSON.stringify(targetROAS));
-                formData.append('modelId', modelId); // Send selected model ID
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('tactics', JSON.stringify(selectedTactics));
+            formData.append('kpis', JSON.stringify(selectedKPIs));
+            formData.append('currentSituation', currentSituation);
+            formData.append('desiredOutcome', desiredOutcome);
+            formData.append('targetCPA', JSON.stringify(targetCPA));
+            formData.append('targetROAS', JSON.stringify(targetROAS));
 
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                let errorDetails = `HTTP error! status: ${response.status}`;
                 try {
-                    const response = await fetch('/api/analyze', {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    if (!response.ok) {
-                        let errorDetails = `HTTP error! status: ${response.status}`;
-                        try {
-                            const errorData = await response.json();
-                            errorDetails = errorData.error || errorData.details || errorDetails;
-                        } catch (e) {
-                            // Ignore if response body is not JSON
-                        }
-                        throw new Error(errorDetails);
-                    }
-
-                    const data = await response.json();
-                    const sanitizedHtml = DOMPurify.sanitize(data.html);
-
-                    // Store results for this model
-                    return {
-                        modelId,
-                        result: {
-                            html: sanitizedHtml,
-                            raw: data.raw,
-                            modelName: data.modelName || modelId
-                        }
-                    };
-                } catch (error: any) {
-                    console.error(`Error during analysis with model ${modelId}:`, error);
-                    return {
-                        modelId,
-                        error: error.message || 'An unexpected error occurred'
-                    };
-                } finally {
-                    // Update loading state for this model
-                    setIsLoadingModels(prev => ({
-                        ...prev,
-                        [modelId]: false
-                    }));
+                    const errorData = await response.json();
+                    errorDetails = errorData.error || errorData.details || errorDetails;
+                } catch (e) {
+                    // Ignore if response body is not JSON
                 }
-            });
+                throw new Error(errorDetails);
+            }
 
-            // Wait for all model results
-            const results = await Promise.all(modelPromises);
+            const data = await response.json();
+            const sanitizedHtml = DOMPurify.sanitize(data.html);
             
-            // Process results
-            const modelResultsMap: {[key: string]: {html: string, raw: string, modelName: string}} = {};
-            let hasSuccessfulResult = false;
-            let promptFound = false;
-            
-            results.forEach(result => {
-                if ('result' in result && result.result) {
-                    modelResultsMap[result.modelId] = result.result;
-                    
-                    // Store prompt data from the first successful result
-                    if (!promptFound && 'prompt' in result.result) {
-                        setPromptSent(result.result.prompt as string);
-                        promptFound = true;
-                    }
-                    
-                    hasSuccessfulResult = true;
-                    
-                    // Set the first successful result as the active tab
-                    if (!activeModelTab) {
-                        setActiveModelTab(result.modelId);
-                    }
-                }
-            });
-            
-            // Store all results
-            setModelResults(modelResultsMap);
-            
-            // Set data for compatibility with single-model view
-            if (hasSuccessfulResult && activeModelTab && modelResultsMap[activeModelTab]) {
-                setAnalysisResult(modelResultsMap[activeModelTab].html);
-                setRawAnalysisResult(modelResultsMap[activeModelTab].raw);
-                setModelName(modelResultsMap[activeModelTab].modelName);
-            }
-            
-            if (hasSuccessfulResult) {
-                setShowResults(true);
-            } else {
-                setError('All model analyses failed. Please try again.');
-            }
+            setAnalysisResult(sanitizedHtml);
+            setRawAnalysisResult(data.raw);
+            setPromptSent(data.prompt);
+            setModelName(data.modelName);
+            setShowResults(true);
         } catch (error: any) {
-            console.error('Error during multi-model analysis:', error);
+            console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
             setShowResults(false);
         } finally {
@@ -521,21 +470,6 @@ function App() {
 
     const handleBackToForm = () => {
         setShowResults(false);
-    };
-
-    const handleModelSelectionChange = (modelId: string) => {
-        setSelectedModels(prevSelectedModels => {
-            if (prevSelectedModels.includes(modelId)) {
-                // If already selected, remove it (unless it's the last one)
-                if (prevSelectedModels.length > 1) {
-                    return prevSelectedModels.filter(id => id !== modelId);
-                }
-                return prevSelectedModels;
-            } else {
-                // Add the model
-                return [...prevSelectedModels, modelId];
-            }
-        });
     };
 
     if (showResults) {
@@ -586,78 +520,13 @@ function App() {
                             )}
                         </div>
                         
-                        {/* Model Tabs for multiple results */}
-                        {selectedModels.length > 1 && Object.keys(modelResults).length > 0 && (
-                            <div className="model-tabs-container">
-                                <div className="model-comparison-controls">
-                                    <div className="compare-toggle">
-                                        <input 
-                                            type="checkbox" 
-                                            id="compare-toggle" 
-                                            checked={isCompareMode}
-                                            onChange={() => setIsCompareMode(!isCompareMode)}
-                                        />
-                                        <label htmlFor="compare-toggle">Show all results side-by-side</label>
-                                    </div>
-                                </div>
-                                
-                                {!isCompareMode && (
-                                    <div className="model-tabs">
-                                        {Object.keys(modelResults).map(modelId => {
-                                            const modelInfo = AVAILABLE_MODELS.find(m => m.id === modelId) || 
-                                                { name: modelResults[modelId].modelName, provider: 'Unknown' };
-                                            
-                                            return (
-                                                <div 
-                                                    key={modelId}
-                                                    className={`model-tab ${activeModelTab === modelId ? 'active' : ''}`}
-                                                    onClick={() => {
-                                                        setActiveModelTab(modelId);
-                                                        setAnalysisResult(modelResults[modelId].html);
-                                                        setRawAnalysisResult(modelResults[modelId].raw);
-                                                        setModelName(modelResults[modelId].modelName);
-                                                    }}
-                                                >
-                                                    {modelInfo.name}
-                                                    <span className="provider">({modelInfo.provider})</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        
-                        {/* Analysis results - Either single tab view or comparison view */}
-                        {isCompareMode ? (
-                            // Comparison view - all models side by side
-                            <div className="comparison-view">
-                                {Object.keys(modelResults).map(modelId => {
-                                    const modelInfo = AVAILABLE_MODELS.find(m => m.id === modelId) || 
-                                        { name: modelResults[modelId].modelName, provider: 'Unknown' };
-                                        
-                                    return (
-                                        <div className="model-result-panel" key={modelId}>
-                                            <div className="model-result-header">
-                                                {modelInfo.name} ({modelInfo.provider})
-                                            </div>
-                                            <div 
-                                                className="model-result-content"
-                                                dangerouslySetInnerHTML={{ __html: modelResults[modelId].html }}
-                                            />
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                        {/* Analysis results */}
+                        {analysisResult ? (
+                            <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
                         ) : (
-                            // Single model view (the active tab)
-                            analysisResult ? (
-                                <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
-                            ) : (
-                                <div className="no-results">
-                                    <p>No analysis result available.</p>
-                                </div>
-                            )
+                            <div className="no-results">
+                                <p>No analysis result available.</p>
+                            </div>
                         )}
                         
                         {/* Model attribution */}
@@ -788,68 +657,86 @@ function App() {
                     {showHelpModal && (
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal help-modal">
-                                <h2>Ask for Additional Help</h2>
+                                <h2>Chat with Marketing Assistant</h2>
                                 <button onClick={() => setShowHelpModal(false)} className="close-button">Close</button>
                                 
-                                <div className="help-form">
-                                    <p className="help-instructions">
-                                        Ask a specific question about the analysis or request additional information based on the data.
-                                    </p>
-                                    
-                                    <textarea
-                                        ref={helpInputRef}
-                                        className="help-textarea"
-                                        value={helpQuestion}
-                                        onChange={handleHelpQuestionChange}
-                                        onKeyDown={handleHelpKeyDown}
-                                        placeholder="Example: Can you explain more about the CTR metrics? What other KPIs should I focus on? How should I implement the first recommendation?"
-                                        rows={4}
-                                    />
-                                    
-                                    <div className="help-button-container">
-                                        <button 
-                                            className="submit-help-button"
-                                            onClick={handleGetHelp}
-                                            disabled={isHelpLoading}
-                                        >
-                                            {isHelpLoading ? 'Loading...' : 'Submit Question'}
-                                        </button>
-                                        
-                                        {helpResponse && (
-                                            <button 
-                                                className="clear-help-button"
-                                                onClick={() => {
-                                                    setHelpResponse(null);
-                                                    setHelpQuestion('');
-                                                    helpInputRef.current?.focus();
-                                                }}
-                                            >
-                                                Clear & Ask New Question
-                                            </button>
+                                <div className="chat-interface">
+                                    {/* Display chat history */}
+                                    <div className="chat-history-container" ref={chatContainerRef}>
+                                        {chatHistory.length === 0 ? (
+                                            <div className="empty-chat-message">
+                                                <p>Ask a question about the analysis or how to improve your marketing strategy.</p>
+                                            </div>
+                                        ) : (
+                                            chatHistory.map((message, index) => (
+                                                <div key={index} className={`chat-message ${message.type}-message`}>
+                                                    <div className="message-header">
+                                                        <strong>{message.type === 'user' ? 'You' : 'Assistant'}</strong>
+                                                        <span className="message-time">
+                                                            {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        </span>
+                                                    </div>
+                                                    <div 
+                                                        className="message-content"
+                                                        dangerouslySetInnerHTML={{ __html: message.content }}
+                                                    />
+                                                </div>
+                                            ))
+                                        )}
+                                        {isHelpLoading && (
+                                            <div className="assistant-message typing-indicator">
+                                                <div className="message-header">
+                                                    <strong>Assistant</strong>
+                                                </div>
+                                                <div className="message-content">
+                                                    <div className="typing-dots">
+                                                        <span></span>
+                                                        <span></span>
+                                                        <span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                     
-                                    <p className="keyboard-tip">
-                                        Pro tip: Press <strong>Ctrl+Enter</strong> to submit your question quickly.
-                                    </p>
-                                </div>
-                                
-                                {isHelpLoading && (
-                                    <div className="help-loading">
-                                        <div className="spinner"></div>
-                                        <p>Processing your question...</p>
-                                    </div>
-                                )}
-                                
-                                {helpResponse && (
-                                    <div className="help-response">
-                                        <h3>Response:</h3>
-                                        <div 
-                                            className="help-response-content"
-                                            dangerouslySetInnerHTML={{ __html: helpResponse }}
+                                    {/* Input area for new questions */}
+                                    <div className="chat-input-container">
+                                        <textarea
+                                            ref={helpInputRef}
+                                            className="chat-input"
+                                            value={helpQuestion}
+                                            onChange={handleHelpQuestionChange}
+                                            onKeyDown={handleHelpKeyDown}
+                                            placeholder="Type your question here..."
+                                            rows={3}
                                         />
+                                        <div className="chat-controls">
+                                            <button 
+                                                className="send-message-button"
+                                                onClick={handleGetHelp}
+                                                disabled={isHelpLoading || !helpQuestion.trim()}
+                                            >
+                                                {isHelpLoading ? 'Sending...' : 'Send'}
+                                            </button>
+                                            
+                                            {chatHistory.length > 0 && (
+                                                <button 
+                                                    className="clear-chat-button"
+                                                    onClick={() => {
+                                                        setChatHistory([]);
+                                                        setHelpQuestion('');
+                                                        helpInputRef.current?.focus();
+                                                    }}
+                                                >
+                                                    Clear Chat
+                                                </button>
+                                            )}
+                                        </div>
+                                        <p className="keyboard-tip">
+                                            Press <strong>Ctrl+Enter</strong> to send
+                                        </p>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -952,33 +839,6 @@ function App() {
                     />
                 </div>
             )}
-            <div className="model-selection-container">
-                <label>Select AI Models for Analysis:</label>
-                <div className="model-options">
-                    {AVAILABLE_MODELS.map(model => (
-                        <div key={model.id} className="model-option">
-                            <input
-                                type="checkbox"
-                                id={`model-${model.id}`}
-                                checked={selectedModels.includes(model.id)}
-                                onChange={() => handleModelSelectionChange(model.id)}
-                            />
-                            <label htmlFor={`model-${model.id}`} className="model-label">
-                                <span className="model-name">{model.name}</span>
-                                <span className="model-provider">{model.provider}</span>
-                            </label>
-                        </div>
-                    ))}
-                </div>
-                <div className="model-selection-info">
-                    <p>
-                        <strong>{selectedModels.length}</strong> model{selectedModels.length !== 1 ? 's' : ''} selected. 
-                        {selectedModels.length > 1 && (
-                            <span> Multi-model analysis will take longer to complete.</span>
-                        )}
-                    </p>
-                </div>
-            </div>
             <style>{`
                 .recommendation-message {
                     background-color: #FE7333;

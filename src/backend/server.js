@@ -278,12 +278,30 @@ app.post('/get-help', express.json(), async (req, res) => {
       fileName,
       currentSituation,
       desiredOutcome,
-      modelId
+      modelId,
+      conversationHistory = []
     } = req.body;
 
     // Basic validation
     if (!question) {
       return res.status(400).json({ error: 'Question is required.' });
+    }
+
+    // Format previous conversation if it exists
+    let previousConversation = '';
+    if (conversationHistory && conversationHistory.length > 0) {
+      // Get all messages except the most recent user message (which is the current question)
+      const previousMessages = conversationHistory.slice(0, -1);
+      
+      if (previousMessages.length > 0) {
+        previousConversation = "\nPREVIOUS CONVERSATION:\n";
+        previousMessages.forEach(message => {
+          // Strip HTML tags for cleaner prompt
+          const textContent = message.content.replace(/<\/?[^>]+(>|$)/g, "");
+          const role = message.type === 'user' ? 'User' : 'You (EmilioAI)';
+          previousConversation += `${role}: ${textContent}\n\n`;
+        });
+      }
     }
 
     // Construct a new prompt for the follow-up question
@@ -299,7 +317,7 @@ ${desiredOutcome ? `Desired Outcome: ${desiredOutcome}` : ''}
 
 YOUR PREVIOUS ANALYSIS:
 ${originalAnalysis || 'No previous analysis available.'}
-
+${previousConversation}
 NEW QUESTION FROM THE USER:
 ${question}
 
@@ -310,6 +328,7 @@ INSTRUCTIONS:
 4. Be concise but thorough
 5. If the question pertains to something not covered in your original analysis, acknowledge this and provide your best assessment based on the available information
 6. If the question requires data that wasn't included in the original analysis, explain what additional data would be helpful
+7. Reference any relevant parts of the conversation history if applicable
 
 FORMAT YOUR RESPONSE AS HTML, with proper headings, paragraphs, and lists as appropriate.
 `;
