@@ -13,13 +13,13 @@ INSTRUCTIONS:
 2. Calculate and derive meaningful metrics that might not be explicitly stated in the data
 3. Identify patterns, trends, anomalies, and correlations in the data
 4. **Generate a response containing THREE distinct parts:**
-    a. **HTML Analysis:** A professional report formatted in clean, structured HTML for display (using the format specified below).
+    a. **HTML Analysis:** A professional report formatted in clean, structured HTML for display (using the format specified below). **Start the HTML analysis with a TL;DR section summarizing the most critical insight and recommendation in 1-2 concise sentences.**
     b. **Chart Data:** A JSON object containing time-series data for the primary KPI ({{kpisString}}). If a date/time column is available, use that for labels. Otherwise, try to infer or use sequential labels (e.g., Campaign 1, Campaign 2 or Week 1, Week 2). The JSON should have `labels` (array of strings) and `data` (array of numbers). If time-series data cannot be reasonably extracted or generated, provide an empty JSON object `{}`.
     c. **Table Data:** A JSON array of objects representing a key performance breakdown (e.g., performance per campaign, ad group, or other relevant dimension found in the data). Each object in the array should represent a row, with keys representing the column headers. If suitable table data cannot be extracted, provide an empty JSON array `[]`.
 5. **Structure your entire response** clearly separating the three parts using specific delimiters:
    ```text
    ---HTML_ANALYSIS_START---
-   [Your HTML analysis content here]
+   [Your HTML analysis content here, starting with TL;DR]
    ---HTML_ANALYSIS_END---
 
    ---CHART_DATA_START---
@@ -44,6 +44,10 @@ INSTRUCTIONS:
 HTML RESPONSE FORMAT (for the HTML Analysis part):
 <div class="analysis">
   <h2>Campaign Analysis</h2>
+  
+  <h3>TL;DR</h3>
+  [Insert 1-2 sentence summary of the key finding and top recommendation here.]
+  
   <p><strong>Tactic:</strong> [Insert tactic with brief explanation if specialized]</p>
   <p><strong>Key Performance Indicator:</strong> [Insert KPI with definition if needed]</p>
   
