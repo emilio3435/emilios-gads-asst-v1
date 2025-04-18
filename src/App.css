@@ -886,7 +886,7 @@ label.choose-file-button {
 }
 
 .submit-help-button {
-  background-color: #FE5000; /* Audacy Orange */
+  background-color: #FE5000; /* Audacy Orange - Enabled */
   color: white;
   border: none;
   border-radius: 25px;
@@ -894,6 +894,20 @@ label.choose-file-button {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
+}
+
+.submit-help-button:hover:not(:disabled) {
+  background-color: #e64500; /* Darker Audacy Orange - Hover */
+  transform: translateY(-2px);
+}
+
+.submit-help-button:disabled {
+  background-color: #FFB999; /* More distinct pale orange for disabled state */
+  color: #FFFFFF; /* White text for contrast */
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none; /* Remove shadow when disabled */
+  opacity: 0.7; /* Add opacity to further indicate disabled state */
 }
 
 .clear-help-button {
@@ -918,19 +932,6 @@ label.choose-file-button {
   color: #777;
   margin-top: 10px;
   font-style: italic;
-}
-
-.submit-help-button:hover {
-  background-color: #e64500; /* Darker Audacy Orange */
-  transform: translateY(-2px);
-}
-
-.submit-help-button:disabled {
-  background-color: #FADECF; /* Lighter, muted orange for disabled state */
-  color: #FEA880; /* Even lighter orange for text */
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none; /* Remove shadow when disabled */
 }
 
 .help-loading {
