@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import multer from 'multer'; // For handling file uploads
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import { PDFDocument } from 'pdf-lib'; // Replace pdf-parse with pdf-lib
 import * as dotenv from 'dotenv';
 import fs from 'fs'; // Import file system module
 import path from 'path'; // Import path module
@@ -122,7 +123,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     }
 
     let finalPrompt;
-    let data = [];
+    let dataString = ''; // Initialize dataString
     let fileName = 'N/A'; // Default file name if none uploaded
 
     if (!req.file) {
@@ -136,8 +137,10 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       const fileBuffer = req.file.buffer;
       console.log(`Processing file: ${fileName}`);
 
-      // Parse file based on type
-      if (fileName.endsWith('.csv')) {
+      // Parse file based on type (case-insensitive check)
+      const lowerCaseFileName = fileName.toLowerCase();
+
+      if (lowerCaseFileName.endsWith('.csv')) {
         console.log('Parsing CSV file...');
         const fileContent = fileBuffer.toString('utf-8');
         const parseResult = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
@@ -145,27 +148,64 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
           console.error('CSV parsing errors:', parseResult.errors);
           return res.status(400).json({ error: 'Failed to parse CSV file.' });
         }
-        data = parseResult.data;
+        dataString = JSON.stringify(parseResult.data, null, 2);
         console.log('CSV parsed successfully.');
-      } else if (fileName.endsWith('.xlsx')) {
+      } else if (lowerCaseFileName.endsWith('.xlsx')) {
         console.log('Parsing Excel file...');
         const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        data = XLSX.utils.sheet_to_json(worksheet);
+        const excelData = XLSX.utils.sheet_to_json(worksheet);
+        dataString = JSON.stringify(excelData, null, 2);
         console.log('Excel parsed successfully.');
+      } else if (lowerCaseFileName.endsWith('.pdf')) {
+        console.log('Parsing PDF file...');
+        try {
+          // Load PDF with pdf-lib
+          const pdfDoc = await PDFDocument.load(fileBuffer);
+          
+          // Get total pages
+          const pageCount = pdfDoc.getPageCount();
+          console.log(`PDF has ${pageCount} pages`);
+          
+          // We can't directly extract text with pdf-lib, so we'll send page info
+          dataString = `PDF file with ${pageCount} pages. File name: ${fileName}`;
+          
+          // Add metadata info if available
+          const { title, author, subject, keywords, creator } = pdfDoc.getTitle() ? 
+            { 
+              title: pdfDoc.getTitle() || 'N/A', 
+              author: pdfDoc.getAuthor() || 'N/A',
+              subject: pdfDoc.getSubject() || 'N/A',
+              keywords: pdfDoc.getKeywords() || 'N/A',
+              creator: pdfDoc.getCreator() || 'N/A'
+            } : 
+            { title: 'N/A', author: 'N/A', subject: 'N/A', keywords: 'N/A', creator: 'N/A' };
+            
+          if (title !== 'N/A') {
+            dataString += `\nTitle: ${title}`;
+          }
+          if (author !== 'N/A') {
+            dataString += `\nAuthor: ${author}`;
+          }
+          if (subject !== 'N/A') {
+            dataString += `\nSubject: ${subject}`;
+          }
+          
+          console.log('PDF parsed successfully (metadata only).');
+        } catch (pdfError) {
+          console.error('PDF parsing error:', pdfError);
+          return res.status(400).json({ error: 'Failed to parse PDF file.', details: pdfError.message });
+        }
       } else {
         console.log('Unsupported file type.');
-        return res.status(400).json({ error: 'Unsupported file type. Please upload CSV or XLSX.' });
+        return res.status(400).json({ error: 'Unsupported file type. Please upload CSV, XLSX, or PDF.' });
       }
 
-      // Convert parsed data to string for Gemini
-      const dataString = JSON.stringify(data, null, 2);
-      
       // Construct prompt from template and replace placeholders
       finalPrompt = promptTemplate
         .replace('{{fileName}}', fileName)
-        .replace('{{dataString}}', dataString)
+        .replace('{{dataString}}', dataString) // dataString now contains JSON string or PDF text
         .replace('{{tacticsString}}', tacticsString)
         .replace('{{kpisString}}', kpisString)
         .replace('{{currentSituation}}', currentSituation || 'Not provided')
@@ -180,16 +220,19 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     // Determine which model to use FOR ANALYSIS - PRIORITIZE CUSTOM GEM
     const customGemId = process.env.CUSTOM_GEM_ID;
     let modelName;
+    let displayModelName; // New variable for display purposes
     
     if (customGemId) {
         modelName = customGemId;
+        displayModelName = "Audacy EmilioAI (Custom)"; // Custom branding
         console.log(`Using CUSTOM Gem for analysis: ${modelName}`);
     } else {
         // Fallback logic if CUSTOM_GEM_ID is not set
         const envModelName = process.env.GEMINI_MODEL_NAME;
         const defaultModelName = 'gemini-2.5-pro-preview-03-25'; // Updated default
         modelName = envModelName || defaultModelName;
-        console.warn('CUSTOM_GEM_ID not found in .env, falling back to standard model for analysis:', modelName);
+        displayModelName = "Audacy EmilioAI"; // Still use Audacy branding even with standard model
+        console.log('Using standard model for analysis with Audacy branding:', modelName);
     }
     
     // Provider is always Google for Gemini models
@@ -288,7 +331,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       chartData: chartData, // Parsed chart data JSON
       tableData: tableData, // Parsed table data JSON
       prompt: finalPrompt,  // Send the final generated prompt
-      modelName: modelName  // This sends the model name used in the API call
+      modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
     });
 
     console.log('Response sent to client.');
