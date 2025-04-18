@@ -371,7 +371,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         try {
           // Configure pdfjs-dist worker (important for Node.js environment)
           // Note: Adjust the path if your node_modules structure is different
-          const workerSrcPath = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+          const workerSrcPath = path.join(__dirname, '../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'); // Corrected path
           // console.log('Worker source path:', workerSrcPath); // Debug log
           pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrcPath;
 
@@ -609,7 +609,7 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
         } else if (lowerCaseFileName.endsWith('.pdf')) {
           const uint8Array = new Uint8Array(fileBuffer);
           // Configure PDF.js worker
-          pdfjsLib.GlobalWorkerOptions.workerSrc = path.join(__dirname, '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = path.join(__dirname, '../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
           const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
           const pdfDoc = await loadingTask.promise;
           let fullText = '';
@@ -673,30 +673,7 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
 ${previousConversationFormatted}${campaignContext}${additionalContext ? `===== ADDITIONAL CONTEXT =====\n${additionalContext}\n===== END ADDITIONAL CONTEXT =====\n\n` : ''}
 CURRENT QUESTION: ${req.body.question}
 
-RESPONSE GUIDELINES:
-Answer first, answer clearly. Use HTML only (no <html> / <body> tags).
-
-Purpose         Tag
-Section heading <h3>
-Sub-heading     <h4>
-Paragraph       <p>
-Bullet list     <ul><li>
-Emphasis        <strong>
-
-Strategic Advice (when needed):
-Use this exact format:
-<h3>Strategic Recommendations</h3>
-<h4>[Recommendation Title]</h4>
-<p>[Why & how it helps.]</p>
-<ul>
-  <li>[Specific action 1.]</li>
-  <li>[Specific action 2.]</li>
-</ul>
-
-Tone & Style:
-Friendly, professional, natural language. Skip robotic labels (e.g., "Recommendation 1:", "Action 2:"). Do not use numbered action prefixes.
-
-If you don't know the answer, say so and suggest what information would help.`;
+`; // Removed response guidelines
 
     // Enhanced logging for debugging prompt issues
     console.log("=================================================================================");

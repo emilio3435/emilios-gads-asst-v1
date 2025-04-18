@@ -660,27 +660,29 @@ input[type='file'] {
 
 .prompt-modal .close-button {
   position: absolute;
-  top: 13px;
-  right: 15px;
+  top: 8px; /* Closer to top */
+  right: 8px; /* Closer to right */
   background-color: transparent;
-  color: #999;
+  color: #FE5000; /* Audacy Orange */
   border: none;
-  padding: 5px;
+  padding: 0; 
   border-radius: 50%;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 22px; /* Slightly larger font for better 'x' visibility */
+  font-weight: 300; /* Make the 'x' thinner */
   line-height: 1;
   z-index: 10;
-  width: 26px;
-  height: 26px;
+  width: 20px; /* Make smaller */
+  height: 20px; /* Make smaller */
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s;
 }
 
 .prompt-modal .close-button:hover {
-  background-color: #f0f0f0; /* Subtle hover */
-  color: #5029a7;
+  background-color: #FFF0E6; /* Light Audacy Orange on hover */
+  color: #e04500; /* Darker Audacy Orange on hover */
 }
 
 .results-display table {
@@ -1691,7 +1693,7 @@ label.choose-file-button {
   flex: 1;
   overflow-y: auto;
   margin: 0;
-  padding: 15px;
+  padding: 15px 25px;
   background-color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -1704,6 +1706,7 @@ label.choose-file-button {
   flex-direction: column;
   margin-bottom: 6px;
   max-width: 90%;
+  margin: 0 auto;
 }
 
 .conversation-message:last-child {
@@ -2259,5 +2262,74 @@ select:focus {
 }
 
 .prominent-notice strong {
-    color: #004085; /* Match text color */
+    color: #005f99; /* Match the notice text color */
+}
+
+.help-form {
+  padding: 0 25px 15px 25px;
+  margin-top: auto;
+}
+
+/* Modal Styles */
+.prompt-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* Darker backdrop */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050; /* Ensure it's above other content */
+}
+
+.prompt-modal {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 600px; /* Limit max width */
+  position: relative; /* Needed for absolute positioning of the close button */
+  max-height: 80vh; /* Limit height */
+  overflow-y: auto; /* Add scroll if content exceeds height */
+}
+
+.prompt-modal h2 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.5em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.prompt-modal .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #FF5722; /* Audacy Orange */
+  color: white;
+  border: none; /* Remove default border */
+  border-radius: 4px; /* Slightly rounded corners for the box */
+  width: 24px; /* Small square size */
+  height: 24px; /* Small square size */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margin */
+  font-size: 16px; /* Size of the 'x' */
+  font-weight: bold;
+  line-height: 24px; /* Center 'x' vertically */
+  text-align: center; /* Center 'x' horizontally */
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.prompt-modal .close-button:hover {
+  background-color: #E64A19; /* Darker orange on hover */
+  transform: scale(1.1); /* Slight scale effect */
+}
+
+.prompt-modal label {
+  /* ... existing code ... */
 }

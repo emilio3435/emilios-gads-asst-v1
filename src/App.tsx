@@ -531,7 +531,7 @@ function App() {
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal prompt-content">
                                 <h2>Prompt Sent to LLM:</h2>
-                                <button onClick={() => setShowPrompt(false)} className="close-button">Close</button>
+                                <button onClick={() => setShowPrompt(false)} className="close-button">&times;</button>
                                 {promptSent ? (
                                     <div className="formatted-prompt">
                                         {promptSent.split('\n\n').map((section, index) => {
@@ -603,7 +603,7 @@ function App() {
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal help-modal">
                                 <h2>Chat with Audacy AI</h2>
-                                <button onClick={() => setShowHelpModal(false)} className="close-button">Close</button>
+                                <button onClick={() => setShowHelpModal(false)} className="close-button">&times;</button>
                                 
                                 {/* Conversation History */}
                                 {helpConversation.length > 0 && (

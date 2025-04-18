@@ -801,7 +801,7 @@ const DataAnalysisAssistant: React.FC = () => {
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal prompt-content">
                                 <h2>Prompt Sent to LLM:</h2>
-                                <button onClick={() => setShowPrompt(false)} className="close-button">Close</button>
+                                <button onClick={() => setShowPrompt(false)} className="close-button">&times;</button>
                                 {promptSent ? (
                                     <div className="formatted-prompt">
                                         {promptSent.split('\n\n').map((section, index) => {
