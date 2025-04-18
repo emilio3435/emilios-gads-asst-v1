@@ -440,6 +440,10 @@ function App() {
         setShowResults(false);
     };
 
+    const handleViewAnalysis = () => {
+        setShowResults(true);
+    };
+
     if (showResults) {
         return (
             <div className="App">
@@ -448,8 +452,13 @@ function App() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M19 12H5M12 19l-7-7 7-7"/>
                         </svg>
-                        Back to Form
+                        Back to Input Form
                     </button>
+                    <div className="navigation-info">
+                        <span className="nav-step">Input</span>
+                        <span className="nav-arrow">→</span>
+                        <span className="nav-step active">Analysis</span>
+                    </div>
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">
@@ -834,6 +843,20 @@ function App() {
             )}
             {error && <div className="error-message">{error}</div>}
             {isLoading && <div className="loading-indicator">Loading analysis...</div>}
+            
+            {/* Add View Analysis button when analysis result exists */}
+            {analysisResult && !showResults && (
+                <div className="input-to-analysis-navigation">
+                    <div className="navigation-info">
+                        <span className="nav-step active">Input</span>
+                        <span className="nav-arrow">→</span>
+                        <span className="nav-step">Analysis</span>
+                    </div>
+                    <button className="rounded-element view-analysis-button" onClick={handleViewAnalysis}>
+                        View Analysis
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

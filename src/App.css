@@ -1233,6 +1233,10 @@ label.choose-file-button {
     box-sizing: border-box;
     margin-top: 10px;
   }
+  
+  .navigation-info {
+    margin-top: 10px;
+  }
 }
 
 .chart-container {
@@ -1363,4 +1367,64 @@ label.choose-file-button {
   to {
     opacity: 0;
   }
+}
+
+.view-analysis-button {
+  background-color: #FE7333;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.view-analysis-button:hover {
+  background-color: #e05a1e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.view-analysis-button::before {
+  content: "↗";
+  font-size: 1.2em;
+}
+
+.navigation-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.nav-step {
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.nav-step.active {
+  background-color: #5029a7;
+  color: white;
+  font-weight: 500;
+}
+
+.nav-arrow {
+  color: #999;
+}
+
+.input-to-analysis-navigation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.input-to-analysis-navigation .navigation-info {
+  margin-bottom: 15px;
 }
