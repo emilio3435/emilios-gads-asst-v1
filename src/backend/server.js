@@ -481,14 +481,13 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
         JSON.parse(req.body.conversationHistory) : [];
         
       if (conversationHistory && conversationHistory.length > 0) {
-        // Get all messages except the most recent user message (which is the current question)
         const previousMessages = conversationHistory.slice(0, -1);
         
         if (previousMessages.length > 0) {
-          previousConversationFormatted = "===== IMPORTANT: CONVERSATION HISTORY =====\n";
+          previousConversationFormatted = "===== CONVERSATION HISTORY =====\n";
           previousMessages.forEach(message => {
             const textContent = message.content.replace(/<\/?[^>]+(>|$)/g, "");
-            const role = message.type === 'user' ? 'USER' : 'YOU (EMILIOAI)';
+            const role = message.type === 'user' ? 'USER' : 'ASSISTANT';
             previousConversationFormatted += `${role}: ${textContent}\n\n`;
           });
           previousConversationFormatted += "===== END OF CONVERSATION HISTORY =====\n\n";
@@ -498,54 +497,49 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
       console.error('Error formatting conversation history:', error);
       previousConversationFormatted = '';
     }
+    
+    // Add campaign context if available
+    let campaignContext = '';
+    if (tactic || kpi || fileName || currentSituation || desiredOutcome) {
+      campaignContext = "===== CAMPAIGN CONTEXT =====\n";
+      if (tactic) campaignContext += `Tactic: ${tactic}\n`;
+      if (kpi) campaignContext += `KPI: ${kpi}\n`;
+      if (fileName) campaignContext += `File: ${fileName}\n`;
+      if (currentSituation) campaignContext += `Current Situation: ${currentSituation}\n`;
+      if (desiredOutcome) campaignContext += `Desired Outcome: ${desiredOutcome}\n`;
+      campaignContext += "===== END CAMPAIGN CONTEXT =====\n\n";
+    }
 
-    const promptForHelp = `You are EmilioAI, a helpful assistant working with the Audacy Campaign Performance Analysis tool. The user is asking for help related to their analysis. 
+    // NEW Streamlined Prompt
+    const promptForHelp = `You are a helpful AI assistant specializing in digital marketing analytics for Audacy. Your goal is to help users understand their marketing campaign data.
 
-${previousConversationFormatted}
+${previousConversationFormatted}${campaignContext}${additionalContext ? `===== ADDITIONAL CONTEXT =====\n${additionalContext}\n===== END ADDITIONAL CONTEXT =====\n\n` : ''}
+CURRENT QUESTION: ${req.body.question}
 
-RESPOND IN VALID HTML FORMAT. Wrap paragraphs in <p> tags, use <ul> and <li> for lists, and <strong> for emphasis. Do not use markdown formatting like # or **. 
+RESPONSE GUIDELINES:
+Answer first, answer clearly. Keep it brief and directly address the user's question. Use HTML only (no <html> / <body> tags).
 
-IMPORTANT: Base your response on the CONVERSATION HISTORY above. Maintain context from previous interactions.
+Purpose         Tag
+Section heading <h3>
+Sub-heading     <h4>
+Paragraph       <p>
+Bullet list     <ul><li>
+Emphasis        <strong>
 
-User Question: ${req.body.question}
+Strategic Advice (when needed):
+Use this exact format:
+<h3>Strategic Recommendations</h3>
+<h4>[Recommendation Title]</h4>
+<p>[Why & how it helps.]</p>
+<ul>
+  <li>[Specific action 1.]</li>
+  <li>[Specific action 2.]</li>
+</ul>
 
-${additionalContext ? `Additional Context from Uploaded File: ${additionalContext}\n\n` : ''}
+Tone & Style:
+Friendly, professional, natural language. Skip robotic labels (e.g., "Recommendation 1:", "Action 2:"). Do not use numbered action prefixes.
 
-FORMAT INSTRUCTIONS:
-1. Answer the user's question directly and concisely.
-2. Format your response with proper HTML elements:
-   - Use <h3> tags for section headings
-   - Use <p> tags for paragraphs
-   - Use <ul> and <li> tags for lists
-   - Use <strong> for emphasis
-
-3. When providing strategic recommendations:
-   <h3>Strategic Recommendations</h3>
-   <p>[Optional introductory text explaining the recommendations]</p>
-   
-   <h4>Recommendation: [Title of First Recommendation]</h4>
-   <p>[Explanation of the recommendation]</p>
-   <ul>
-     <li>Increase bid adjustments for top-performing keywords by 15-20%</li>
-     <li>Review negative keyword list and expand it with irrelevant search terms</li>
-   </ul>
-
-   <h4>Recommendation: [Title of Second Recommendation]</h4>
-   <p>[Explanation of the recommendation]</p>
-   <ul>
-     <li>Specific action to take</li>
-     <li>Another specific action to take</li>
-   </ul>
-
-4. IMPORTANT: NEVER use robotic-sounding prefixes such as:
-   - "Recommendation X:"
-   - "Action/Aspect X:" 
-   - "Short-term:" or "Long-term:" as standalone labels
-   - Any numbering scheme like "Action 1:", "Step 2:", etc.
-
-5. Instead, use proper HTML heading structure and natural language bullet points.
-
-Respond in a friendly, helpful manner. If you don't know the answer, acknowledge that and suggest what might help.`;
+If you don't know the answer, say so and suggest what information would help.`;
 
     console.log("Help prompt:", promptForHelp);
 
