@@ -658,9 +658,8 @@ function App() {
                                         </p>
                                     )}
                                     
-                                    {/* Add file upload for additional context */}
-                                    <div className="help-context-file-container">
-                                        <p className="context-file-label">Upload additional context (optional):</p>
+                                    {/* Simplify file upload to a single button */}
+                                    <div className="help-context-file-container simplified">
                                         <input
                                             type="file"
                                             id="helpContextFile"
@@ -668,22 +667,19 @@ function App() {
                                             onChange={handleHelpContextFileChange}
                                             style={{ display: 'none' }}
                                         />
-                                        <div className="context-file-input-container">
-                                            <label htmlFor="helpContextFile" className="context-file-button">
-                                                Choose File
-                                            </label>
-                                            {helpContextFileName && (
-                                                <div className="context-file-info">
-                                                    <span className="context-file-name">{helpContextFileName}</span>
-                                                    <button 
-                                                        className="context-file-remove"
-                                                        onClick={() => { setHelpContextFile(null); setHelpContextFileName(null); }}
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <label htmlFor="helpContextFile" className="upload-file-button">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                            {helpContextFileName ? `File: ${helpContextFileName}` : 'Upload File'}
+                                        </label>
+                                        {helpContextFileName && (
+                                            <button 
+                                                className="context-file-remove small"
+                                                onClick={() => { setHelpContextFile(null); setHelpContextFileName(null); }}
+                                                title="Remove uploaded file"
+                                            >
+                                                ×
+                                            </button>
+                                        )}
                                     </div>
                                     
                                     <textarea
