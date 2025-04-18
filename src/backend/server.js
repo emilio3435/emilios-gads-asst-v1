@@ -493,61 +493,81 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
       }
     }
 
-    // --- Format previous conversation ---
+    // Format previous conversation if provided
     let previousConversationFormatted = '';
     try {
-      const conversationHistory = conversationHistoryJson ? JSON.parse(conversationHistoryJson) : [];
-      if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
-        console.log(`Formatting ${conversationHistory.length} previous messages...`);
-        previousConversationFormatted = "\n\n--- Previous Conversation Turn(s) ---";
+      const conversationHistory = req.body.conversationHistory ? 
+        JSON.parse(req.body.conversationHistory) : [];
         
-        // Iterate through all messages in the history
-        conversationHistory.forEach(message => {\n          // Sanitize content - remove HTML tags for the prompt\n          const textContent = message.content ? message.content.replace(/<\\/?[^>]+(>|$)/g, "") : '';\n          const role = message.type === 'user' ? 'User' : 'Audacy AI';\n          previousConversationFormatted += `\\n${role}: ${textContent}\\n`;\n        });
-         previousConversationFormatted += "------------------------------------\n";
-      } else {
-        console.log('No valid conversation history found or history is empty.');
+      if (conversationHistory && conversationHistory.length > 0) {
+        // Get all messages except the most recent user message (which is the current question)
+        const previousMessages = conversationHistory.slice(0, -1);
+        
+        if (previousMessages.length > 0) {
+          previousConversationFormatted = "PREVIOUS CONVERSATION:\n";
+          previousMessages.forEach(message => {
+            const textContent = message.content.replace(/<\/?[^>]+(>|$)/g, "");
+            const role = message.type === 'user' ? 'User' : 'You (EmilioAI)';
+            previousConversationFormatted += `${role}: ${textContent}\n\n`;
+          });
+        }
       }
-    } catch (parseError) {
-      console.error('Error parsing conversation history JSON:', parseError);
-      // Handle cases where JSON might be malformed
-      previousConversationFormatted = '\n\n[Error processing conversation history]\n';
+    } catch (error) {
+      console.error('Error formatting conversation history:', error);
+      previousConversationFormatted = '';
     }
 
-    // Construct the prompt for the help request
-    // Ensure all parts are included, especially the formatted conversation history
-    const helpPrompt = `
-CONTEXT: You are an AI assistant helping a user understand a previous data analysis.
+    const promptForHelp = `You are EmilioAI, a helpful assistant working with the Audacy Campaign Performance Analysis tool. The user is asking for help related to their analysis. 
 
---- Original Analysis Context ---
-Tactic: ${tactic || 'N/A'}
-KPI: ${kpi || 'N/A'}
-File Name: ${fileName || 'N/A'}
-Current Situation: ${currentSituation || 'N/A'}
-Desired Outcome: ${desiredOutcome || 'N/A'}
-Original Prompt Sent for Analysis:
-\`\`\`
-${originalPrompt || 'N/A'}
-\`\`\`
-Original Analysis Received:
-\`\`\`
-${originalAnalysis || 'N/A'}
-\`\`\`
----------------------------------${previousConversationFormatted}${additionalContext}
---- Current User Question ---
-${question}
+RESPOND IN VALID HTML FORMAT. Wrap paragraphs in <p> tags, use <ul> and <li> for lists, and <strong> for emphasis. Do not use markdown formatting like # or **. 
 
-INSTRUCTIONS: Address the user's NEW question directly, using the provided original analysis, the previous conversation turns, and any additional context files as reference. Provide a clear, concise, and helpful response. If the question is unrelated to the analysis, politely state that. Respond in well-formatted HTML.
-`;
+User Question: ${req.body.question}
 
-    console.log('--- Help Prompt to Gemini ---');
-    console.log(`Help prompt constructed including conversation history (length: ${previousConversationFormatted.length}) and additional context (length: ${additionalContext.length}).`);
-    console.log('--- End Help Prompt ---');
+${additionalContext ? `Additional Context from Uploaded File: ${additionalContext}\n\n` : ''}${previousConversationFormatted}
+
+FORMAT INSTRUCTIONS:
+1. Answer the user's question directly and concisely.
+2. Format your response with proper HTML elements:
+   - Use <h3> tags for section headings
+   - Use <p> tags for paragraphs
+   - Use <ul> and <li> tags for lists
+   - Use <strong> for emphasis
+
+3. When providing strategic recommendations:
+   <h3>Strategic Recommendations</h3>
+   <p>[Optional introductory text explaining the recommendations]</p>
+   
+   <h4>Recommendation: [Title of First Recommendation]</h4>
+   <p>[Explanation of the recommendation]</p>
+   <ul>
+     <li>Increase bid adjustments for top-performing keywords by 15-20%</li>
+     <li>Review negative keyword list and expand it with irrelevant search terms</li>
+   </ul>
+
+   <h4>Recommendation: [Title of Second Recommendation]</h4>
+   <p>[Explanation of the recommendation]</p>
+   <ul>
+     <li>Specific action to take</li>
+     <li>Another specific action to take</li>
+   </ul>
+
+4. IMPORTANT: NEVER use robotic-sounding prefixes such as:
+   - "Recommendation X:"
+   - "Action/Aspect X:" 
+   - "Short-term:" or "Long-term:" as standalone labels
+   - Any numbering scheme like "Action 1:", "Step 2:", etc.
+
+5. Instead, use proper HTML heading structure and natural language bullet points.
+
+Respond in a friendly, helpful manner. If you don't know the answer, acknowledge that and suggest what might help.`;
+
+    console.log("Help prompt:", promptForHelp);
 
     try {
       // Use a default or specific model for help requests if desired
       // Using the default model configured earlier for consistency
       const model = genAI.getGenerativeModel({ model: process.env.GEMINI_DEFAULT_MODEL || 'gemini-2.0-flash' });
-      const result = await callModelWithRetry(model, helpPrompt);
+      const result = await callModelWithRetry(model, promptForHelp);
       const response = await result.response;
       const responseText = response.text();
       
