@@ -897,19 +897,20 @@ label.choose-file-button {
 }
 
 .clear-help-button {
-  background-color: #FFF0E6; /* Light Audacy Orange */
-  color: #FE5000; /* Audacy Orange text */
-  border: 1px solid #FADECF; /* Orange border */
+  background-color: #FE5000; /* Match Send button */
+  color: white;             /* Match Send button */
+  border: none;             /* Match Send button */
   border-radius: 25px;
-  padding: 8px 16px;
+  padding: 10px 20px;     /* Match Send button padding */
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .clear-help-button:hover {
-  background-color: #FADECF; /* Darker shade on hover */
-  color: #e64500;
+  background-color: #e64500; /* Match Send button hover */
+  transform: translateY(-2px);
+  color: white; /* Ensure text stays white on hover */
 }
 
 .keyboard-tip {
