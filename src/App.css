@@ -275,6 +275,27 @@ input[type='file'] {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+.help-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.95em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: #FE7333;
+  color: white;
+}
+
+.help-button:hover {
+  background-color: #e05a1e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
 .show-input-button {
   background-color: #5029a7;
   color: white;
@@ -624,6 +645,125 @@ label.choose-file-button {
   font-family: monospace;
   font-size: 0.9em;
   line-height: 1.4;
+}
+
+/* Help feature styling */
+.help-modal {
+  max-width: 800px;
+  width: 90%;
+}
+
+.help-form {
+  margin: 20px 0;
+}
+
+.help-instructions {
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #555;
+}
+
+.help-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+.help-button-container {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.submit-help-button {
+  background-color: #FE5000;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.clear-help-button {
+  background-color: #f0f0f0;
+  color: #555;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.clear-help-button:hover {
+  background-color: #e6e6e6;
+  color: #333;
+}
+
+.keyboard-tip {
+  font-size: 12px;
+  color: #777;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.submit-help-button:hover {
+  background-color: #e64500;
+  transform: translateY(-2px);
+}
+
+.submit-help-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.help-loading {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.help-response {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border-left: 5px solid #5029a7;
+}
+
+.help-response h3 {
+  color: #5029a7;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.help-response-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.help-response-content p {
+  margin-bottom: 12px;
+}
+
+.help-response-content ul, 
+.help-response-content ol {
+  margin-left: 20px;
+  margin-bottom: 12px;
+}
+
+.help-response-content li {
+  margin-bottom: 8px;
 }
 
 /* Fix for JSX style issue */

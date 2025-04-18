@@ -16,7 +16,6 @@ function App() {
     const [rawAnalysisResult, setRawAnalysisResult] = useState<string | null>(null);
     const [promptSent, setPromptSent] = useState<string | null>(null);
     const [modelName, setModelName] = useState<string | null>(null);
-    const [actualModelUsed, setActualModelUsed] = useState<string | null>(null);
     const [showPrompt, setShowPrompt] = useState<boolean>(false);
     const [showResults, setShowResults] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -24,7 +23,12 @@ function App() {
     const [targetCPA, setTargetCPA] = useState<number | null>(null);
     const [targetROAS, setTargetROAS] = useState<number | null>(null);
     const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
+    const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
+    const [helpQuestion, setHelpQuestion] = useState<string>('');
+    const [helpResponse, setHelpResponse] = useState<string | null>(null);
+    const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
     const exportMenuRef = useRef<HTMLDivElement>(null);
+    const helpInputRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -37,6 +41,15 @@ function App() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // Focus on help input when modal opens
+    useEffect(() => {
+        if (showHelpModal && helpInputRef.current) {
+            setTimeout(() => {
+                helpInputRef.current?.focus();
+            }, 100);
+        }
+    }, [showHelpModal]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAnalysisResult(null);
@@ -99,6 +112,71 @@ function App() {
 
     const handleOutcomeChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         setDesiredOutcome(event.target.value);
+    };
+
+    const handleHelpQuestionChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setHelpQuestion(event.target.value);
+    };
+
+    const handleHelpKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Submit question when pressing Ctrl+Enter
+        if (event.key === 'Enter' && event.ctrlKey) {
+            event.preventDefault();
+            handleGetHelp();
+        }
+    };
+
+    const handleGetHelp = async () => {
+        if (!helpQuestion.trim()) {
+            alert('Please enter a question to get help.');
+            return;
+        }
+
+        setIsHelpLoading(true);
+        setHelpResponse(null);
+
+        try {
+            // Prepare data for the help request
+            const helpData = {
+                originalPrompt: promptSent,
+                originalAnalysis: rawAnalysisResult,
+                question: helpQuestion,
+                tactic: selectedTactics,
+                kpi: selectedKPIs,
+                fileName: fileName,
+                currentSituation: currentSituation,
+                desiredOutcome: desiredOutcome
+            };
+
+            // Send the help request to the server
+            const response = await fetch('/api/get-help', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(helpData)
+            });
+
+            if (!response.ok) {
+                let errorDetails = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorDetails = errorData.error || errorData.details || errorDetails;
+                } catch (e) {
+                    // Ignore if response body is not JSON
+                }
+                throw new Error(errorDetails);
+            }
+
+            const data = await response.json();
+            const sanitizedHtml = DOMPurify.sanitize(data.html || data.response);
+            setHelpResponse(sanitizedHtml);
+        } catch (error: any) {
+            console.error('Error getting help:', error);
+            setHelpResponse(`<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`);
+        } finally {
+            setIsHelpLoading(false);
+        }
     };
 
     const handleExportToRtf = async () => {
@@ -286,7 +364,6 @@ function App() {
         setAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
-        setActualModelUsed(null);
         setShowResults(false);
 
         if (!file) {
@@ -338,7 +415,6 @@ function App() {
             setRawAnalysisResult(data.raw);
             setPromptSent(data.prompt);
             setModelName(data.modelName);
-            setActualModelUsed(data.actualModelUsed || data.modelName);
             setShowResults(true);
         } catch (error: any) {
             console.error('Error during analysis:', error);
@@ -411,9 +487,9 @@ function App() {
                         )}
                         
                         {/* Model attribution */}
-                        {(actualModelUsed || modelName) && (
+                        {modelName && (
                             <div className="model-attribution">
-                                <p>Analysis by <strong>{actualModelUsed || modelName}</strong></p>
+                                <p>Analysis by <strong>{modelName}</strong></p>
                             </div>
                         )}
                     </div>
@@ -428,6 +504,17 @@ function App() {
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                             Show Input Data
+                        </button>
+                        <button
+                            className="help-button"
+                            onClick={() => setShowHelpModal(true)}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            Get Help
                         </button>
                         <div className="export-container">
                             <button className="export-button" onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}>
@@ -518,6 +605,76 @@ function App() {
                                     </div>
                                 ) : (
                                     <p>Prompt not available.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Help Modal */}
+                    {showHelpModal && (
+                        <div className="prompt-modal-overlay">
+                            <div className="prompt-modal help-modal">
+                                <h2>Ask for Additional Help</h2>
+                                <button onClick={() => setShowHelpModal(false)} className="close-button">Close</button>
+                                
+                                <div className="help-form">
+                                    <p className="help-instructions">
+                                        Ask a specific question about the analysis or request additional information based on the data.
+                                    </p>
+                                    
+                                    <textarea
+                                        ref={helpInputRef}
+                                        className="help-textarea"
+                                        value={helpQuestion}
+                                        onChange={handleHelpQuestionChange}
+                                        onKeyDown={handleHelpKeyDown}
+                                        placeholder="Example: Can you explain more about the CTR metrics? What other KPIs should I focus on? How should I implement the first recommendation?"
+                                        rows={4}
+                                    />
+                                    
+                                    <div className="help-button-container">
+                                        <button 
+                                            className="submit-help-button"
+                                            onClick={handleGetHelp}
+                                            disabled={isHelpLoading}
+                                        >
+                                            {isHelpLoading ? 'Loading...' : 'Submit Question'}
+                                        </button>
+                                        
+                                        {helpResponse && (
+                                            <button 
+                                                className="clear-help-button"
+                                                onClick={() => {
+                                                    setHelpResponse(null);
+                                                    setHelpQuestion('');
+                                                    helpInputRef.current?.focus();
+                                                }}
+                                            >
+                                                Clear & Ask New Question
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    <p className="keyboard-tip">
+                                        Pro tip: Press <strong>Ctrl+Enter</strong> to submit your question quickly.
+                                    </p>
+                                </div>
+                                
+                                {isHelpLoading && (
+                                    <div className="help-loading">
+                                        <div className="spinner"></div>
+                                        <p>Processing your question...</p>
+                                    </div>
+                                )}
+                                
+                                {helpResponse && (
+                                    <div className="help-response">
+                                        <h3>Response:</h3>
+                                        <div 
+                                            className="help-response-content"
+                                            dangerouslySetInnerHTML={{ __html: helpResponse }}
+                                        />
+                                    </div>
                                 )}
                             </div>
                         </div>

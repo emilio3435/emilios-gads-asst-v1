@@ -47,62 +47,9 @@ if (!apiKey) {
 } else {
   // Log only the first few and last few characters for security
   console.log(`GEMINI_API_KEY loaded successfully: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`); 
-  // Check if the API key is linked to a Project ID or Organization
-  const projectIdentifier = apiKey.includes('_') ? apiKey.split('_')[1] : 'unknown';
-  console.log(`API Key project identifier: ${projectIdentifier}`);
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
-
-// Function to check available models (will log info about models available to this API key)
-async function checkAPIConfiguration() {
-  try {
-    console.log('=== CHECKING API CONFIGURATION ===');
-    // Try to list models or other operations to verify API key permissions
-    // This is just an example and may need to be adjusted based on the actual API
-    const generationConfig = {
-      temperature: 0.9,
-      topP: 0.95,
-      topK: 40,
-    };
-    
-    // Create a test model instance
-    const testModel = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash-latest',
-      generationConfig
-    });
-    
-    // Get model info if possible
-    console.log('API key appears valid. Configured test model.');
-    return true;
-  } catch (error) {
-    console.error('Error checking API configuration:', error.message);
-    return false;
-  }
-}
-
-// Check API configuration on startup
-checkAPIConfiguration().catch(console.error);
-
-// Async function to check available models
-async function checkAvailableModels() {
-  try {
-    console.log('Attempting to get available models...');
-    // Note: This is an example - the actual API might not support this method directly
-    // You may need to check Google Generative AI API documentation for the correct method
-    const models = await genAI.getModels();
-    console.log('Available models:', models);
-    return models;
-  } catch (error) {
-    console.error('Error getting available models:', error.message);
-    return null;
-  }
-}
-
-// Try to check available models (this may not work depending on the API implementation)
-checkAvailableModels().catch(error => {
-  console.log('Could not check available models:', error.message);
-});
 
 // POST endpoint for analyzing marketing data
 app.post('/analyze', upload.single('file'), async (req, res) => {
@@ -189,15 +136,8 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log('--- End Prompt ---');
     
     // Call Gemini API
-    const envModelName = process.env.GEMINI_MODEL_NAME;
-    const defaultModelName = 'gemini-2.5-pro-preview-03-25';
-    const modelName = envModelName || defaultModelName;
-    
-    console.log('=== MODEL DIAGNOSTICS ===');
-    console.log(`Environment variable GEMINI_MODEL_NAME: ${envModelName ? envModelName : 'not set'}`);
-    console.log(`Default model name: ${defaultModelName}`);
-    console.log(`Attempting to use model: ${modelName}`);
-    
+    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro-preview-03-25';
+    console.log(`Using Gemini model: ${modelName}`);
     const model = genAI.getGenerativeModel({ model: modelName });
     
     // Add retry logic with exponential backoff for API calls
@@ -207,38 +147,11 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     
     while (retryCount < maxRetries) {
       try {
-        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API with model: ${modelName}`);
+        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API`);
         result = await model.generateContent(finalPrompt);
-        console.log('API call successful!');
-        
-        // Try to get the actual model used from response metadata if available
-        if (result && result.response && result.response.candidates && result.response.candidates[0] && result.response.candidates[0].modelName) {
-            console.log(`Actual model used according to response: ${result.response.candidates[0].modelName}`);
-        } else {
-            console.log('Model name not available in response metadata');
-        }
-        
         break; // If successful, exit the loop
       } catch (error) {
         console.error(`Error on attempt ${retryCount + 1}:`, error);
-        
-        // Check if this is a model-not-found error
-        if (error.message && error.message.includes('not found')) {
-          console.error(`The specified model '${modelName}' was not found or is not available.`);
-          // Try using a fallback model if the specified one doesn't exist
-          if (modelName === 'gemini-2.5-pro-preview-03-25') {
-            const fallbackModel = 'gemini-1.5-pro-latest';
-            console.log(`Attempting to use fallback model: ${fallbackModel}`);
-            try {
-              const fallbackModelInstance = genAI.getGenerativeModel({ model: fallbackModel });
-              result = await fallbackModelInstance.generateContent(finalPrompt);
-              console.log(`Successfully used fallback model: ${fallbackModel}`);
-              break;
-            } catch (fallbackError) {
-              console.error(`Error using fallback model: ${fallbackError.message}`);
-            }
-          }
-        }
         
         // If this is a 429 resource exhaustion error or a 503 unavailable error
         if (error.message && (error.message.includes('429') || error.message.includes('503'))) {
@@ -258,39 +171,13 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
           console.log(`Retrying in ${Math.round(waitTime / 1000)} seconds...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         } else {
-          // For other errors, show more details but still retry
-          console.error('Detailed error:', JSON.stringify(error, null, 2));
-          retryCount++;
-          
-          if (retryCount >= maxRetries) {
-            throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
-          }
-          
-          // Use a simple backoff for other errors
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // For other errors, don't retry
+          throw error;
         }
       }
     }
     
     const response = await result.response;
-    
-    // Log response metadata if available
-    if (response._responseData && response._responseData.candidates) {
-        console.log('Response metadata:', JSON.stringify(response._responseData.candidates[0], null, 2));
-    }
-    
-    let actualModelUsed = modelName;
-    // Try to extract model information from response
-    try {
-        if (response._responseData && response._responseData.candidates && 
-            response._responseData.candidates[0] && response._responseData.candidates[0].model) {
-            actualModelUsed = response._responseData.candidates[0].model;
-            console.log(`Extracted model from response: ${actualModelUsed}`);
-        }
-    } catch (err) {
-        console.log('Could not extract model information from response:', err.message);
-    }
-    
     let htmlText = response.text();    
     console.log('Raw Gemini response:', htmlText); // Log raw response first
 
@@ -315,16 +202,145 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       html: htmlText, // Send the cleaned HTML
       raw: rawText,
       prompt: finalPrompt, // Send the final generated prompt
-      modelName: modelName, // This sends the model name used in the API call
-      actualModelUsed: actualModelUsed // Try to get the actual model name from the response if available
+      modelName: modelName // This sends the model name used in the API call
     });
 
-    console.log('Response sent to client with model:', modelName);
+    console.log('Response sent to client.');
   } catch (error) {
     // Handle errors (e.g., JSON parsing, file parsing, API call)
     console.error('--- Error in /analyze ---');
     console.error(error);
     res.status(500).json({ error: 'Server error during analysis', details: error.message });
+  }
+});
+
+// POST endpoint for getting follow-up help
+app.post('/get-help', express.json(), async (req, res) => {
+  console.log('--- New request to /get-help ---');
+  try {
+    // Extract data from request
+    const {
+      originalPrompt,
+      originalAnalysis,
+      question,
+      tactic,
+      kpi,
+      fileName,
+      currentSituation,
+      desiredOutcome
+    } = req.body;
+
+    // Basic validation
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required.' });
+    }
+
+    // Construct a new prompt for the follow-up question
+    const helpPrompt = `
+You are EmilioAI, a senior digital marketing analyst. You previously provided an analysis about a marketing campaign.
+
+ORIGINAL DATA:
+Tactic: ${tactic || 'Not specified'}
+KPI: ${kpi || 'Not specified'}
+${fileName ? `File: ${fileName}` : ''}
+${currentSituation ? `Current Situation: ${currentSituation}` : ''}
+${desiredOutcome ? `Desired Outcome: ${desiredOutcome}` : ''}
+
+YOUR PREVIOUS ANALYSIS:
+${originalAnalysis || 'No previous analysis available.'}
+
+NEW QUESTION FROM THE USER:
+${question}
+
+INSTRUCTIONS:
+1. Answer the user's question directly and specifically based on the marketing data and your previous analysis
+2. Provide additional context, explanations, or recommendations as needed
+3. Format your response in clean, structured HTML for proper display
+4. Be concise but thorough
+5. If the question pertains to something not covered in your original analysis, acknowledge this and provide your best assessment based on the available information
+6. If the question requires data that wasn't included in the original analysis, explain what additional data would be helpful
+
+FORMAT YOUR RESPONSE AS HTML, with proper headings, paragraphs, and lists as appropriate.
+`;
+
+    console.log('--- Help Prompt to Gemini ---');
+    console.log(helpPrompt);
+    console.log('--- End Help Prompt ---');
+
+    // Get the model to use - same as the analysis endpoint
+    const modelName = process.env.GEMINI_MODEL_NAME || 'gemini-2.5-pro-preview-03-25';
+    console.log(`Using Gemini model for help: ${modelName}`);
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    // Add retry logic with exponential backoff for API calls
+    const maxRetries = 3;
+    let retryCount = 0;
+    let result;
+
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`Attempt ${retryCount + 1} of ${maxRetries} to call Gemini API for help`);
+        result = await model.generateContent(helpPrompt);
+        break; // If successful, exit the loop
+      } catch (error) {
+        console.error(`Error on attempt ${retryCount + 1}:`, error);
+
+        // If this is a 429 resource exhaustion error or a 503 unavailable error
+        if (error.message && (error.message.includes('429') || error.message.includes('503'))) {
+          retryCount++;
+
+          if (retryCount >= maxRetries) {
+            throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
+          }
+
+          // Exponential backoff with jitter
+          const baseDelay = 1000; // 1 second
+          const maxDelay = 10000; // 10 seconds
+          const delay = Math.min(maxDelay, baseDelay * Math.pow(2, retryCount - 1));
+          const jitter = delay * 0.1 * Math.random(); // Add 0-10% jitter
+          const waitTime = delay + jitter;
+
+          console.log(`Retrying in ${Math.round(waitTime / 1000)} seconds...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+          // For other errors, don't retry
+          throw error;
+        }
+      }
+    }
+
+    const response = await result.response;
+    let htmlText = response.text();
+    console.log('Raw Gemini help response:', htmlText);
+
+    // Check if the response is wrapped in markdown code blocks
+    const prefix = '```html';
+    const suffix = '```';
+    if (htmlText.startsWith(prefix)) {
+        htmlText = htmlText.substring(prefix.length);
+    }
+    if (htmlText.endsWith(suffix)) {
+        htmlText = htmlText.substring(0, htmlText.length - suffix.length);
+    }
+    htmlText = htmlText.trim();
+
+    console.log('Cleaned Gemini help response:', htmlText);
+
+    // Extract raw text content from the HTML
+    const rawText = htmlText.replace(/<\/?[^>]+(>|$)/g, "");
+
+    // Send response to client
+    res.json({
+      html: htmlText,
+      raw: rawText,
+      modelName: modelName
+    });
+
+    console.log('Help response sent to client.');
+  } catch (error) {
+    console.error('--- Error in /get-help ---');
+    console.error(error);
+    res.status(500).json({ error: 'Server error while getting help', details: error.message });
   }
 });
 
