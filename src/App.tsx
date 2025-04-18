@@ -2,8 +2,30 @@ import React, { useState, useEffect, useRef } from 'react';
 import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+  } from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import audacyLogo from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
+
+// Register Chart.js components
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
 
 // Define a type for chat messages
 interface ChatMessage {
@@ -11,6 +33,15 @@ interface ChatMessage {
     content: string;
     timestamp: Date;
 }
+
+// Define types for the new data
+interface ChartData {
+    labels?: string[];
+    data?: number[];
+}
+
+// Simple type for table data (can be more specific later)
+interface TableData extends Array<Record<string, any>> {}
 
 function App() {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
@@ -31,10 +62,13 @@ function App() {
     const [targetROAS, setTargetROAS] = useState<number | null>(null);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
     const [helpQuestion, setHelpQuestion] = useState<string>('');
-    // Replace single response with chat history
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isHelpLoading, setIsHelpLoading] = useState<boolean>(false);
-    const [helpResponse, setHelpResponse] = useState<string | null>(null);
+    // Removed unused helpResponse state
+    
+    // Add state for chart and table data
+    const [chartData, setChartData] = useState<ChartData | null>(null);
+    const [tableData, setTableData] = useState<TableData | null>(null);
     
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -49,8 +83,15 @@ function App() {
     }, [showHelpModal]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Reset all results when file changes
         setAnalysisResult(null);
+        setRawAnalysisResult(null);
+        setPromptSent(null);
+        setModelName(null);
+        setChartData(null);
+        setTableData(null);
         setError(null);
+        
         if (event.target.files && event.target.files.length > 0) {
             const selectedFile = event.target.files[0];
             if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx')) {
@@ -339,9 +380,13 @@ function App() {
 
     const handleSubmit = async () => {
         setError(null);
+        // Reset all result states
         setAnalysisResult(null);
+        setRawAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
+        setChartData(null);
+        setTableData(null);
         setShowResults(false);
 
         if (!file) {
@@ -388,12 +433,20 @@ function App() {
             }
 
             const data = await response.json();
+            console.log("Received data from backend:", data);
+            
+            // Sanitize HTML response
             const sanitizedHtml = DOMPurify.sanitize(data.html);
             
             setAnalysisResult(sanitizedHtml);
             setRawAnalysisResult(data.raw);
             setPromptSent(data.prompt);
             setModelName(data.modelName);
+            
+            // Set chart and table data
+            setChartData(data.chartData || null); 
+            setTableData(data.tableData || null);
+            
             setShowResults(true);
         } catch (error: any) {
             console.error('Error during analysis:', error);
@@ -408,7 +461,67 @@ function App() {
         setShowResults(false);
     };
 
+    // --- Render Logic --- 
     if (showResults) {
+        // Prepare chart data
+        const lineChartData = {
+            labels: chartData?.labels || [],
+            datasets: [
+              {
+                label: `${selectedKPIs || 'KPI'} Trend`,
+                data: chartData?.data || [],
+                borderColor: 'rgb(80, 41, 167)', // Audacy purple
+                backgroundColor: 'rgba(80, 41, 167, 0.5)',
+                tension: 0.1
+              },
+            ],
+        };
+        
+        const chartOptions = {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top' as const,
+              },
+              title: {
+                display: true,
+                text: `${selectedKPIs || 'Key Metric'} Trend Over Time`,
+              },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        };
+        
+        // Basic Table Rendering (no sorting/filtering yet)
+        const renderTable = () => {
+            if (!tableData || tableData.length === 0) return null;
+
+            const headers = Object.keys(tableData[0]);
+
+            return (
+                <div className="data-table-container">
+                    <h3>Data Table</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                {headers.map(header => <th key={header}>{header}</th>)}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tableData.map((row, index) => (
+                                <tr key={index}>
+                                    {headers.map(header => <td key={`${index}-${header}`}>{row[header]}</td>)}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        };
+
         return (
             <div className="App">
                 <div className="back-button-container">
@@ -465,6 +578,16 @@ function App() {
                             </div>
                         )}
                         
+                        {/* Render Chart if data exists */}
+                        {chartData && chartData.labels && chartData.labels.length > 0 && (
+                            <div className="chart-container">
+                                <Line options={chartOptions} data={lineChartData} />
+                            </div>
+                        )}
+                        
+                        {/* Render Table if data exists */}
+                        {renderTable()}
+                        
                         {/* Model attribution */}
                         {modelName && (
                             <div className="model-attribution">
@@ -503,7 +626,7 @@ function App() {
                         </button>
                     </div>
                     
-                    {/* Prompt Modal (no changes needed) */}
+                    {/* Prompt Modal (no changes needed here, formatCsvDataAsTable handles its display) */}
                     {showPrompt && (
                         <div className="prompt-modal-overlay">
                             <div className="prompt-modal prompt-content">
@@ -667,6 +790,7 @@ function App() {
         );
     }
 
+    // --- Initial Form Render --- 
     return (
         <div className="App">
             <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />

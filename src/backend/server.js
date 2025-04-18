@@ -208,31 +208,87 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     }
     
     const response = await result.response;
-    let htmlText = response.text();    
-    console.log('Raw Gemini response:', htmlText); // Log raw response first
+    const fullResponseText = response.text();
+    console.log('Raw Gemini response:', fullResponseText);
 
-    // Remove ```html prefix and ``` suffix if present
-    const prefix = '```html';
-    const suffix = '```';
-    if (htmlText.startsWith(prefix)) {
-        htmlText = htmlText.substring(prefix.length);
+    // --- Parse the response based on delimiters --- 
+    let htmlAnalysis = '';
+    let chartData = {};
+    let tableData = [];
+    let rawText = ''; // For the text version of the HTML analysis
+
+    try {
+        const htmlMatch = fullResponseText.match(/---HTML_ANALYSIS_START---([\s\S]*?)---HTML_ANALYSIS_END---/);
+        if (htmlMatch && htmlMatch[1]) {
+            htmlAnalysis = htmlMatch[1].trim();
+            // Optional: Remove ```html tags if they still appear within the block
+            const prefix = '```html';
+            const suffix = '```';
+            if (htmlAnalysis.startsWith(prefix)) {
+                htmlAnalysis = htmlAnalysis.substring(prefix.length);
+            }
+            if (htmlAnalysis.endsWith(suffix)) {
+                htmlAnalysis = htmlAnalysis.substring(0, htmlAnalysis.length - suffix.length);
+            }
+            htmlAnalysis = htmlAnalysis.trim();
+            rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, ""); // Extract raw text from HTML
+        } else {
+            console.warn('Could not find HTML analysis part in response.');
+            // Fallback: Assume the whole response is HTML if delimiters are missing
+            htmlAnalysis = fullResponseText.trim(); 
+             rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
+        }
+
+        const chartMatch = fullResponseText.match(/---CHART_DATA_START---([\s\S]*?)---CHART_DATA_END---/);
+        if (chartMatch && chartMatch[1]) {
+            try {
+                chartData = JSON.parse(chartMatch[1].trim());
+                console.log('Parsed Chart Data:', chartData);
+            } catch (jsonError) {
+                console.error('Error parsing chart JSON data:', jsonError);
+                console.error('Problematic chart JSON string:', chartMatch[1].trim());
+                chartData = {}; // Send empty object on parse failure
+            }
+        } else {
+            console.warn('Could not find chart data part in response.');
+        }
+
+        const tableMatch = fullResponseText.match(/---TABLE_DATA_START---([\s\S]*?)---TABLE_DATA_END---/);
+        if (tableMatch && tableMatch[1]) {
+            try {
+                tableData = JSON.parse(tableMatch[1].trim());
+                console.log('Parsed Table Data:', tableData);
+            } catch (jsonError) {
+                console.error('Error parsing table JSON data:', jsonError);
+                console.error('Problematic table JSON string:', tableMatch[1].trim());
+                tableData = []; // Send empty array on parse failure
+            }
+        } else {
+            console.warn('Could not find table data part in response.');
+        }
+
+    } catch (parsingError) {
+        console.error('Error parsing response sections:', parsingError);
+        // Use the full response as HTML as a fallback if parsing fails catastrophically
+        htmlAnalysis = fullResponseText.trim();
+        rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
+        chartData = {};
+        tableData = [];
     }
-    if (htmlText.endsWith(suffix)) {
-        htmlText = htmlText.substring(0, htmlText.length - suffix.length);
-    }
-    htmlText = htmlText.trim(); // Remove any leading/trailing whitespace
+    // --------------------------------------------
 
-    console.log('Cleaned Gemini response (with HTML):', htmlText);
+    console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
+    console.log('Final Chart Data:', chartData);
+    console.log('Final Table Data:', tableData);
 
-    // Extract raw text content from the CLEANED HTML
-    const rawText = htmlText.replace(/<\/?[^>]+(>|$)/g, "");
-
-    // Send cleaned response to client
+    // Send structured response to client
     res.json({
-      html: htmlText, // Send the cleaned HTML
-      raw: rawText,
-      prompt: finalPrompt, // Send the final generated prompt
-      modelName: modelName // This sends the model name used in the API call
+      html: htmlAnalysis, // The main HTML analysis
+      raw: rawText,       // Raw text version of the HTML analysis
+      chartData: chartData, // Parsed chart data JSON
+      tableData: tableData, // Parsed table data JSON
+      prompt: finalPrompt,  // Send the final generated prompt
+      modelName: modelName  // This sends the model name used in the API call
     });
 
     console.log('Response sent to client.');

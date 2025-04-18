@@ -1230,3 +1230,47 @@ label.choose-file-button {
     margin-top: 10px;
   }
 }
+
+.chart-container {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background-color: #fdfdfd;
+}
+
+.data-table-container {
+  margin-top: 30px;
+  overflow-x: auto; /* Allow horizontal scrolling for wide tables */
+}
+
+.data-table-container h3 {
+  color: #FE5000; /* Match other section headers */
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.data-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table-container th, .data-table-container td {
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.data-table-container th {
+  background-color: #f2f2f2;
+  font-weight: 600;
+}
+
+.data-table-container tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.data-table-container tr:hover {
+  background-color: #f1f1f1;
+}
