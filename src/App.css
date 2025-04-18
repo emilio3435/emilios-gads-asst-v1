@@ -1756,3 +1756,27 @@ label.choose-file-button {
     margin-bottom: 6px;
   }
 }
+
+/* Style for the new show input data icon */
+.show-input-icon {
+  display: inline-block;
+  margin-left: 8px;
+  background-color: #e0e0e0;
+  color: #555;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 16px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  vertical-align: middle; /* Align nicely with text */
+}
+
+.show-input-icon:hover {
+  background-color: #5029a7;
+  color: white;
+  transform: scale(1.1);
+}

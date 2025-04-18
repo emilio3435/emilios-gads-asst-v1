@@ -215,13 +215,26 @@ function App() {
             }
 
             const data = await response.json();
-            let sanitizedHtml = DOMPurify.sanitize(data.html || data.response);
-            sanitizedHtml = cleanMarkdownCodeBlocks(sanitizedHtml);
+            console.log('Raw response object from /api/get-help:', data); // Log the whole object
             
-            // Add AI response to conversation
+            // Get the response text, defaulting to an empty string if missing
+            const rawResponseText = data.response || ''; 
+            console.log('Raw response text:', rawResponseText); 
+
+            // Sanitize the HTML received from the backend
+            let sanitizedHtml = DOMPurify.sanitize(rawResponseText); 
+            console.log('Sanitized HTML:', sanitizedHtml); // Log after sanitize
+
+            // Clean potential markdown artifacts (like ```html)
+            // It's often better to do this *before* sanitizing if the goal is just to remove the backticks
+            // However, let's keep the current order for now unless issues persist
+            sanitizedHtml = cleanMarkdownCodeBlocks(sanitizedHtml);
+            console.log('Cleaned HTML:', sanitizedHtml); // Log after cleaning markdown
+            
+            // Add AI response to conversation state
             const newAiMessage = {
                 type: 'assistant',
-                content: sanitizedHtml,
+                content: sanitizedHtml, // Store the cleaned, sanitized HTML
                 timestamp: new Date()
             };
             
@@ -527,22 +540,20 @@ function App() {
                         {/* Model attribution */}
                         {modelName && (
                             <div className="model-attribution">
-                                <p>Analysis by <strong>{modelName}</strong></p>
+                                <p>Analysis by <strong>{modelName}</strong>
+                                  <span 
+                                    className="show-input-icon" 
+                                    title="Show input data & prompt sent to AI" 
+                                    onClick={() => setShowPrompt(true)}
+                                  >
+                                    ?
+                                  </span>
+                                </p>
                             </div>
                         )}
                     </div>
                     
                     <div className="input-section">
-                        <button
-                            className="show-input-button"
-                            onClick={() => setShowPrompt(true)}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                            Show Input Data
-                        </button>
                         <button
                             className="help-button"
                             onClick={() => setShowHelpModal(true)}
@@ -659,7 +670,7 @@ function App() {
                                 {helpConversation.length > 0 && (
                                     <div className="help-conversation">
                                         {helpConversation.map((message, index) => (
-                                            <div key={index} className="conversation-message">
+                                            <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
                                                 <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
                                                     {message.type === 'user' ? (
                                                         <p>{message.content}</p>
