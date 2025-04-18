@@ -541,7 +541,12 @@ Friendly, professional, natural language. Skip robotic labels (e.g., "Recommenda
 
 If you don't know the answer, say so and suggest what information would help.`;
 
-    console.log("Help prompt:", promptForHelp);
+    // Enhanced logging for debugging prompt issues
+    console.log("=================================================================================");
+    console.log("HELP PROMPT BEING SENT TO MODEL:");
+    console.log("----------------------------------------------------------------------------------");
+    console.log(promptForHelp);
+    console.log("=================================================================================");
 
     // Validate the requested model ID
     const allowedModels = [
@@ -561,7 +566,12 @@ If you don't know the answer, say so and suggest what information would help.`;
     const response = await result.response;
     const responseText = response.text();
     
-    console.log('Raw help response from Gemini:', responseText);
+    // Enhanced logging for debugging response issues
+    console.log("=================================================================================");
+    console.log("RAW RESPONSE FROM MODEL:");
+    console.log("----------------------------------------------------------------------------------");
+    console.log(responseText);
+    console.log("=================================================================================");
 
     res.json({ response: responseText });
   } catch (error) {
