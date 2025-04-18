@@ -368,7 +368,7 @@ input[type='file'] {
 .analysis-page-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -383,7 +383,8 @@ input[type='file'] {
   line-height: 1.5;
   max-width: 800px;
   margin: 0 auto;
-  color: #333; /* Ensure all results display text is dark */
+  color: #333;
+  text-align: left;
 }
 
 .results-display h2:first-child {
@@ -415,7 +416,8 @@ input[type='file'] {
 /* Styling for the analysis content */
 .analysis {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333; /* Set base text color for the whole analysis section */
+  color: #333;
+  text-align: left;
 }
 
 .analysis h2 {
@@ -455,7 +457,7 @@ input[type='file'] {
 .analysis p {
   line-height: 1.6;
   margin-bottom: 12px;
-  color: #333; /* Explicitly set dark color */
+  color: #333;
   font-size: 15px;
   text-align: left;
 }
@@ -465,7 +467,7 @@ input[type='file'] {
   margin-bottom: 16px;
   padding-left: 30px;
   text-align: left;
-  color: #333; /* Ensure lists inherit dark color */
+  color: #333;
 }
 
 .analysis li {
@@ -474,7 +476,7 @@ input[type='file'] {
   text-align: left;
   position: relative;
   padding-left: 5px;
-  color: #333; /* Explicitly set dark color for list items */
+  color: #333;
 }
 
 /* Remove the complex flex and value-span styles */
@@ -746,7 +748,7 @@ label.choose-file-button {
   padding: 15px;
   border-radius: 5px;
   overflow-x: auto;
-  color: #333; /* Set dark text color for content text */
+  color: #333;
 }
 
 .json-content {
@@ -935,7 +937,7 @@ label.choose-file-button {
   margin-top: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  color: #333; /* Set dark text color */
+  color: #333;
 }
 
 .help-response h3 {
@@ -948,7 +950,7 @@ label.choose-file-button {
 
 .help-response-content {
   text-align: left;
-  color: #333; /* Ensure help response has dark text */
+  color: #333;
 }
 
 .help-response-content h2 {
@@ -984,7 +986,7 @@ label.choose-file-button {
 .help-response-content p {
   margin-bottom: 15px;
   line-height: 1.6;
-  color: #333; /* Explicitly set dark color for paragraphs */
+  color: #333;
 }
 
 .assistant-response {
@@ -1374,7 +1376,7 @@ label.choose-file-button {
   border: none;
   color: #5029a7; 
   text-decoration: underline;
-  font-size: 12px; /* Smaller font size */
+  font-size: 12px;
   padding: 0;
   margin: 0;
   cursor: pointer;
@@ -1389,8 +1391,8 @@ label.choose-file-button {
 .main-action-buttons {
     display: flex;
     justify-content: center;
-    gap: 20px; /* Gap between Help and Download buttons */
-    width: 100%; /* Ensure wrapper takes width for centering */
+    gap: 20px;
+    width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -1422,11 +1424,11 @@ label.choose-file-button {
 
 .data-table-container {
   margin-top: 30px;
-  overflow-x: auto; /* Allow horizontal scrolling for wide tables */
+  overflow-x: auto;
 }
 
 .data-table-container h3 {
-  color: #FE5000; /* Match other section headers */
+  color: #FE5000;
   font-size: 20px;
   margin-bottom: 15px;
 }
@@ -1723,7 +1725,7 @@ label.choose-file-button {
 .analysis h5 + p,
 .analysis h6 + p {
   margin-top: 16px;
-  color: #333; /* Ensure paragraph text after headings is dark */
+  color: #333;
 }
 
 /* Better spacing for lists that follow headings */
@@ -1776,4 +1778,41 @@ label.choose-file-button {
 .analysis li:has(> ul),
 .analysis li:has(> ol) {
   margin-bottom: 12px;
+}
+
+/* Ensure all rich HTML elements are properly left-aligned */
+.analysis h1, 
+.analysis h2, 
+.analysis h3, 
+.analysis h4, 
+.analysis h5, 
+.analysis h6, 
+.analysis p, 
+.analysis ul, 
+.analysis ol, 
+.analysis li, 
+.analysis blockquote, 
+.analysis table {
+  text-align: left;
+}
+
+/* Preserve the rich HTML formatting */
+.analysis table {
+  width: 100%;
+  margin: 15px 0;
+  border-collapse: collapse;
+}
+
+.analysis blockquote {
+  margin: 15px 0;
+  padding: 10px 20px;
+  border-left: 3px solid #5029a7;
+  background-color: #f9f9f9;
+}
+
+.analysis code {
+  font-family: monospace;
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
 }
