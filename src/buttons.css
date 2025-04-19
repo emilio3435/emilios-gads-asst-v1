@@ -83,6 +83,16 @@ button {
   transform: translateY(-1px);
 }
 
+/* Style for disabled help button */
+.help-button:disabled {
+    background-color: var(--gray-medium); /* Gray background */
+    color: var(--gray-dark);
+    cursor: not-allowed;
+    box-shadow: none; /* Remove shadow */
+    transform: none; /* Remove hover transform */
+    opacity: 0.6; /* Make it slightly transparent */
+}
+
 /* Back Button (Results Page) */
 .back-button {
   display: flex;

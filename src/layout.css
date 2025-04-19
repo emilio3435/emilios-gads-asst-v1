@@ -231,6 +231,40 @@
     gap: var(--border-radius-small); /* Use small border radius as gap? */
 }
 
+.history-main-details {
+    font-weight: 500; /* Slightly bolder main details */
+    color: var(--gray-darkest);
+    font-size: 0.9em;
+}
+
+.history-context-details {
+    font-size: 0.8em; /* Smaller font for context */
+    color: var(--gray-dark);
+    margin-top: 2px; /* Small space above context line */
+}
+
 .nav-step {
   color: var(--gray-dark);
+}
+
+/* === Card Styling === */
+.card {
+    background-color: var(--color-white); /* Or a very light gray like --gray-lightest */
+    border-radius: var(--border-radius-large); /* More pronounced rounding */
+    padding: var(--spacing-large);
+    margin-top: var(--spacing-large); /* Add space between cards */
+    box-shadow: var(--shadow-medium); /* Apply shadow */
+    width: 100%; /* Ensure card takes full width within App container */
+    box-sizing: border-box;
+    border: 1px solid var(--gray-light); /* Subtle border */
+}
+
+.assistant-card {
+    /* Specific styles for assistant card if needed */
+    margin-top: 0; /* No top margin for the first card */
+}
+
+.history-card {
+    /* Specific styles for history card if needed */
+     padding-top: var(--spacing-medium); /* Slightly less top padding if h2 is close */
 } 

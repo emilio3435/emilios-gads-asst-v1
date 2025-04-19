@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 
@@ -10,6 +12,9 @@ interface HistoryEntry {
   id: string; // Unique ID, maybe timestamp based
   timestamp: number;
   inputs: {
+    clientName: string;
+    startDate: number | null;
+    endDate: number | null;
     selectedTactics: string;
     selectedKPIs: string;
     fileName: string | null;
@@ -73,6 +78,9 @@ function App() {
     const [file, setFile] = useState<File | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [currentSituation, setCurrentSituation] = useState<string>('');
+    const [clientName, setClientName] = useState<string>('');
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
     const [rawAnalysisResult, setRawAnalysisResult] = useState<string | null>(null);
     const [promptSent, setPromptSent] = useState<string | null>(null);
@@ -95,6 +103,7 @@ function App() {
     const [outputDetail, setOutputDetail] = useState<'brief' | 'detailed'>('brief');
     const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const [analysisHistory, setAnalysisHistory] = useState<HistoryEntry[]>([]);
+    const [isViewingHistory, setIsViewingHistory] = useState<boolean>(false);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -249,6 +258,10 @@ function App() {
 
     const handleTargetROASChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTargetROAS(event.target.value ? parseFloat(event.target.value) : null);
+    };
+
+    const handleClientNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setClientName(event.target.value);
     };
 
     const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -518,6 +531,9 @@ function App() {
                 id: `analysis-${Date.now()}`,
                 timestamp: Date.now(),
                 inputs: {
+                    clientName,
+                    startDate: startDate ? startDate.getTime() : null,
+                    endDate: endDate ? endDate.getTime() : null,
                     selectedTactics,
                     selectedKPIs,
                     fileName,
@@ -550,6 +566,7 @@ function App() {
 
             setShowResults(true); // Show the results page
             setShowHelpModal(false); // Ensure help modal is closed when showing new results
+            setIsViewingHistory(false); // Set to false as this is a fresh analysis
         } catch (error: any) {
             console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
@@ -594,6 +611,7 @@ function App() {
 
         // Go back to the form view
         setShowResults(false);
+        setIsViewingHistory(false); // Reset history view state
     };
 
     // Add this helper function near the top of your file, before the App component
@@ -639,9 +657,27 @@ function App() {
             // Switch to results view
             setShowResults(true);
             setShowHelpModal(false); // Close help modal if open
+            setIsViewingHistory(true); // Set to true as we are viewing history
         } else {
             console.error("History entry not found:", entryId);
             setError("Could not load the selected history item.");
+        }
+    };
+
+    // Helper function to format date range for history display
+    const formatDateRange = (startTimestamp: number | null, endTimestamp: number | null): string => {
+        const options: Intl.DateTimeFormatOptions = { year: '2-digit', month: 'numeric', day: 'numeric' };
+        const startDateStr = startTimestamp ? new Date(startTimestamp).toLocaleDateString(undefined, options) : null;
+        const endDateStr = endTimestamp ? new Date(endTimestamp).toLocaleDateString(undefined, options) : null;
+
+        if (startDateStr && endDateStr) {
+            return `${startDateStr} - ${endDateStr}`;
+        } else if (startDateStr) {
+            return `From ${startDateStr}`;
+        } else if (endDateStr) {
+            return `Until ${endDateStr}`;
+        } else {
+            return 'N/A';
         }
     };
 
@@ -649,7 +685,14 @@ function App() {
         return (
             <div className="App">
                 <div className="back-button-container">
-                    {/* Logo on the left */}
+                    {/* Add Back button here */}
+                    <button onClick={handleBackToForm} className="sleek-back-button" title="Back to Input Form">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline> 
+                        </svg>
+                         Back
+                    </button>
+                    {/* Logo remains */}
                     <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" />
                     
                     {/* Navigation info on the right */}
@@ -735,15 +778,17 @@ function App() {
                     </div>
                     
                     <div className="input-section">
-                        {/* Review Inputs Button (Moved to Left) */}
-                         <button className="edit-inputs-button" onClick={handleEditInputs}>
+                        {/* Review Inputs Button (Removed) */}
+                         {/* <button className="edit-inputs-button" onClick={handleEditInputs}>
                              Review Inputs
-                         </button>
+                         </button> */}
 
-                        {/* Discuss this Analysis Button (Moved to Right) */}
+                        {/* Discuss this Analysis Button (Remains) */}
                         <button
                             className="help-button"
                             onClick={() => setShowHelpModal(true)}
+                            disabled={isViewingHistory}
+                            title={isViewingHistory ? "Chat is only available for newly generated analyses." : "Discuss this Analysis"}
                         >
                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                             Discuss this Analysis
@@ -911,281 +956,345 @@ function App() {
 
     return (
         <div className="App">
-            <div className="app-header">
-                <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
-                <div className="header-controls-container">
-                    <div className="model-selector-simple detail-toggle">
-                        <span className="model-selector-label">Output Detail:</span>
-                        <button 
-                            className={`model-button ${outputDetail === 'brief' ? 'active' : ''}`}
-                            onClick={() => handleOutputDetailChange('brief')}
-                            title="Brief Output: Focuses on essential findings and recommendations."
-                        >
-                            Brief
-                        </button>
-                        <button 
-                            className={`model-button ${outputDetail === 'detailed' ? 'active' : ''}`}
-                            onClick={() => handleOutputDetailChange('detailed')}
-                            title="Detailed Output: Provides comprehensive explanations and context."
-                        >
-                            Detailed
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <h1>Marketing Assistant</h1>
-            <p className="app-instructions">
-                Upload your campaign data (CSV, XLSX, or PDF), select the relevant Tactic and KPI, and describe the client's situation and goals. 
-                The AI will analyze the data and provide actionable insights tailored for Audacy AEs.
-            </p>
-            
-            <div className="form-grid">
-                <div className="form-column">
-                    <div className="select-container">
-                        <label htmlFor="tactics-list">Select Tactic:</label>
-                        <select
-                            id="tactics-list"
-                            className="tactics-list"
-                            value={selectedTactics}
-                            onChange={handleTacticChange}
-                            required
-                            title="Select the primary marketing tactic used in the campaign data."
-                        >
-                            <option value="" disabled>Select Tactic</option>
-                            <option value="Amazon DSP">Amazon DSP</option>
-                            <option value="Display Ads">Display Ads</option>
-                            <option value="Email eDirect">Email eDirect</option>
-                            <option value="OTT">OTT</option>
-                            <option value="Podcasting">Podcasting</option>
-                            <option value="SEM">SEM</option>
-                            <option value="SEO">SEO</option>
-                            <option value="Social Ads">Social Ads</option>
-                            <option value="Streaming Audio">Streaming Audio</option>
-                            <option value="Video Display Ads">Video Display Ads</option>
-                            <option value="YouTube">YouTube</option>
-                        </select>
+            {/* Assistant Card */}
+            <div className="card assistant-card">
+                <div className="app-header">
+                    <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
+                    <div className="header-controls-container">
+                        <div className="model-selector-simple detail-toggle">
+                            <span className="model-selector-label">Output Detail:</span>
+                            <button 
+                                className={`model-button ${outputDetail === 'brief' ? 'active' : ''}`}
+                                onClick={() => handleOutputDetailChange('brief')}
+                                title="Brief Output: Focuses on essential findings and recommendations."
+                            >
+                                Brief
+                            </button>
+                            <button 
+                                className={`model-button ${outputDetail === 'detailed' ? 'active' : ''}`}
+                                onClick={() => handleOutputDetailChange('detailed')}
+                                title="Detailed Output: Provides comprehensive explanations and context."
+                            >
+                                Detailed
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div className="form-column">
-                    <div className="select-container">
-                        <label htmlFor="kpi-list">Select KPI:</label>
-                        <select
-                            id="kpi-list"
-                            className="kpi-list"
-                            value={selectedKPIs}
-                            onChange={handleKPIChange}
-                            required
-                            title="Select the main Key Performance Indicator relevant to the campaign goals."
-                        >
-                            <option value="" disabled>Select KPI</option>
-                            {/* Alphabetized List */}
-                            <option value="Clicks">Clicks</option>
-                            <option value="Conversion Rate">Conversion Rate</option>
-                            <option value="Conversions">Conversions</option>
-                            <option value="CPA">CPA</option>
-                            <option value="CPC">CPC</option>
-                            <option value="CTR">CTR</option>
-                            <option value="Impressions">Impressions</option>
-                            <option value="ROAS">ROAS</option>
-                        </select>
+                <h1>Marketing Assistant</h1>
+                <p className="app-instructions">
+                    Upload your campaign data (CSV, XLSX, or PDF), select the relevant Tactic and KPI, and describe the client's situation and goals. 
+                    The AI will analyze the data and provide actionable insights tailored for Audacy AEs.
+                </p>
+                
+                {/* Client Name Input - Add this section */}
+                <div className="input-container full-width">
+                    <label htmlFor="clientName">Client / Advertiser Name:</label>
+                    <input
+                        type="text"
+                        id="clientName"
+                        value={clientName}
+                        onChange={handleClientNameChange} // Ensure handler is connected
+                        placeholder="Enter client or advertiser name"
+                        className="text-input"
+                        title="Enter the name of the client or advertiser for this analysis."
+                    />
+                </div>
+                
+                {/* Date Range Selection - Add this section */}
+                <div className="form-grid date-range-grid"> {/* Use a class for potential specific styling */}
+                    <div className="form-column">
+                        <div className="input-container">
+                             <label>Date Range (Start):</label>
+                             <DatePicker
+                                 selected={startDate}
+                                 onChange={(date: Date | null) => setStartDate(date)}
+                                 selectsStart
+                                 startDate={startDate}
+                                 endDate={endDate}
+                                 placeholderText="Select start date"
+                                 className="text-input date-picker-input"
+                                 dateFormat="MM/dd/yyyy"
+                                 isClearable
+                                 title="Select the start date for the analysis period."
+                             />
+                        </div>
                     </div>
-                    {/* Re-add the KPI recommendation popup */}
-                    {selectedTactics && getRecommendationMessage(selectedTactics) && showKpiRecommendation && (
-                        <div className="kpi-recommendation-popup">
-                            <div className="kpi-recommendation-content">
-                                <div className="kpi-recommendation-header">
-                                    <span>Recommended KPIs</span>
-                                    <button 
-                                        className="kpi-recommendation-close"
-                                        onClick={() => setShowKpiRecommendation(false)}
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                <div className="kpi-recommendation-body">
-                                    {getRecommendationMessage(selectedTactics)}
+                    <div className="form-column">
+                        <div className="input-container">
+                            <label>Date Range (End):</label>
+                            <DatePicker
+                                selected={endDate}
+                                onChange={(date: Date | null) => setEndDate(date)}
+                                selectsEnd
+                                startDate={startDate}
+                                endDate={endDate}
+                                minDate={startDate ?? undefined} // Use undefined if startDate is null
+                                placeholderText="Select end date"
+                                className="text-input date-picker-input"
+                                dateFormat="MM/dd/yyyy"
+                                isClearable
+                                title="Select the end date for the analysis period."
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="form-grid">
+                    <div className="form-column">
+                        <div className="select-container">
+                            <label htmlFor="tactics-list">Select Tactic:</label>
+                            <select
+                                id="tactics-list"
+                                className="tactics-list"
+                                value={selectedTactics}
+                                onChange={handleTacticChange}
+                                required
+                                title="Select the primary marketing tactic used in the campaign data."
+                            >
+                                <option value="" disabled>Select Tactic</option>
+                                <option value="Amazon DSP">Amazon DSP</option>
+                                <option value="Display Ads">Display Ads</option>
+                                <option value="Email eDirect">Email eDirect</option>
+                                <option value="OTT">OTT</option>
+                                <option value="Podcasting">Podcasting</option>
+                                <option value="SEM">SEM</option>
+                                <option value="SEO">SEO</option>
+                                <option value="Social Ads">Social Ads</option>
+                                <option value="Streaming Audio">Streaming Audio</option>
+                                <option value="Video Display Ads">Video Display Ads</option>
+                                <option value="YouTube">YouTube</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="form-column">
+                        <div className="select-container">
+                            <label htmlFor="kpi-list">Select KPI:</label>
+                            <select
+                                id="kpi-list"
+                                className="kpi-list"
+                                value={selectedKPIs}
+                                onChange={handleKPIChange}
+                                required
+                                title="Select the main Key Performance Indicator relevant to the campaign goals."
+                            >
+                                <option value="" disabled>Select KPI</option>
+                                {/* Alphabetized List */}
+                                <option value="Clicks">Clicks</option>
+                                <option value="Conversion Rate">Conversion Rate</option>
+                                <option value="Conversions">Conversions</option>
+                                <option value="CPA">CPA</option>
+                                <option value="CPC">CPC</option>
+                                <option value="CTR">CTR</option>
+                                <option value="Impressions">Impressions</option>
+                                <option value="ROAS">ROAS</option>
+                            </select>
+                        </div>
+                        {/* Re-add the KPI recommendation popup */}
+                        {selectedTactics && getRecommendationMessage(selectedTactics) && showKpiRecommendation && (
+                            <div className="kpi-recommendation-popup">
+                                <div className="kpi-recommendation-content">
+                                    <div className="kpi-recommendation-header">
+                                        <span>Recommended KPIs</span>
+                                        <button 
+                                            className="kpi-recommendation-close"
+                                            onClick={() => setShowKpiRecommendation(false)}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                    <div className="kpi-recommendation-body">
+                                        {getRecommendationMessage(selectedTactics)}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {selectedKPIs === 'CPA' && (
-                        <div className="input-container">
-                            <label htmlFor="targetCPA">Target CPA:</label>
-                            <input
-                                type="number"
-                                id="targetCPA"
-                                value={targetCPA !== null ? targetCPA : ''}
-                                onChange={handleTargetCPAChange}
-                                placeholder="Enter Target CPA"
-                                className="text-input"
-                            />
-                        </div>
-                    )}
-                    {selectedKPIs === 'ROAS' && (
-                        <div className="input-container">
-                            <label htmlFor="targetROAS">Target ROAS:</label>
-                            <input
-                                type="number"
-                                id="targetROAS"
-                                value={targetROAS !== null ? targetROAS : ''}
-                                onChange={handleTargetROASChange}
-                                placeholder="Enter Target ROAS"
-                                className="text-input"
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div className="text-area-container">
-                <label htmlFor="currentSituation">Current Situation & Goals:</label>
-                <textarea
-                    id="currentSituation"
-                    className="text-area"
-                    value={currentSituation}
-                    onChange={handleSituationChange}
-                    placeholder="Describe your current marketing situation and goals..."
-                    rows={3}
-                    title="Briefly describe the client's current situation, challenges, or the context for this analysis."
-                />
-            </div>
-            
-            <div className="file-upload-section">
-                <input
-                    type="file"
-                    id="fileInput"
-                    accept=".csv, .xlsx, .pdf"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                />
-                <label 
-                    htmlFor="fileInput" 
-                    className="choose-file-button"
-                    title="Upload campaign performance data (CSV, XLSX, or PDF)."
-                >
-                    Choose File
-                </label>
-
-                {/* Container for file name and remove button, shown only when a file is selected */}
-                {file && fileName && (
-                    <div className="file-info-container">
-                        <p className="file-name" title={fileName}>
-                            {fileName}
-                        </p>
-                        <button 
-                            className="remove-file-button icon-style" 
-                            onClick={() => { setFile(null); setFileName(null); }}
-                            title="Remove file"
-                        >
-                            ×
-                        </button>
+                        {selectedKPIs === 'CPA' && (
+                            <div className="input-container">
+                                <label htmlFor="targetCPA">Target CPA:</label>
+                                <input
+                                    type="number"
+                                    id="targetCPA"
+                                    value={targetCPA !== null ? targetCPA : ''}
+                                    onChange={handleTargetCPAChange}
+                                    placeholder="Enter Target CPA"
+                                    className="text-input"
+                                />
+                            </div>
+                        )}
+                        {selectedKPIs === 'ROAS' && (
+                            <div className="input-container">
+                                <label htmlFor="targetROAS">Target ROAS:</label>
+                                <input
+                                    type="number"
+                                    id="targetROAS"
+                                    value={targetROAS !== null ? targetROAS : ''}
+                                    onChange={handleTargetROASChange}
+                                    placeholder="Enter Target ROAS"
+                                    className="text-input"
+                                />
+                            </div>
+                        )}
                     </div>
-                )}
-
-                {/* Message shown when no file is selected */}
-                {!file && !fileName && (
-                    <p className="file-name prompt-text">Please select a CSV, XLSX, or PDF file.</p>
-                )}
-            </div>
-
-            {/* --- Advanced Options Button (Stays Here) --- */}
-            <div className="advanced-options-trigger-area">
-                <button 
-                    className="advanced-options-button"
-                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                    title="Show/hide advanced options"
-                >
-                    {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
-                </button>
-            </div>
-            {/* --- End Advanced Options Button --- */}
-
-            {/* --- Advanced Options revealed content (Now only Speed) --- */}
-            {showAdvancedOptions && (
-                <div className="advanced-toggles-container revealed">
-                    <h4 className="advanced-options-heading">Advanced Options</h4>
-                    {/* Analysis Speed Toggle */}
-                    <div className="model-selector-simple speed-toggle">
-                       <span className="model-selector-label">Analysis Speed:</span>
-                       <button 
-                           className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
-                           onClick={() => handleModelSelection('speed')}
-                           title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
-                       >
-                           Faster
-                       </button>
-                       <button 
-                           className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
-                           onClick={() => handleModelSelection('quality')}
-                           title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
-                       >
-                           Better Quality
-                       </button>
-                    </div>
-                    {/* Output Detail Toggle - Removed from here */}
-                 </div>
-            )}
-            {/* --- End Advanced Options revealed content --- */}
-
-            {/* Conditionally render the Analyze button OR the loading indicator */}
-            {!isLoading ? (
-                <button
-                    className="rounded-element submit-button"
-                    onClick={handleSubmit}
-                    disabled={!file || !selectedTactics || !selectedKPIs} // Keep disabled state based on required fields
-                    title="Submit the data and inputs to generate the AI analysis."
-                >
-                    Analyze
-                </button>
-            ) : (
-                <div className="spinner-container">
-                    <div className="spinner"></div>
-                    <p>Analyzing your data, please wait...</p>
                 </div>
-            )}
 
-            {error && <div className="error-message">{error}</div>}
-
-            {/* --- Analysis History Section --- */}
-            {analysisHistory.length > 0 && (
-                <div className="history-section">
-                    <h2>Analysis History</h2>
-                    <button 
-                        className="clear-history-button"
-                        onClick={() => {
-                            if (window.confirm('Are you sure you want to clear all analysis history?')) {
-                                setAnalysisHistory([]);
-                                localStorage.removeItem('analysisHistory');
-                            }
-                        }}
+                <div className="text-area-container">
+                    <label htmlFor="currentSituation">Current Situation & Goals:</label>
+                    <textarea
+                        id="currentSituation"
+                        className="text-area"
+                        value={currentSituation}
+                        onChange={handleSituationChange}
+                        placeholder="Describe your current marketing situation and goals..."
+                        rows={3}
+                        title="Briefly describe the client's current situation, challenges, or the context for this analysis."
+                    />
+                </div>
+                
+                <div className="file-upload-section">
+                    <input
+                        type="file"
+                        id="fileInput"
+                        accept=".csv, .xlsx, .pdf"
+                        onChange={handleFileChange}
+                        style={{ display: 'none' }}
+                    />
+                    <label 
+                        htmlFor="fileInput" 
+                        className="choose-file-button"
+                        title="Upload campaign performance data (CSV, XLSX, or PDF)."
                     >
-                        Clear History
-                    </button>
-                    <ul className="history-list">
-                        {analysisHistory.map((entry) => (
-                            <li key={entry.id} className="history-item">
-                                <div className="history-item-info">
-                                    <span className="history-timestamp">
-                                        {new Date(entry.timestamp).toLocaleString()}
-                                    </span>
-                                    <span className="history-details">
-                                        {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs} 
-                                        {entry.inputs.fileName && ` (${entry.inputs.fileName})`}
-                                    </span>
-                                </div>
-                                <button 
-                                    className="view-history-button"
-                                    onClick={() => handleLoadHistory(entry.id)}
-                                >
-                                    View Details
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
+                        Choose File
+                    </label>
+
+                    {/* Container for file name and remove button, shown only when a file is selected */}
+                    {file && fileName && (
+                        <div className="file-info-container">
+                            <p className="file-name" title={fileName}>
+                                {fileName}
+                            </p>
+                            <button 
+                                className="remove-file-button icon-style" 
+                                onClick={() => { setFile(null); setFileName(null); }}
+                                title="Remove file"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Message shown when no file is selected */}
+                    {!file && !fileName && (
+                        <p className="file-name prompt-text">Please select a CSV, XLSX, or PDF file.</p>
+                    )}
                 </div>
+
+                {/* --- Advanced Options Button (Stays Here) --- */}
+                <div className="advanced-options-trigger-area">
+                    <button 
+                        className="advanced-options-button"
+                        onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                        title="Show/hide advanced options"
+                    >
+                        {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+                    </button>
+                </div>
+                {/* --- End Advanced Options Button --- */}
+
+                {/* --- Advanced Options revealed content (Now only Speed) --- */}
+                {showAdvancedOptions && (
+                    <div className="advanced-toggles-container revealed">
+                        <h4 className="advanced-options-heading">Advanced Options</h4>
+                        {/* Analysis Speed Toggle */}
+                        <div className="model-selector-simple speed-toggle">
+                           <span className="model-selector-label">Analysis Speed:</span>
+                           <button 
+                               className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
+                               onClick={() => handleModelSelection('speed')}
+                               title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
+                           >
+                               Faster
+                           </button>
+                           <button 
+                               className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
+                               onClick={() => handleModelSelection('quality')}
+                               title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
+                           >
+                               Better Quality
+                           </button>
+                        </div>
+                        {/* Output Detail Toggle - Removed from here */}
+                     </div>
+                )}
+                {/* --- End Advanced Options revealed content --- */}
+
+                {/* Conditionally render the Analyze button OR the loading indicator */}
+                {!isLoading ? (
+                    <button
+                        className="rounded-element submit-button"
+                        onClick={handleSubmit}
+                        disabled={!file || !selectedTactics || !selectedKPIs} // Keep disabled state based on required fields
+                        title="Submit the data and inputs to generate the AI analysis."
+                    >
+                        Analyze
+                    </button>
+                ) : (
+                    <div className="spinner-container">
+                        <div className="spinner"></div>
+                        <p>Analyzing your data, please wait...</p>
+                    </div>
+                )}
+
+                {error && <div className="error-message">{error}</div>}
+            </div> {/* End Assistant Card */}
+
+            {/* History Card - Conditionally render the card itself */}
+            {analysisHistory.length > 0 && (
+                <div className="card history-card">
+                    <div className="history-section">
+                        <h2>Analysis History</h2>
+                        <button 
+                            className="clear-history-button"
+                            onClick={() => {
+                                if (window.confirm('Are you sure you want to clear all analysis history?')) {
+                                    setAnalysisHistory([]);
+                                    localStorage.removeItem('analysisHistory');
+                                }
+                            }}
+                        >
+                            Clear History
+                        </button>
+                        <ul className="history-list">
+                            {analysisHistory.map((entry) => (
+                                <li key={entry.id} className="history-item">
+                                    <div className="history-item-info">
+                                        <span className="history-timestamp">
+                                            {new Date(entry.timestamp).toLocaleString()}
+                                        </span>
+                                        {/* Main details */}
+                                        <span className="history-main-details">
+                                            {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
+                                            {entry.inputs.fileName && ` (${entry.inputs.fileName})`}
+                                        </span>
+                                        {/* Context details */}
+                                        <span className="history-context-details">
+                                            Client: {entry.inputs.clientName || 'N/A'} | 
+                                            Range: {formatDateRange(entry.inputs.startDate, entry.inputs.endDate)}
+                                        </span>
+                                    </div>
+                                    <button 
+                                        className="view-history-button"
+                                        onClick={() => handleLoadHistory(entry.id)}
+                                    >
+                                        View Details
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div> /* End History Card */
             )}
             {/* --- End Analysis History Section --- */}
         </div>

@@ -2,10 +2,10 @@
 label {
   display: block;
   margin-bottom: var(--spacing-small);
-  font-weight: 600; /* Slightly bolder labels */
-  color: var(--gray-darker);
+  font-weight: 600;
+  color: var(--gray-darkest);
   text-align: left;
-  font-size: 0.9em;
+  font-size: 1em;
 }
 
 input[type='file'] {
@@ -215,4 +215,47 @@ select:hover {
   padding: 0;
   color: var(--gray-darkest);
   line-height: 1.5;
-} 
+}
+
+/* --- End Select/Dropdown --- */
+
+/* --- Date Picker Specific Styles --- */
+.date-picker-input {
+    /* Use text-input styles as a base */
+    width: 100%; /* Ensure it fills the container */
+    box-sizing: border-box; /* Include padding/border in width */
+}
+
+/* Ensure react-datepicker portal is visible */
+.react-datepicker-popper {
+    z-index: 10; /* Make sure calendar appears above other elements */
+}
+
+/* Optional: Adjust calendar appearance slightly */
+.react-datepicker {
+    font-family: inherit; /* Use app's font */
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--shadow-medium);
+    border: 1px solid var(--gray-medium);
+}
+
+.react-datepicker__header {
+    background-color: var(--gray-lightest);
+    border-bottom: 1px solid var(--gray-light);
+}
+
+/* --- End Date Picker --- */
+
+
+/* === Labels === */
+label {
+    display: block;
+    margin-bottom: var(--spacing-small);
+    font-weight: 600;
+    color: var(--gray-darkest);
+    text-align: left;
+    font-size: 1em;
+}
+
+/* === Text Area Specific Styles === */
+/* ... existing code ... */
