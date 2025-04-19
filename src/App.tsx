@@ -1,11 +1,50 @@
 import React, { useState, useEffect, useRef } from 'react';
-import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
+
+// Helper function for basic syntax highlighting
+const formatPromptForDisplay = (prompt: string | null): string => {
+    if (!prompt) return '';
+
+    let formatted = prompt;
+
+    // Escape HTML characters to prevent XSS if not careful later
+    formatted = formatted
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    // Highlight comments (// ...)
+    formatted = formatted.replace(/(\/\/.*)/g, '<span class="prompt-comment">$1</span>');
+
+    // Highlight placeholders ({{...}})
+    formatted = formatted.replace(/(\{\{.*?\}\})/g, '<span class="prompt-placeholder">$1</span>');
+    
+    // Highlight delimiters
+    formatted = formatted.replace(/(---HTML_ANALYSIS_START---|---HTML_ANALYSIS_END---)/g, '<span class="prompt-delimiter">$1</span>');
+
+    // Highlight backticks
+    formatted = formatted.replace(/(`)/g, '<span class="prompt-backtick">$1</span>');
+
+    // Highlight keywords (simple example, add more as needed)
+    // Use word boundaries (\b) to avoid matching parts of words
+    const keywords = ['const', 'let', 'if', 'else', 'for', 'async', 'await', 'function', 'return'];
+    keywords.forEach(keyword => {
+        const regex = new RegExp(`(\\b${keyword}\\b)`, 'g');
+        formatted = formatted.replace(regex, '<span class="prompt-keyword">$1</span>');
+    });
+
+    // Basic string highlighting (content within backticks) - This is tricky and might not be perfect
+    // It might incorrectly highlight things if backticks are nested or escaped
+    // formatted = formatted.replace(/`([^`]*)`/g, '`<span class="prompt-string">$1</span>`');
+    // Simpler: Just color the backticks themselves (done above)
+
+    return formatted; 
+};
 
 function App() {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
@@ -304,18 +343,6 @@ function App() {
         }
     };
 
-    const handleExportToRtf = async () => {
-        if (analysisResult) {
-            const rtf = await htmlToRtf.convertHtmlToRtf(analysisResult);
-            const blob = new Blob([rtf], { type: 'application/rtf' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'analysis.rtf';
-            link.click();
-        }
-    };
-
     const formatCsvDataAsTable = (prompt: string | null) => {
         if (!prompt) return "";
 
@@ -515,13 +542,15 @@ function App() {
         return (
             <div className="App">
                 <div className="back-button-container">
-                    {/* Removed Back to Input Form button */}
+                    {/* Logo on the left */}
+                    <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" />
+                    
+                    {/* Navigation info on the right */}
                     <div className="navigation-info">
                         <span className="nav-step">Input</span>
                         <span className="nav-arrow">→</span>
                         <span className="nav-step active">Analysis</span>
                     </div>
-                    <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" />
                 </div>
                 <div className="analysis-page-container">
                     <div className="results-display">
@@ -599,102 +628,39 @@ function App() {
                     </div>
                     
                     <div className="input-section">
-                        {/* Discuss this Analysis Button */}
+                        {/* Review Inputs Button (Moved to Left) */}
+                         <button className="edit-inputs-button" onClick={handleEditInputs}>
+                             Review Inputs
+                         </button>
+
+                        {/* Discuss this Analysis Button (Moved to Right) */}
                         <button
                             className="help-button"
                             onClick={() => setShowHelpModal(true)}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                            </svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                             Discuss this Analysis
-                        </button>
-
-                        {/* Download RTF Button */}
-                        <button className="export-button" onClick={handleExportToRtf}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Download RTF
-                        </button>
-
-                        {/* Edit Inputs Button */}
-                        <button className="edit-inputs-button" onClick={handleEditInputs}>
-                            Edit Inputs
                         </button>
 
                     </div>
                     
-                    {/* Prompt Modal (no changes needed) */}
+                    {/* Prompt Modal */}
                     {showPrompt && (
-                        <div className="prompt-modal-overlay">
-                            <div className="prompt-modal prompt-content">
-                                <h2>Prompt Sent to LLM:</h2>
-                                <button onClick={() => setShowPrompt(false)} className="close-button">&times;</button>
-                                {promptSent ? (
-                                    <div className="formatted-prompt">
-                                        {promptSent.split('\n\n').map((section, index) => {
-                                            // Check if the section contains a header
-                                            if (section.includes(':\n')) {
-                                                const [header, content] = section.split(':\n');
-                                                
-                                                // Special handling for data section with CSV format
-                                                if (header === "INPUT DATA" || header === "Campaign Data") {
-                                                    const table = formatCsvDataAsTable(header + ":\n" + content);
-                                                    return (
-                                                        <div key={index} className="prompt-section">
-                                                            <h3>{header}:</h3>
-                                                            <div dangerouslySetInnerHTML={{ __html: table.replace(header + ":\n", "") }} />
-                                                        </div>
-                                                    );
-                                                } 
-                                                // Special handling for JSON data
-                                                else if (content && (content.trim().startsWith('{') || content.trim().startsWith('['))) {
-                                                    try {
-                                                        // Try to parse and format JSON
-                                                        const jsonData = JSON.parse(content.trim());
-                                                        const formattedJson = JSON.stringify(jsonData, null, 2);
-                                                        return (
-                                                            <div key={index} className="prompt-section">
-                                                                <h3>{header}:</h3>
-                                                                <pre className="json-content">{formattedJson}</pre>
-                                                            </div>
-                                                        );
-                                                    } catch (e) {
-                                                        // If not valid JSON, display as normal text
-                                                        return (
-                                                            <div key={index} className="prompt-section">
-                                                                <h3>{header}:</h3>
-                                                                <p className="content-text">{content}</p>
-                                                            </div>
-                                                        );
-                                                    }
-                                                } 
-                                                // Normal text content
-                                                else {
-                                                    return (
-                                                        <div key={index} className="prompt-section">
-                                                            <h3>{header}:</h3>
-                                                            <p className="content-text">{content}</p>
-                                                        </div>
-                                                    );
-                                                }
-                                            } 
-                                            // Section without header
-                                            else {
-                                                return (
-                                                    <div key={index} className="prompt-section">
-                                                        <p className="content-text">{section}</p>
-                                                    </div>
-                                                );
-                                            }
-                                        })}
-                                    </div>
-                                ) : (
-                                    <p>Prompt not available.</p>
-                                )}
+                        <div className="prompt-modal-overlay" onClick={() => setShowPrompt(false)}>
+                            <div className="prompt-modal" onClick={(e) => e.stopPropagation()}>
+                               {/* Optional Header */}
+                               <div className="modal-header">
+                                 <h2>Prompt Sent to LLM</h2>
+                                 <button onClick={() => setShowPrompt(false)} className="close-button" title="Close">&times;</button>
+                               </div>
+                               {/* Content Area */}
+                                <div className="prompt-content">
+                                    {promptSent ? (
+                                        <pre className="formatted-prompt" dangerouslySetInnerHTML={{ __html: formatPromptForDisplay(promptSent) }} />
+                                    ) : (
+                                        <p>Prompt not available.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -829,7 +795,7 @@ function App() {
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        New Inquiry
+                        New Analysis
                     </button>
                 )}
             </div>
