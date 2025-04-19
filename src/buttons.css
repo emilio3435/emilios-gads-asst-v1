@@ -281,4 +281,44 @@ button {
     background-color: var(--gray-medium-dark);
 }
 
+/* Style for the new sleek back button in results header */
+.sleek-back-button {
+    background-color: var(--gray-lightest); /* Add light background */
+    border: 1px solid var(--gray-light); /* Subtle border */
+    color: var(--audacy-purple); 
+    padding: 6px 12px; /* Adjust padding for background */
+    margin-right: 0; /* Remove margin, spacing handled by parent flex */
+    cursor: pointer;
+    display: inline-flex; 
+    align-items: center;
+    font-size: 0.95em; /* Slightly smaller */
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: var(--border-radius-round); /* Make it rounded */
+    box-shadow: var(--shadow-small); /* Add subtle shadow */
+}
+
+.sleek-back-button svg {
+    margin-right: 6px; /* Space between icon and text */
+    stroke-width: 2.5; /* Slightly bolder icon */
+}
+
+.sleek-back-button:hover {
+    color: var(--audacy-purple-dark);
+    background-color: var(--gray-light); /* Lighten background on hover */
+    border-color: var(--gray-medium); 
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-1px);
+}
+
+.sleek-back-button:focus {
+    outline: none; /* Remove default focus outline */
+    box-shadow: 0 0 0 2px var(--audacy-focus-ring); /* Custom focus ring */
+    border-radius: 4px; /* Slight radius for focus */
+}
+
+/* ======================================
+   Submit / Action Buttons (Analyze, Send)
+   ====================================== */
+
 /* Add other button styles (.kpi-recommendation-close, chat buttons, modal buttons) below */ 

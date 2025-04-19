@@ -43,26 +43,22 @@
 /* === Results Page Layout === */
 .back-button-container {
   display: flex;
-  align-items: center;
-  justify-content: center; /* Centering items */
-  text-align: left;
-  margin-bottom: 0;
-  padding: var(--spacing-large) var(--spacing-large) var(--spacing-medium) var(--spacing-large);
-  padding-top: 65px; /* Keep specific padding-top for logo space */
-  border-bottom: 1px solid var(--gray-medium);
-  width: 100%;
-  background-color: var(--color-white);
-  z-index: 10;
-  position: relative;
-  box-sizing: border-box;
+  align-items: center; /* Vertically align items */
+  justify-content: space-between; /* Pushes items to ends and center */
+  padding: var(--spacing-medium) var(--spacing-large);
+  border-bottom: 1px solid var(--gray-light); 
+  margin-bottom: var(--spacing-large);
+  position: relative; /* For potential absolute positioning inside if needed */
+  width: 100%; /* Ensure it spans the container */
+  box-sizing: border-box; /* Include padding in width */
 }
 
 .navigation-info {
   display: flex;
   align-items: center;
   gap: var(--spacing-small);
-  font-size: 14px;
-  color: var(--gray-darker);
+  /* Centering is implicitly handled by justify-content: space-between on the parent */
+  /* If explicit centering is needed later, could use absolute positioning or grid */
 }
 
 .results-header-logo {
@@ -233,4 +229,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--border-radius-small); /* Use small border radius as gap? */
+}
+
+.nav-step {
+  color: var(--gray-dark);
 } 
