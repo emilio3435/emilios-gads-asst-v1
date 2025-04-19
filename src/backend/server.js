@@ -203,8 +203,8 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
     // Determine model based on ID
     const allowedModels = [
-      'gemini-2.5-pro-preview-03-25',
-      'gemini-2.0-flash'
+        'gemini-2.5-pro-preview-03-25',
+        'gemini-2.0-flash'
     ];
 
     let modelName;
@@ -212,20 +212,20 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       modelName = modelId;
     } else {
       console.warn(`Requested model ${modelId} not allowed or invalid. Falling back to default.`);
-      modelName = 'gemini-2.0-flash'; // Fallback to default
+        modelName = 'gemini-2.0-flash'; // Fallback to default
     }
-
+    
     // Determine display name based on model used
     let displayModelName;
     switch (modelName) {
-      case 'gemini-2.5-pro-preview-03-25':
-        displayModelName = "Audacy AI (Gemini 2.5 Pro Preview)";
-        break;
-      case 'gemini-2.0-flash':
-        displayModelName = "Audacy AI (Gemini 2.0 Flash)";
-        break;
-      default:
-        displayModelName = "Audacy AI"; // Generic fallback
+        case 'gemini-2.5-pro-preview-03-25':
+            displayModelName = "Audacy AI (Gemini 2.5 Pro Preview)";
+            break;
+        case 'gemini-2.0-flash':
+            displayModelName = "Audacy AI (Gemini 2.0 Flash)";
+            break;
+        default:
+            displayModelName = "Audacy AI"; // Generic fallback
     }
 
     console.log(`Initializing model for analysis: ${modelName}`);
@@ -237,7 +237,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     let fileName = req.file ? req.file.originalname : 'N/A'; // Get filename early
 
     try {
-        const model = genAI.getGenerativeModel({ model: modelName });
+      const model = genAI.getGenerativeModel({ model: modelName });
 
         // --- Process Uploaded File --- 
         if (!req.file) {
@@ -339,7 +339,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         // --- End Log --- 
 
         // Call the model
-        result = await callModelWithRetry(model, finalPrompt);
+      result = await callModelWithRetry(model, finalPrompt);
     
     } catch (error) {
       // Catch errors from file processing or model call
@@ -370,13 +370,13 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     }
 
     try {
-        const response = await result.response;
-        const fullResponseText = response.text();
-        console.log('Raw Gemini response:', fullResponseText);
+    const response = await result.response;
+    const fullResponseText = response.text();
+    console.log('Raw Gemini response:', fullResponseText);
 
-        // --- Parse the response based on delimiters --- 
-        let htmlAnalysis = '';
-        let rawText = ''; // For the text version of the HTML analysis
+    // --- Parse the response based on delimiters --- 
+    let htmlAnalysis = '';
+    let rawText = ''; // For the text version of the HTML analysis
 
         const htmlMatch = fullResponseText.match(/---HTML_ANALYSIS_START---([\s\S]*?)---HTML_ANALYSIS_END---/);
         if (htmlMatch && htmlMatch[1]) {
@@ -397,21 +397,21 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
             // Fallback: Assume the whole response is HTML if delimiters are missing
             htmlAnalysis = fullResponseText.trim(); 
              rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
-        }
-        // --------------------------------------------
+    }
+    // --------------------------------------------
 
-        console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
+    console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
 
-        // Send structured response to client
+    // Send structured response to client
         // Ensure response is sent only once
         if (!res.headersSent) {
-            res.json({
-                html: htmlAnalysis, // The main HTML analysis
-                raw: rawText,       // Raw text version of the HTML analysis
-                prompt: finalPrompt,  // Send the final generated prompt
-                modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
-            });
-            console.log('Response sent to client.');
+    res.json({
+      html: htmlAnalysis, // The main HTML analysis
+      raw: rawText,       // Raw text version of the HTML analysis
+      prompt: finalPrompt,  // Send the final generated prompt
+      modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
+    });
+    console.log('Response sent to client.');
         }
     } catch (responseProcessingError) {
         console.error('Error processing model response:', responseProcessingError);
@@ -510,7 +510,7 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
     try {
       const conversationHistory = req.body.conversationHistory ? 
         JSON.parse(req.body.conversationHistory) : [];
-      
+        
       if (conversationHistory && conversationHistory.length > 0) {
         // Remove the check for only the current message
         // Always use conversation history
@@ -530,7 +530,7 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
       console.error('Error formatting conversation history:', error);
       previousConversationFormatted = '';
     }
-    
+
     // Add campaign context if available
     let campaignContext = '';
     if (tactic || kpi || fileName || currentSituation || desiredOutcome) {

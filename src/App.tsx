@@ -6,6 +6,28 @@ import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
 
+// Define the structure for a history entry
+interface HistoryEntry {
+  id: string; // Unique ID, maybe timestamp based
+  timestamp: number;
+  inputs: {
+    selectedTactics: string;
+    selectedKPIs: string;
+    fileName: string | null;
+    currentSituation: string;
+    targetCPA: number | null;
+    targetROAS: number | null;
+    selectedModelId: string;
+    outputDetail: 'brief' | 'detailed';
+  };
+  results: {
+    analysisResult: string | null; // Store the processed HTML result
+    rawAnalysisResult: string | null; // Optionally store raw too
+    modelName: string | null;
+    promptSent: string | null; // The prompt that was constructed
+  };
+}
+
 // Helper function for basic syntax highlighting
 const formatPromptForDisplay = (prompt: string | null): string => {
     if (!prompt) return '';
@@ -73,6 +95,7 @@ function App() {
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.0-flash');
     const [outputDetail, setOutputDetail] = useState<'brief' | 'detailed'>('brief');
     const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
+    const [analysisHistory, setAnalysisHistory] = useState<HistoryEntry[]>([]);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -117,6 +140,22 @@ function App() {
             sessionStorage.setItem('helpConversation', JSON.stringify(helpConversation));
         }
     }, [helpConversation]);
+
+    // Load analysis history from localStorage on mount
+    useEffect(() => {
+        const savedHistory = localStorage.getItem('analysisHistory');
+        if (savedHistory) {
+            try {
+                const parsedHistory: HistoryEntry[] = JSON.parse(savedHistory);
+                // Optionally sort history, newest first
+                parsedHistory.sort((a, b) => b.timestamp - a.timestamp);
+                setAnalysisHistory(parsedHistory);
+            } catch (e) {
+                console.error('Error loading analysis history from localStorage:', e);
+                localStorage.removeItem('analysisHistory'); // Clear corrupted data
+            }
+        }
+    }, []);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // Clear previous results when file changes
@@ -474,6 +513,42 @@ function App() {
             setRawAnalysisResult(data.raw); 
             setPromptSent(data.prompt);
             setModelName(data.modelName);
+
+            // --- Add to History ---
+            const newHistoryEntry: HistoryEntry = {
+                id: `analysis-${Date.now()}`,
+                timestamp: Date.now(),
+                inputs: {
+                    selectedTactics,
+                    selectedKPIs,
+                    fileName,
+                    currentSituation,
+                    targetCPA,
+                    targetROAS,
+                    selectedModelId,
+                    outputDetail,
+                },
+                results: {
+                    analysisResult: sanitizedHtml, // Save the sanitized HTML
+                    rawAnalysisResult: data.raw,
+                    modelName: data.modelName,
+                    promptSent: data.prompt,
+                }
+            };
+            
+            // Update state and localStorage
+            setAnalysisHistory(prevHistory => {
+                const updatedHistory = [newHistoryEntry, ...prevHistory];
+                // Keep only the latest N entries (e.g., 20)
+                const HISTORY_LIMIT = 20;
+                if (updatedHistory.length > HISTORY_LIMIT) {
+                    updatedHistory.length = HISTORY_LIMIT; // Truncate the array
+                }
+                localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
+                return updatedHistory;
+            });
+            // --- End Add to History ---
+
             setShowResults(true); // Show the results page
             setShowHelpModal(false); // Ensure help modal is closed when showing new results
         } catch (error: any) {
@@ -1057,6 +1132,46 @@ function App() {
             )}
 
             {error && <div className="error-message">{error}</div>}
+
+            {/* --- Analysis History Section --- */}
+            {analysisHistory.length > 0 && (
+                <div className="history-section">
+                    <h2>Analysis History</h2>
+                    <button 
+                        className="clear-history-button"
+                        onClick={() => {
+                            if (window.confirm('Are you sure you want to clear all analysis history?')) {
+                                setAnalysisHistory([]);
+                                localStorage.removeItem('analysisHistory');
+                            }
+                        }}
+                    >
+                        Clear History
+                    </button>
+                    <ul className="history-list">
+                        {analysisHistory.map((entry) => (
+                            <li key={entry.id} className="history-item">
+                                <div className="history-item-info">
+                                    <span className="history-timestamp">
+                                        {new Date(entry.timestamp).toLocaleString()}
+                                    </span>
+                                    <span className="history-details">
+                                        {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs} 
+                                        {entry.inputs.fileName && ` (${entry.inputs.fileName})`}
+                                    </span>
+                                </div>
+                                <button 
+                                    className="view-history-button"
+                                    // onClick={() => handleLoadHistory(entry.id)} // We'll add this function next
+                                >
+                                    View Details
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {/* --- End Analysis History Section --- */}
         </div>
     );
 }
