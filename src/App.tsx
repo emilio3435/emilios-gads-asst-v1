@@ -32,6 +32,7 @@ function App() {
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.0-flash');
+    const [outputDetail, setOutputDetail] = useState<'brief' | 'detailed'>('detailed');
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -380,6 +381,11 @@ function App() {
         }
     };
 
+    // Handler for the new Output Detail toggle
+    const handleOutputDetailChange = (detail: 'brief' | 'detailed') => {
+        setOutputDetail(detail);
+    };
+
     const handleSubmit = async () => {
         setError(null);
         setAnalysisResult(null);
@@ -405,6 +411,7 @@ function App() {
         formData.append('targetCPA', JSON.stringify(targetCPA));
         formData.append('targetROAS', JSON.stringify(targetROAS));
         formData.append('modelId', selectedModelId);
+        formData.append('outputDetail', outputDetail);
 
         setIsLoading(true);
 
@@ -817,22 +824,41 @@ function App() {
         <div className="App">
             <div className="app-header">
                 <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
-                <div className="model-selector-simple">
-                    <span className="model-selector-label">Analysis Speed:</span>
-                    <button 
-                        className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
-                        onClick={() => handleModelSelection('speed')}
-                        title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
-                    >
-                        Faster
-                    </button>
-                    <button 
-                        className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
-                        onClick={() => handleModelSelection('quality')}
-                        title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
-                    >
-                        Better Quality
-                    </button>
+                <div className="header-controls-container">
+                    <div className="model-selector-simple">
+                        <span className="model-selector-label">Analysis Speed:</span>
+                        <button 
+                            className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
+                            onClick={() => handleModelSelection('speed')}
+                            title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
+                        >
+                            Faster
+                        </button>
+                        <button 
+                            className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
+                            onClick={() => handleModelSelection('quality')}
+                            title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
+                        >
+                            Better Quality
+                        </button>
+                    </div>
+                    <div className="model-selector-simple">
+                        <span className="model-selector-label">Output Detail:</span>
+                        <button 
+                            className={`model-button ${outputDetail === 'brief' ? 'active' : ''}`}
+                            onClick={() => handleOutputDetailChange('brief')}
+                            title="Brief Output: Focuses on essential findings and recommendations."
+                        >
+                            Brief
+                        </button>
+                        <button 
+                            className={`model-button ${outputDetail === 'detailed' ? 'active' : ''}`}
+                            onClick={() => handleOutputDetailChange('detailed')}
+                            title="Detailed Output: Provides comprehensive explanations and context."
+                        >
+                            Detailed
+                        </button>
+                    </div>
                 </div>
             </div>
 

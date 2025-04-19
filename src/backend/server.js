@@ -17,144 +17,6 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') }); // Load .env file relative to this file
 
-// Define the prompt template (moved up for clarity)
-// Note: Enhanced instructions for Strategic Recommendations formatting
-const promptTemplate = `
-Analyze the provided campaign data and generate a user-friendly, actionable analysis for Audacy sales representatives.
-
-// ==========================
-// == INPUT DATA & CONTEXT ==
-// ==========================
-
-INPUT DATA:
-* File Name: {{fileName}}
-* Selected Tactic: {{tacticsString}}
-* Selected KPIs: {{kpisString}}
-* Current Situation/Goal: {{currentSituation}}
-* Desired Outcome/Goal: {{desiredOutcome}}
-* Data Content:
-    \`\`\`json
-    {{dataString}}
-    \`\`\`
-
-AUDACY BRAND & SALES CONTEXT:
-You are an AI assistant for Audacy - a premier multi-platform audio content and entertainment company.
-Audacy combines the power of radio, podcasting, digital, experiential, and premium live events to create meaningful connections with consumers. Audacy sales representatives work with clients across industries to develop effective advertising campaigns that span both traditional radio and digital audio channels.
-
-CLIENT SALES ASSISTANT ROLE:
-You are analyzing this data for an Audacy Account Executive (AE) who needs to interpret digital marketing data for clients. Your goal is to help the AE demonstrate the value of Audacy's advertising solutions and identify opportunities to expand or improve current campaigns. Focus on insights that showcase Audacy's unique value proposition in the audio marketing landscape.
-
-// ===================
-// == INSTRUCTIONS ===
-// ===================
-
-INSTRUCTIONS:
-
-Your analysis MUST be:
-
-1.  Simple and Digestible:
-    * Use plain language, avoiding technical jargon.
-    * When using marketing terms, briefly explain them (use simple analogies where possible).
-    * Use Audacy-specific terminology where appropriate.
-
-2.  Structured in these exact sections (using the HTML structure defined below):
-    * Executive Summary: (1-2 sentences max) Simple takeaway highlighting Audacy's value.
-    * Key Findings: (3-5 bullet points max) Important insights connected to Audacy's audio solutions.
-    * Story Angles: (2-3 hooks) Narrative ideas connecting data to client goals, using simple analogies or metaphors where helpful for clarity (e.g., comparing reach to casting a wide net).
-    * Supporting Data: Brief, critical metrics with context (e.g., "3.1% CTR, 2x industry average").
-    * Actionable Recommendations: (3-5 suggestions) Clear, step-by-step actions leveraging Audacy's capabilities. Each MUST include WHAT, WHY, and HOW.
-
-3.  Action-Oriented:
-    * Focus on actionable improvements.
-    * Recommendations SHOULD aim to:
-        * Suggest Audacy's audio marketing solutions where applicable and aligned with client goals/situation.
-        * Suggest cross-platform opportunities (radio + digital).
-        * Be specific (e.g., "add these 3 interest categories," not "improve targeting").
-        * Be practical (implementable by Audacy team).
-        * Be prioritized (indicate likely impact).
-        * Be contextual (explain why it matters for campaign goals).
-
-4.  Formatted STRICTLY as HTML:
-    * Generate output enclosed ONLY within the '---HTML_ANALYSIS_START---' and '---HTML_ANALYSIS_END---' delimiters.
-    * Use ONLY standard HTML tags (e.g., <section>, <h2>, <p>, <ul>, <li>, <div>, <h3>, <strong>, <em>) for ALL structure, layout, and text emphasis.
-    * DO NOT use ANY Markdown syntax (like **, *, -, #) within the generated HTML content. All formatting must be done with HTML tags.
-    * Ensure the output is clean, valid HTML suitable for direct rendering.
-    * Use short paragraphs and bullet points (using <ul> and <li>) for scannability.
-
-5.  Client-Ready:
-    * AE should be able to use the analysis directly with clients without translation.
-
-// ===========================
-// == OUTPUT HTML STRUCTURE ==
-// ===========================
-
-OUTPUT STRUCTURE REQUIREMENTS:
-Format your output using ONLY the HTML structure and tags defined below. Ensure all content resides within appropriate tags. DO NOT include markdown.
-
----HTML_ANALYSIS_START---
-<section class="executive-summary">
-  <h2>Executive Summary</h2>
-  <p>[1-2 sentence plain language summary that incorporates Audacy's value]</p>
-</section>
-
-<section class="key-findings">
-  <h2>Key Findings</h2>
-  <ul>
-    <li>[Clear, simple finding #1 connecting to Audacy's solutions]</li>
-    <li>[Clear, simple finding #2 connecting to Audacy's solutions]</li>
-    </ul>
-</section>
-
-<section class="story-angles">
-  <h2>Potential Story Angle(s)</h2>
-  <div class="story">
-    <h3>[Audacy-specific story title 1]</h3>
-    <p>[Simple narrative connecting data to client goals, using a helpful analogy/metaphor if applicable]</p>
-  </div>
-  <div class="story">
-    <h3>[Audacy-specific story title 2]</h3>
-    <p>[Simple narrative connecting data to client goals, using a helpful analogy/metaphor if applicable]</p>
-  </div>
-  </section>
-
-<section class="supporting-data">
-  <h2>Supporting Data</h2>
-  <ul>
-    <li>[Key metric 1 with context and Audacy insights, e.g., <strong>Metric Name:</strong> Value (Context)]</li>
-    <li>[Key metric 2 with context and Audacy insights, e.g., <strong>Metric Name:</strong> Value (Context)]</li>
-    </ul>
-</section>
-
-<section class="recommendations">
-  <h2>Actionable Recommendations</h2>
-  <div class="recommendation">
-    <h3>[Audacy-specific recommendation title 1, possibly indicating impact like (High Impact)]</h3>
-    <p>[Why this matters in simple terms, with Audacy-specific value]</p>
-    <ul>
-      <li><strong>WHAT:</strong> Specific action to take using Audacy capabilities</li>
-      <li><strong>WHY:</strong> Expected outcome / benefit</li>
-      <li><strong>HOW:</strong> How Audacy's team can implement this</li>
-    </ul>
-  </div>
-  <div class="recommendation">
-    <h3>[Audacy-specific recommendation title 2, possibly indicating impact like (Medium Impact)]</h3>
-    <p>[Why this matters in simple terms, with Audacy-specific value]</p>
-    <ul>
-      <li><strong>WHAT:</strong> Specific action to take using Audacy capabilities</li>
-      <li><strong>WHY:</strong> Expected outcome / benefit</li>
-      <li><strong>HOW:</strong> How Audacy's team can implement this</li>
-    </ul>
-  </div>
-  </section>
----HTML_ANALYSIS_END---
-
-// ===============
-// == FINAL CHECK ==
-// ===============
-
-Ensure your analysis delivers meaningful, easy-to-understand insights focused on what the Audacy AE can actually do with this information to improve results and drive more business, adhering STRICTLY to the specified HTML format without any markdown.
-`;
-
 // Define industry-specific context data for Audacy
 const audacyIndustryContext = {
   retail: {
@@ -330,205 +192,192 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     console.log('File:', req.file ? req.file.originalname : 'No file uploaded');
 
     // Extract form data with defaults to avoid undefined errors
-    const tactics = req.body.tactics ? JSON.parse(req.body.tactics) : [];
-    const kpis = req.body.kpis ? JSON.parse(req.body.kpis) : [];
-    const currentSituation = req.body.currentSituation || 'Not provided';
-    const desiredOutcome = req.body.desiredOutcome || 'Not provided';
-    // Extract modelId from the request, default to a stable model if not provided
-    const requestedModelId = req.body.modelId || 'gemini-2.0-flash'; // Changed default
+    const tacticsString = req.body.tactics ? JSON.parse(req.body.tactics) : '';
+    const kpisString = req.body.kpis ? JSON.parse(req.body.kpis) : '';
+    const currentSituation = req.body.currentSituation || '';
+    const targetCPA = req.body.targetCPA || '';
+    const targetROAS = req.body.targetROAS || '';
+    const modelId = req.body.modelId || 'gemini-2.0-flash'; // Default to flash if not provided
+    const outputDetail = req.body.outputDetail || 'detailed'; // Get output detail, default to detailed
+    console.log(`Received outputDetail: ${outputDetail}`);
 
-    let tacticsString = '';
-    if (Array.isArray(tactics)) {
-      tacticsString = tactics.join(', ');
-    } else {
-      tacticsString = tactics;
-    }
-
-    let kpisString = '';
-    if (Array.isArray(kpis)) {
-      kpisString = kpis.join(', ');
-    } else {
-      kpisString = kpis;
-    }
-
-    let finalPrompt;
-    let dataString = ''; // Initialize dataString
-    let fileName = 'N/A'; // Default file name if none uploaded
-
-    if (!req.file) {
-      // Handle no file uploaded
-      console.log('No file uploaded. Using specific no-file prompt.');
-      // Keep the specific no-file prompt logic if desired, or adapt the template
-      finalPrompt = "No file was uploaded for analysis. Please respond with exactly this message: 'please upload file for analysis'.";
-    } else {
-      // Process uploaded file
-      fileName = req.file.originalname;
-      const fileBuffer = req.file.buffer;
-      console.log(`Processing file: ${fileName}`);
-
-      // Parse file based on type (case-insensitive check)
-      const lowerCaseFileName = fileName.toLowerCase();
-
-      if (lowerCaseFileName.endsWith('.csv')) {
-        console.log('Parsing CSV file...');
-        const fileContent = fileBuffer.toString('utf-8');
-        const parseResult = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
-        if (parseResult.errors.length > 0) {
-          console.error('CSV parsing errors:', parseResult.errors);
-          return res.status(400).json({ error: 'Failed to parse CSV file.' });
-        }
-        dataString = JSON.stringify(parseResult.data, null, 2);
-        console.log('CSV parsed successfully.');
-      } else if (lowerCaseFileName.endsWith('.xlsx')) {
-        console.log('Parsing Excel file...');
-        const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const excelData = XLSX.utils.sheet_to_json(worksheet);
-        dataString = JSON.stringify(excelData, null, 2);
-        console.log('Excel parsed successfully.');
-      } else if (lowerCaseFileName.endsWith('.pdf')) {
-        console.log('Parsing PDF file with pdfjs-dist...');
-        try {
-          // Configure pdfjs-dist worker (important for Node.js environment)
-          // Note: Adjust the path if your node_modules structure is different
-          const workerSrcPath = path.join(__dirname, '../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'); // Corrected path
-          // console.log('Worker source path:', workerSrcPath); // Debug log
-          pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrcPath;
-
-          // Load the PDF document
-          // Convert the Node.js Buffer from Multer to a Uint8Array for pdfjs-dist
-          const uint8Array = new Uint8Array(fileBuffer);
-          const loadingTask = pdfjsLib.getDocument({ data: uint8Array }); // Pass Uint8Array
-          const pdfDoc = await loadingTask.promise;
-          console.log(`PDF loaded successfully. Pages: ${pdfDoc.numPages}`);
-
-          let fullText = '';
-          for (let i = 1; i <= pdfDoc.numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map((item) => item.str).join(' ');
-            fullText += pageText + '\n'; // Add newline between pages
-          }
-          
-          dataString = fullText.trim(); // Assign extracted text
-          
-          // Log extracted text length for confirmation
-          console.log(`PDF parsed successfully. Extracted ${dataString.length} characters.`);
-
-        } catch (pdfError) {
-          console.error('PDF parsing error with pdfjs-dist:', pdfError);
-          // Provide a more informative error message
-          let errorMessage = 'Failed to parse PDF file.';
-          if (pdfError instanceof Error) {
-            errorMessage += ` Details: ${pdfError.message}`;
-            if (pdfError.message.includes('Setting up fake worker failed') || pdfError.message.includes('pdf.worker.mjs')) {
-                 errorMessage += ' Check if the pdf.worker.mjs path is correct for your environment.';
-             }
-          }
-          return res.status(400).json({ error: errorMessage });
-        }
-      } else {
-        console.log('Unsupported file type.');
-        return res.status(400).json({ error: 'Unsupported file type. Please upload CSV, XLSX, or PDF.' });
-      }
-
-      // After processing the file and before constructing the prompt
-      // Detect industry context based on data content
-      const industryContext = getIndustryContext(dataString, currentSituation);
-      let industryContextString = '';
-      
-      if (industryContext) {
-        console.log('Detected industry context:', Object.keys(audacyIndustryContext).find(key => audacyIndustryContext[key] === industryContext));
-        
-        // Format industry context for prompt
-        industryContextString = `
-**Industry-Specific Context:**
-${industryContext.contextDetails}
-
-**Audacy Industry Tips:**
-${industryContext.specificTips.map(tip => `- ${tip}`).join('\n')}
-`;
-      }
-
-      // Construct prompt from template and replace placeholders
-      finalPrompt = promptTemplate
-        .replace('{{fileName}}', fileName)
-        .replace('{{dataString}}', dataString)
-        .replace('{{tacticsString}}', tacticsString)
-        .replace('{{kpisString}}', kpisString)
-        .replace('{{currentSituation}}', currentSituation || 'Not provided')
-        .replace('{{desiredOutcome}}', desiredOutcome || 'Not provided');
-        
-      // Add industry context if detected
-      if (industryContextString) {
-        // Add industry context before the Output Structure Requirements section
-        const outputSectionMarker = "**Output Structure Requirements:**";
-        if (finalPrompt.includes(outputSectionMarker)) {
-          finalPrompt = finalPrompt.replace(
-            outputSectionMarker,
-            `${industryContextString}\n\n${outputSectionMarker}`
-          );
-        } else {
-          // Append to the end if marker not found
-          finalPrompt += `\n\n${industryContextString}`;
-        }
-      }
-    }
-    
-    // Log the prompt sent to Gemini
-    console.log('--- Prompt to Gemini ---');
-    console.log(finalPrompt);
-    console.log('--- End Prompt ---');
-    
-    // --- Use the requested model ID --- 
+    // Determine model based on ID
     const allowedModels = [
-        'gemini-2.5-pro-preview-03-25',
-        'gemini-2.0-flash'
+      'gemini-2.5-pro-preview-03-25',
+      'gemini-2.0-flash'
     ];
 
     let modelName;
-    if (allowedModels.includes(requestedModelId)) {
-        modelName = requestedModelId;
+    if (allowedModels.includes(modelId)) {
+      modelName = modelId;
     } else {
-        console.warn(`Requested model ${requestedModelId} not allowed or invalid. Falling back to default.`);
-        modelName = 'gemini-2.0-flash'; // Fallback to default
+      console.warn(`Requested model ${modelId} not allowed or invalid. Falling back to default.`);
+      modelName = 'gemini-2.0-flash'; // Fallback to default
     }
-    
+
     // Determine display name based on model used
     let displayModelName;
     switch (modelName) {
-        case 'gemini-2.5-pro-preview-03-25':
-            displayModelName = "Audacy AI (Gemini 2.5 Pro Preview)";
-            break;
-        case 'gemini-2.0-flash':
-            displayModelName = "Audacy AI (Gemini 2.0 Flash)";
-            break;
-        default:
-            displayModelName = "Audacy AI"; // Generic fallback
+      case 'gemini-2.5-pro-preview-03-25':
+        displayModelName = "Audacy AI (Gemini 2.5 Pro Preview)";
+        break;
+      case 'gemini-2.0-flash':
+        displayModelName = "Audacy AI (Gemini 2.0 Flash)";
+        break;
+      default:
+        displayModelName = "Audacy AI"; // Generic fallback
     }
 
     console.log(`Initializing model for analysis: ${modelName}`);
     
     // Initialize the model
     let result;
+    let finalPrompt = ''; // Define finalPrompt here to be accessible in response
+    let dataString = ''; // Initialize dataString here
+    let fileName = req.file ? req.file.originalname : 'N/A'; // Get filename early
+
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      result = await callModelWithRetry(model, finalPrompt);
-    } catch (error) {
-      console.error('Error calling model:', error);
-      return res.status(500).json({ error: `Error calling ${modelName}: ${error.message}` });
-    }
+        const model = genAI.getGenerativeModel({ model: modelName });
+
+        // --- Process Uploaded File --- 
+        if (!req.file) {
+            console.log('No file uploaded.');
+            dataString = 'No file content provided.'; 
+        } else {
+            fileName = req.file.originalname;
+            const fileBuffer = req.file.buffer;
+            console.log(`Processing file: ${fileName}`);
+            const lowerCaseFileName = fileName.toLowerCase();
+
+            if (lowerCaseFileName.endsWith('.csv')) {
+                // CSV Parsing logic...
+                console.log('Parsing CSV file...');
+                const fileContent = fileBuffer.toString('utf-8');
+                const parseResult = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
+                if (parseResult.errors.length > 0) {
+                    console.error('CSV parsing errors:', parseResult.errors);
+                    throw new Error('Failed to parse CSV file.'); // Throw error to be caught
+                }
+                dataString = JSON.stringify(parseResult.data, null, 2);
+                console.log('CSV parsed successfully.');
+            } else if (lowerCaseFileName.endsWith('.xlsx')) {
+                // XLSX Parsing logic...
+                console.log('Parsing Excel file...');
+                const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const excelData = XLSX.utils.sheet_to_json(worksheet);
+                dataString = JSON.stringify(excelData, null, 2);
+                console.log('Excel parsed successfully.');
+            } else if (lowerCaseFileName.endsWith('.pdf')) {
+                 // PDF Parsing logic...
+                console.log('Parsing PDF file with pdfjs-dist...');
+                try {
+                    const workerSrcPath = path.join(__dirname, '../../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrcPath;
+                    const uint8Array = new Uint8Array(fileBuffer);
+                    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+                    const pdfDoc = await loadingTask.promise;
+                    console.log(`PDF loaded successfully. Pages: ${pdfDoc.numPages}`);
+                    let fullText = '';
+                    for (let i = 1; i <= pdfDoc.numPages; i++) {
+                        const page = await pdfDoc.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map((item) => item.str).join(' ');
+                        fullText += pageText + '\n';
+                    }
+                    dataString = fullText.trim();
+                    console.log(`PDF parsed successfully. Extracted ${dataString.length} characters.`);
+                } catch (pdfError) {
+                    console.error('PDF parsing error with pdfjs-dist:', pdfError);
+                    let errorMessage = 'Failed to parse PDF file.';
+                    if (pdfError instanceof Error) errorMessage += ` Details: ${pdfError.message}`;
+                    throw new Error(errorMessage); // Throw error
+                }
+            } else {
+                console.log('Unsupported file type.');
+                throw new Error('Unsupported file type. Please upload CSV, XLSX, or PDF.'); // Throw error
+            }
+        }
+        // --- End File Processing ---
+
+        // --- Select and Read Prompt Template --- 
+        let promptTemplatePath;
+        if (outputDetail === 'brief') {
+            promptTemplatePath = path.join(__dirname, 'prompt_template_brief.txt');
+            console.log(`Using BRIEF prompt template: ${promptTemplatePath}`);
+        } else { // Default to detailed
+            promptTemplatePath = path.join(__dirname, 'prompt_template.txt');
+            console.log(`Using DETAILED prompt template: ${promptTemplatePath}`);
+        }
+        let promptTemplateContent = await fs.promises.readFile(promptTemplatePath, 'utf-8');
+        // --- End Select and Read --- 
+
+        // --- Get Industry Context (AFTER processing file) ---
+        const industryContext = getIndustryContext(dataString, currentSituation);
+        console.log(`Detected industry context: ${industryContext ? Object.keys(audacyIndustryContext).find(key => audacyIndustryContext[key] === industryContext) : 'None'}`);
+        // --- End Get Industry Context ---
+        
+        // --- Fill Prompt Placeholders --- 
+        finalPrompt = promptTemplateContent; // Use the selected template
+        finalPrompt = finalPrompt.replace('{{fileName}}', fileName); // fileName is set earlier
+        finalPrompt = finalPrompt.replace('{{tacticsString}}', tacticsString || 'N/A');
+        finalPrompt = finalPrompt.replace('{{kpisString}}', kpisString || 'N/A');
+        finalPrompt = finalPrompt.replace('{{currentSituation}}', currentSituation || 'N/A');
+        finalPrompt = finalPrompt.replace('{{desiredOutcome}}', 'N/A'); // Placeholder 
+        finalPrompt = finalPrompt.replace('{{dataString}}', dataString); // Use processed dataString
+        finalPrompt = finalPrompt.replace('{{industryContext}}', industryContext ? industryContext.contextDetails : 'General audio advertising context.');
+        finalPrompt = finalPrompt.replace('{{industryTips}}', industryContext ? industryContext.specificTips.map(tip => `- ${tip}`).join('\n') : 'Focus on standard audio campaign best practices.');
+        // --- End Fill Placeholders ---
+
+        // --- Log the final prompt before sending --- 
+        console.log("=================================================================================");
+        console.log("FINAL PROMPT BEING SENT TO MODEL:");
+        console.log("----------------------------------------------------------------------------------");
+        console.log(finalPrompt);
+        console.log("=================================================================================");
+        // --- End Log --- 
+
+        // Call the model
+        result = await callModelWithRetry(model, finalPrompt);
     
-    const response = await result.response;
-    const fullResponseText = response.text();
-    console.log('Raw Gemini response:', fullResponseText);
-
-    // --- Parse the response based on delimiters --- 
-    let htmlAnalysis = '';
-    let rawText = ''; // For the text version of the HTML analysis
+    } catch (error) {
+      // Catch errors from file processing or model call
+      console.error('Error during analysis processing or model call:', error);
+      // Ensure a response is sent even on error
+      // Check if headers are already sent before sending response
+      if (!res.headersSent) {
+           if (error instanceof Error && error.message.includes('Unsupported file type')) {
+               return res.status(400).json({ error: error.message });
+           } else if (error instanceof Error && error.message.includes('Failed to parse')) {
+               return res.status(400).json({ error: error.message });
+           } else {
+                return res.status(500).json({ error: `Server error during analysis step: ${error.message}` });
+           }
+      }
+      // If headers were sent, we can't send another response, just log
+       console.error('Headers already sent, could not send error response to client.');
+       return; // Stop further processing in this catch block
+    } // End of outer try block
+    
+    // --- Process Model Response (Ensure this runs ONLY if model call was successful) ---
+    if (!result) {
+        console.error("Model result is undefined, cannot proceed to process response.");
+        if (!res.headersSent) {
+             return res.status(500).json({ error: 'Model did not return a result.' });
+        }
+        return;
+    }
 
     try {
+        const response = await result.response;
+        const fullResponseText = response.text();
+        console.log('Raw Gemini response:', fullResponseText);
+
+        // --- Parse the response based on delimiters --- 
+        let htmlAnalysis = '';
+        let rawText = ''; // For the text version of the HTML analysis
+
         const htmlMatch = fullResponseText.match(/---HTML_ANALYSIS_START---([\s\S]*?)---HTML_ANALYSIS_END---/);
         if (htmlMatch && htmlMatch[1]) {
             htmlAnalysis = htmlMatch[1].trim();
@@ -544,35 +393,41 @@ ${industryContext.specificTips.map(tip => `- ${tip}`).join('\n')}
             htmlAnalysis = htmlAnalysis.trim();
             rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, ""); // Extract raw text from HTML
         } else {
-            console.warn('Could not find HTML analysis part in response.');
+            console.warn('Could not find HTML analysis part in response. Using full response as fallback.');
             // Fallback: Assume the whole response is HTML if delimiters are missing
             htmlAnalysis = fullResponseText.trim(); 
-            rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
+             rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
         }
-    } catch (parsingError) {
-        console.error('Error parsing response sections:', parsingError);
-        // Use the full response as HTML as a fallback if parsing fails catastrophically
-        htmlAnalysis = fullResponseText.trim();
-        rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
+        // --------------------------------------------
+
+        console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
+
+        // Send structured response to client
+        // Ensure response is sent only once
+        if (!res.headersSent) {
+            res.json({
+                html: htmlAnalysis, // The main HTML analysis
+                raw: rawText,       // Raw text version of the HTML analysis
+                prompt: finalPrompt,  // Send the final generated prompt
+                modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
+            });
+            console.log('Response sent to client.');
+        }
+    } catch (responseProcessingError) {
+        console.error('Error processing model response:', responseProcessingError);
+        if (!res.headersSent) {
+             res.status(500).json({ error: 'Server error processing analysis response', details: responseProcessingError.message });
+        }
     }
-    // --------------------------------------------
+    // --- End Process Model Response ---
 
-    console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
-
-    // Send structured response to client
-    res.json({
-      html: htmlAnalysis, // The main HTML analysis
-      raw: rawText,       // Raw text version of the HTML analysis
-      prompt: finalPrompt,  // Send the final generated prompt
-      modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
-    });
-
-    console.log('Response sent to client.');
-  } catch (error) {
-    // Handle errors (e.g., JSON parsing, file parsing, API call)
-    console.error('--- Error in /analyze ---');
-    console.error(error);
-    res.status(500).json({ error: 'Server error during analysis', details: error.message });
+  } catch (outerError) {
+    // Catch errors from initial setup or logic outside the main try block
+    console.error('--- Outer Error in /analyze --- ');
+    console.error(outerError);
+    if (!res.headersSent) {
+         res.status(500).json({ error: 'Server error during analysis setup', details: outerError.message });
+    }
   }
 });
 
@@ -655,7 +510,7 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
     try {
       const conversationHistory = req.body.conversationHistory ? 
         JSON.parse(req.body.conversationHistory) : [];
-        
+      
       if (conversationHistory && conversationHistory.length > 0) {
         // Remove the check for only the current message
         // Always use conversation history

@@ -2480,3 +2480,10 @@ select:focus {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* Enhance shadow on hover */
 }
+
+/* Added container for header controls */
+.header-controls-container {
+  display: flex;
+  gap: 15px; /* Adjust gap between toggles as needed */
+  align-items: center;
+}
