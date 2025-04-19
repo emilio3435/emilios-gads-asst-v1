@@ -205,6 +205,9 @@ function App() {
         const updatedConversation = [...helpConversation, newUserMessage];
         setHelpConversation(updatedConversation);
 
+        // --- Define API Base URL ---
+        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || ''; // Default to empty string if not set
+
         try {
             // Create FormData to support file uploads
             const formData = new FormData();
@@ -230,7 +233,7 @@ function App() {
             }
 
             // Send the help request to the server
-            const response = await fetch('/api/get-help', {
+            const response = await fetch(`${apiBaseUrl}/api/get-help`, { // Use template literal
                 method: 'POST',
                 body: formData,
             });
@@ -403,8 +406,11 @@ function App() {
 
         setIsLoading(true);
 
+        // --- Define API Base URL ---
+        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || ''; // Default to empty string if not set
+
         try {
-            const response = await fetch('/api/analyze', {
+            const response = await fetch(`${apiBaseUrl}/api/analyze`, { // Use template literal
                 method: 'POST',
                 body: formData,
             });
