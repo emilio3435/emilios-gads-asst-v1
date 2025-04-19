@@ -235,7 +235,7 @@ function App() {
             }
 
             // Send the help request to the server
-            const response = await fetch(`${apiBaseUrl}/analyze`, { // Remove /api prefix
+            const response = await fetch(`${apiBaseUrl}/get-help`, { // CORRECTED ENDPOINT
                 method: 'POST',
                 body: formData,
             });
@@ -948,12 +948,12 @@ function App() {
                 )}
             </div>
 
-            {/* Conditionally render the Analyze button OR the loading indicator */}
-            {!isLoading && (
-                <button 
-                    className="rounded-element submit-button" 
-                    onClick={handleSubmit} 
-                    disabled={isLoading} // Technically redundant now but good practice
+            {/* Conditionally render the Analyze button OR the loading indicator OR the View Analysis button */}
+            {!isLoading && !analysisResult && (
+                <button
+                    className="rounded-element submit-button"
+                    onClick={handleSubmit}
+                    disabled={!file || !selectedTactics || !selectedKPIs} // Add disabled state based on required fields
                     title="Submit the data and inputs to generate the AI analysis."
                 >
                     Analyze
@@ -966,21 +966,22 @@ function App() {
                     <p>Analyzing your data, please wait...</p>
                 </div>
             )}
-            {error && <div className="error-message">{error}</div>}
-            
-            {/* Add View Analysis button when analysis result exists */}
-            {analysisResult && !showResults && (
-                <div className="input-to-analysis-navigation">
-                    <div className="navigation-info">
-                        <span className="nav-step active">Input</span>
-                        <span className="nav-arrow">→</span>
-                        <span className="nav-step">Analysis</span>
-                    </div>
+
+            {/* Show View Analysis button IN PLACE of Analyze button when ready */}
+            {!isLoading && analysisResult && !showResults && (
+                <div className="analysis-ready-container"> {/* New container for alignment */}
+                    <p className="analysis-complete-message">Analysis Complete ✔️</p>
                     <button className="rounded-element view-analysis-button" onClick={handleViewAnalysis}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
                         View Analysis
                     </button>
                 </div>
             )}
+
+            {error && <div className="error-message">{error}</div>}
         </div>
     );
 }

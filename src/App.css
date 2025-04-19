@@ -1679,14 +1679,14 @@ label.choose-file-button {
 }
 
 .view-analysis-button:hover {
-  background-color: #e05a1e;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  background-color: #e65c00; /* Slightly darker orange on hover */
 }
 
+/* Remove the arrow icon content */
 .view-analysis-button::before {
-  content: "↗";
-  font-size: 1.2em;
+  /* content: '↗️'; Commenting out or removing this line */
+  margin-right: 6px;
+  font-size: 1.1em;
 }
 
 .nav-step {
