@@ -1,0 +1,332 @@
+/* === Chat Interface Container (within Modal) === */
+.chat-interface { /* If needed as a wrapper */
+  display: flex;
+  flex-direction: column;
+  /* height: 70vh; Should be handled by modal layout */
+  /* max-height: 600px; Should be handled by modal layout */
+}
+
+/* === Chat History/Conversation Area === */
+.chat-history-container, /* Old name? */
+.help-conversation { 
+  flex: 1; 
+  overflow-y: auto;
+  padding: var(--spacing-medium) var(--spacing-large);
+  background-color: var(--color-white); 
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+  gap: var(--spacing-small);
+  /* Remove border/radius if handled by modal layout */
+}
+
+.empty-chat-message {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-dark);
+  font-style: italic;
+  text-align: center;
+  padding: 0 var(--spacing-large);
+}
+
+/* === Individual Chat Messages === */
+.conversation-message { 
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 6px; /* Small gap */
+  max-width: 90%;
+}
+
+.conversation-message:last-child {
+  margin-bottom: 0;
+}
+
+.conversation-message.user-message-container {
+  align-self: flex-end;
+}
+
+.conversation-message.assistant-message-container {
+  align-self: flex-start;
+}
+
+.user-query { /* User message bubble */
+  background-color: var(--audacy-purple-light);
+  color: var(--gray-darkest);
+  padding: 10px 12px;
+  border-radius: 16px 16px var(--border-radius-small) 16px;
+  text-align: left;
+  box-shadow: var(--shadow-small);
+  order: 1;
+  font-size: 14px;
+  line-height: 1.4;
+  max-width: 85%;
+  align-self: flex-end;
+}
+
+.assistant-response { /* Assistant message bubble */
+  background-color: var(--color-white);
+  padding: 10px 12px;
+  line-height: 1.4;
+  border-radius: 16px 16px 16px var(--border-radius-small);
+  border: 1px solid var(--gray-light);
+  text-align: left;
+  box-shadow: var(--shadow-small);
+  color: var(--gray-darkest);
+  order: 1;
+  font-size: 14px;
+  max-width: 85%;
+  align-self: flex-start;
+}
+
+.user-query p,
+.assistant-response p { /* Base paragraph styles in messages */
+  margin-bottom: 0.5em;
+  margin-top: 0.5em;
+}
+.user-query p:first-child,
+.assistant-response p:first-child {
+  margin-top: 0;
+}
+.user-query p:last-child,
+.assistant-response p:last-child {
+  margin-bottom: 0;
+}
+
+.assistant-response ul,
+.assistant-response ol {
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+  padding-left: var(--spacing-large);
+}
+
+.assistant-response ul li {
+  position: relative;
+  list-style-type: none;
+  padding-left: var(--border-radius-small);
+  margin-bottom: var(--border-radius-small);
+}
+
+.assistant-response ul li::before {
+  content: "•";
+  color: var(--audacy-purple);
+  font-weight: bold;
+  position: absolute;
+  left: -12px;
+}
+
+.message-time {
+  display: block;
+  text-align: right; /* Align based on user/assistant? Handled by flex align-self */
+  font-size: 9px;
+  color: var(--gray-dark);
+  margin-top: 2px;
+  padding: 0 5px; /* Add padding for better spacing */
+}
+
+/* === Chat Input Area (within Help Modal Footer) === */
+.help-form { 
+  /* Layout handled by modal */
+}
+
+.help-instructions {
+  color: var(--gray-dark);
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 80%;
+  margin: 0 auto var(--spacing-small) auto;
+  text-align: center;
+}
+
+.help-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--gray-medium);
+  border-radius: 18px; /* Specific radius */
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: var(--spacing-small);
+  box-sizing: border-box;
+  min-height: 50px;
+  line-height: 1.4;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05) inset;
+}
+
+.help-textarea:focus {
+  outline: none;
+  border-color: var(--audacy-purple);
+  box-shadow: 0 0 0 2px rgba(80, 41, 167, 0.1); 
+}
+
+.help-controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--spacing-small);
+  /* margin-bottom: var(--spacing-small); Should be handled by form padding */
+}
+
+.help-button-container {
+  display: flex;
+  gap: var(--spacing-small);
+}
+
+/* Chat specific buttons (Send, Clear, Upload Icon) - Move to buttons.css? */
+/* For now, keeping related controls together */
+.submit-help-button {
+  background-color: var(--audacy-orange);
+  color: var(--color-white);
+  border: none;
+  border-radius: 18px;
+  padding: 8px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-help-button:hover:not(:disabled) {
+  background-color: var(--audacy-orange-dark); 
+  transform: translateY(-2px);
+}
+
+.submit-help-button:disabled {
+  background-color: #FFB999; 
+  color: var(--color-white);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none; 
+  opacity: 0.7; 
+}
+
+.clear-help-button { /* Consider renaming to clear-chat-button? */
+  background-color: transparent;
+  color: var(--gray-dark);
+  border: 1px solid var(--gray-medium);
+  border-radius: 18px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.clear-help-button:hover {
+  background-color: var(--gray-light);
+  transform: none;
+  color: var(--gray-darkest);
+}
+
+.file-upload-area { /* Container for icon + name */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+}
+
+.upload-file-icon-button { /* The paperclip icon button */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+  background-color: var(--gray-light);
+  color: var(--gray-darker);
+  border: 1px solid var(--gray-medium-dark);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-file-icon-button:hover {
+  background-color: var(--gray-medium-light);
+  border-color: var(--gray-medium);
+  color: var(--gray-darkest);
+}
+
+.upload-file-icon-button svg {
+  display: block; 
+}
+
+.uploaded-file-info { /* Bubble showing filename */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--gray-medium-light);
+  padding: 3px 8px;
+  border-radius: 15px;
+  font-size: 12px;
+  max-width: 180px; 
+}
+
+.uploaded-file-name {
+  color: var(--gray-dark);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.context-file-remove.icon-style { /* The 'x' button */
+  background: none;
+  border: none;
+  color: var(--gray-dark);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.context-file-remove.icon-style:hover {
+  color: var(--color-error); 
+}
+
+.keyboard-tip {
+  font-size: 12px;
+  color: var(--gray-dark);
+  margin-top: var(--spacing-small);
+  font-style: italic;
+  text-align: right;
+}
+
+.help-loading {
+  /* Position handled by modal layout? Or keep absolute? */
+  position: absolute;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-medium);
+}
+
+/* Styles specific to how content renders inside assistant messages */
+.help-response-content h2 {
+  color: var(--audacy-purple);
+  font-size: 18px; /* Slightly smaller than main h2 */
+  margin-top: var(--spacing-medium);
+  margin-bottom: var(--spacing-small);
+  padding-bottom: var(--spacing-small);
+  border-bottom: 1px solid var(--gray-medium);
+  width: 100%;
+}
+
+.help-response-content h3 {
+  color: var(--audacy-orange);
+  font-size: 16px; 
+  margin-top: var(--spacing-medium);
+  margin-bottom: var(--spacing-small);
+}
+
+.help-response-content h4 {
+  font-size: 14px;
+  margin-top: var(--spacing-small);
+  margin-bottom: 4px;
+  color: var(--gray-darker);
+}
+
+.help-response-content p {
+  margin-bottom: 0.5em;
+  line-height: 1.4;
+} 

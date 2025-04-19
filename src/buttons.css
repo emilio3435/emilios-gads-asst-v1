@@ -1,0 +1,284 @@
+/* === Base Button Styles === */
+button {
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+/* === General Rounded Button === */
+.rounded-element, 
+.choose-file-button /* Apply base rounded style */
+{
+  background-color: var(--audacy-purple);
+  color: var(--color-white);
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--border-radius-round);
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 0.95em;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-align: center;
+  margin-bottom: var(--spacing-medium);
+}
+
+.rounded-element:hover, 
+.choose-file-button:hover {
+  background-color: var(--audacy-purple-dark);
+}
+
+/* === Specific Button Types === */
+
+/* Buttons in the results input section */
+.show-input-button, 
+.help-button, 
+.copy-button, 
+.edit-inputs-button {
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-small);
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--border-radius-round);
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9em;
+  box-shadow: var(--shadow-medium);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.copy-button {
+  background-color: var(--gray-medium-light);
+  color: var(--gray-darkest);
+  min-width: 120px;
+}
+
+.copy-button:hover {
+  background-color: var(--gray-medium-dark);
+  transform: translateY(-1px);
+}
+
+.edit-inputs-button {
+  background-color: var(--audacy-teal);
+  color: var(--color-white);
+}
+
+.edit-inputs-button:hover {
+  background-color: var(--audacy-teal-dark);
+  transform: translateY(-1px);
+}
+
+.help-button {
+  background-color: var(--audacy-purple-alt);
+  color: var(--color-white);
+}
+
+.help-button:hover {
+  background-color: var(--audacy-purple-alt-dark);
+  transform: translateY(-1px);
+}
+
+/* Back Button (Results Page) */
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+  background-color: var(--gray-lightest);
+  color: var(--audacy-purple);
+  padding: 10px 15px;
+  border: 1px solid var(--gray-medium);
+  border-radius: var(--border-radius-medium);
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.95em;
+  text-align: center;
+  margin-bottom: 0;
+  margin-right: 0; 
+  box-shadow: var(--shadow-small);
+}
+
+.back-button:hover {
+  background-color: var(--audacy-purple);
+  color: var(--color-white);
+  border-color: var(--audacy-purple);
+}
+
+/* Model Selection Buttons (Header/Advanced) */
+.model-button {
+  padding: 5px 12px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  background-color: var(--gray-medium-light);
+  color: var(--gray-dark);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.model-button.active {
+  background-color: var(--audacy-purple);
+  color: var(--color-white);
+  border-color: var(--audacy-purple);
+  font-weight: 600;
+}
+
+.model-button:not(.active):hover {
+  background-color: var(--gray-medium);
+}
+
+/* Submit/Analyze Button */
+.submit-button {
+  background-color: var(--audacy-orange);
+  color: var(--color-white);
+  padding: 10px 30px;
+  border: none;
+  border-radius: var(--border-radius-round);
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 1em;
+  font-weight: 600;
+  text-align: center;
+  margin-top: var(--spacing-small);
+  margin-bottom: var(--spacing-small);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 200px;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: var(--audacy-orange-dark);
+}
+
+.submit-button:disabled {
+  background-color: #FFB999; /* Keep specific disabled color or make variable */
+  color: var(--color-white); 
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none; 
+  opacity: 0.7; 
+}
+
+/* View Analysis Button */
+.view-analysis-button {
+  background-color: var(--audacy-orange);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-small);
+  margin-top: var(--spacing-large);
+  transition: all 0.3s;
+  box-shadow: var(--shadow-medium);
+  position: relative;
+  /* Inherits .rounded-element styles like padding, border-radius */
+}
+
+.view-analysis-button:hover {
+  background-color: var(--audacy-orange-hover);
+}
+
+/* Remove File Button */
+.remove-file-button {
+  background-color: var(--gray-light);
+  color: var(--gray-darker);
+  border: 1px solid var(--gray-medium-dark);
+  padding: 5px 10px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: all 0.2s;
+  margin-top: 0;
+}
+
+.remove-file-button:hover {
+  background-color: var(--gray-medium-light);
+  color: var(--gray-darkest);
+}
+
+/* Advanced Options Button */
+.advanced-options-button {
+  background: none;
+  border: none;
+  color: var(--audacy-purple);
+  text-decoration: underline;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.advanced-options-button:hover {
+  color: var(--audacy-purple-dark);
+}
+
+/* New Inquiry Floating Button */
+.new-inquiry-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    background-color: var(--audacy-orange); 
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--border-radius-round);
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-small);
+    box-shadow: var(--shadow-large);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.new-inquiry-button:hover {
+    background-color: var(--audacy-orange-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); /* Keep specific shadow? */
+}
+
+.new-inquiry-button svg {
+    stroke: var(--color-white);
+    stroke-width: 2;
+}
+
+/* History Buttons */
+.clear-history-button {
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid var(--color-error-border);
+    padding: 6px 12px;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.2s;
+    float: right; 
+    margin-bottom: var(--spacing-small);
+}
+
+.clear-history-button:hover {
+    background-color: var(--color-error-border);
+}
+
+.view-history-button {
+    background-color: var(--gray-medium-light);
+    color: var(--gray-darkest);
+    border: none;
+    padding: 6px 10px;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.2s;
+}
+
+.view-history-button:hover {
+    background-color: var(--gray-medium-dark);
+}
+
+/* Add other button styles (.kpi-recommendation-close, chat buttons, modal buttons) below */ 

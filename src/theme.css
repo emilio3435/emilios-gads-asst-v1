@@ -1,0 +1,56 @@
+:root {
+  /* Audacy Branding Colors */
+  --audacy-purple: #5029a7;
+  --audacy-purple-dark: #3a1e7a;
+  --audacy-purple-light: #e5e0fa;
+  --audacy-orange: #FE5000;
+  --audacy-orange-dark: #e64500;
+  --audacy-orange-hover: #e65c00; /* Slightly darker orange for hover */
+  --audacy-orange-light: #FFF0E6;
+  --audacy-teal: #078574;
+  --audacy-teal-dark: #056b5d;
+  --audacy-purple-alt: #7A3BCB;
+  --audacy-purple-alt-dark: #6732aa;
+
+  /* Grayscale Palette */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --gray-lightest: #f9f9f9;
+  --gray-lighter: #f8f9fa;
+  --gray-light: #f0f0f0;
+  --gray-medium-light: #e9ecef;
+  --gray-medium: #dee2e6;
+  --gray-medium-dark: #cccccc;
+  --gray-dark: #6c757d;
+  --gray-darker: #555555;
+  --gray-darkest: #333333;
+  
+  /* Semantic Colors */
+  --color-error: #dc3545; 
+  --color-error-bg: #f8d7da;
+  --color-error-border: #f5c6cb;
+  --color-error-text: #721c24;
+  --color-info-bg: #e7f3fe;
+  --color-info-border: #b3d7ff;
+  --color-info-border-left: #007bff;
+  --color-info-text: #004085;
+  --color-info-text-strong: #005f99;
+
+  /* Font Families */
+  --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-monospace: Consolas, Menlo, Courier New, monospace;
+
+  /* Common Sizes & Spacing (Examples - adjust as needed) */
+  --border-radius-small: 4px;
+  --border-radius-medium: 8px;
+  --border-radius-large: 12px;
+  --border-radius-round: 50px;
+  --spacing-small: 8px;
+  --spacing-medium: 15px;
+  --spacing-large: 20px;
+
+  /* Shadows */
+  --shadow-small: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-medium: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow-large: 0 4px 12px rgba(0, 0, 0, 0.2);
+} 

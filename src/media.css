@@ -1,0 +1,113 @@
+@media (max-width: 768px) {
+  /* Adjustments for smaller screens */
+
+  /* Layout Adjustments */
+  .App {
+    padding: var(--spacing-medium);
+  }
+
+  .back-button-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-medium);
+    padding-top: 75px; /* Ensure enough space for logo */
+  }
+
+  .navigation-info {
+    margin-top: var(--spacing-small);
+    align-self: center; /* Center nav steps below back button */
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-small);
+  }
+
+  .file-upload-section {
+    padding: var(--spacing-small) 0;
+  }
+
+  .input-section { /* Buttons below results */
+      gap: var(--spacing-small);
+  }
+  
+  .campaign-info {
+    /* Styles moved from App.css specific media query */
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: var(--spacing-small);
+  }
+
+  /* Form Element Adjustments */
+  .choose-file-button {
+    width: 100%;
+  }
+
+  .text-area {
+    min-height: 80px;
+  }
+  
+  .submit-button {
+      max-width: 100%;
+  }
+
+  /* Modal Adjustments */
+  .prompt-modal,
+  .help-modal {
+    width: 95%;
+    max-height: 90vh; 
+  }
+
+  /* Chat Adjustments */
+  .help-modal .help-conversation {
+    max-height: 65vh; /* Adjust chat height on mobile */
+    padding: var(--spacing-small) var(--spacing-medium);
+  }
+
+  .conversation-message {
+    max-width: 95%;
+  }
+
+  .help-modal .help-form {
+      padding: var(--spacing-small) var(--spacing-medium);
+  }
+
+  .help-instructions {
+    font-size: 12px;
+    margin-bottom: var(--spacing-small);
+  }
+  
+  .help-controls-container {
+      flex-wrap: wrap; /* Allow wrapping on small screens */
+      gap: var(--spacing-small);
+  }
+}
+
+@media (max-width: 480px) {
+  /* Further adjustments for very small screens */
+  h1 {
+    font-size: 1.8em;
+  }
+
+  .results-header-logo {
+      height: 35px;
+  }
+  
+  .back-button-container {
+      padding-top: 60px;
+  }
+
+  button,
+  .choose-file-button {
+      padding: 8px 15px;
+      font-size: 0.9em;
+  }
+  
+  .new-inquiry-button {
+      bottom: 15px;
+      right: 15px;
+      padding: 10px 18px;
+      font-size: 14px;
+  }
+} 

@@ -1,0 +1,89 @@
+/* === Base Table Styling === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--spacing-large);
+  font-size: 14px; /* Base table font size */
+}
+
+th, td {
+  border: 1px solid var(--gray-medium);
+  padding: var(--spacing-small) 12px; /* Adjust padding */
+  text-align: left;
+  vertical-align: top; /* Align content top */
+}
+
+th {
+  background-color: var(--gray-lighter);
+  font-weight: 600;
+  color: var(--gray-darkest);
+}
+
+tr:nth-child(even) {
+  background-color: var(--gray-lightest);
+}
+
+tr:hover {
+  background-color: var(--gray-medium-light); /* Subtle hover */
+}
+
+/* === Specific Table Contexts === */
+
+/* Table within results display (if distinct styling needed) */
+.results-display table {
+  font-size: 15px; /* Slightly larger font for results */
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05); /* Specific shadow */
+}
+
+.results-display th {
+  background-color: var(--audacy-purple);
+  color: var(--color-white);
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.results-display td {
+   border-bottom: 1px solid var(--gray-light); /* Lighter internal border */
+   padding: 12px 15px; /* Specific padding */
+}
+
+.results-display tr:nth-child(even) {
+  background-color: var(--gray-lighter);
+}
+
+.results-display tr:hover {
+  background-color: var(--gray-light);
+}
+
+
+/* Table within formatted prompt modal */
+.formatted-prompt table {
+  margin-top: var(--spacing-small);
+  font-size: 13px; /* Smaller font for prompt data */
+}
+
+.formatted-prompt th {
+  background-color: var(--gray-lighter);
+  color: var(--gray-darkest);
+}
+
+.formatted-prompt td {
+  border: 1px solid var(--gray-medium);
+  padding: var(--spacing-small);
+}
+
+/* CSV Table Container from prompt formatting */
+.csv-table-container {
+  margin-top: var(--spacing-medium);
+  max-height: 400px; /* Limit height */
+  overflow: auto;   /* Add scrollbars */
+  border: 1px solid var(--gray-medium);
+  border-radius: var(--border-radius-small);
+}
+
+.csv-data-table { /* The actual table inside the scrollable container */
+  margin-bottom: 0; /* No bottom margin needed inside container */
+} 

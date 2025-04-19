@@ -1,0 +1,218 @@
+/* === Base Form Element Styles === */
+label {
+  display: block;
+  margin-bottom: var(--spacing-small);
+  font-weight: 600; /* Slightly bolder labels */
+  color: var(--gray-darker);
+  text-align: left;
+  font-size: 0.9em;
+}
+
+input[type='file'] {
+  /* Hidden, label is styled */
+  /* Basic styles if needed, but primarily handled by label */
+}
+
+input[type='number'].text-input,
+input[type='text'].text-input, /* Assuming other text inputs might exist */
+textarea.text-area,
+select.tactics-list,
+select.kpi-list,
+select.model-list {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--gray-medium-dark);
+  border-radius: var(--border-radius-small);
+  box-sizing: border-box;
+  background-color: var(--color-white);
+  color: var(--color-black);
+  font-size: 0.95em;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type='number'].text-input:focus,
+input[type='text'].text-input:focus,
+textarea.text-area:focus,
+select.tactics-list:focus,
+select.kpi-list:focus,
+select.model-list:focus {
+  outline: none;
+  border-color: var(--audacy-purple);
+  box-shadow: 0 0 0 2px rgba(80, 41, 167, 0.1); /* Use Audacy purple focus */
+}
+
+textarea.text-area {
+  min-height: 90px;
+  resize: vertical;
+  font-family: inherit; /* Ensure textarea uses the primary font */
+}
+
+textarea.text-area::placeholder {
+  color: var(--gray-dark);
+}
+
+select.tactics-list,
+select.kpi-list,
+select.model-list {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  background-size: 16px 12px;
+}
+
+select:hover {
+  border-color: var(--audacy-orange); /* Audacy orange hover on selects */
+}
+
+/* === Form Structure & Specific Elements === */
+
+.app-instructions { /* Instructions text at top */
+  font-size: 0.95em;
+  color: var(--gray-darker);
+  max-width: 90%;
+  margin: 0 auto var(--spacing-large) auto; 
+  line-height: 1.5;
+  text-align: center; /* Center align instructions */
+}
+
+.file-name { /* Display selected file name */
+  font-size: 14px;
+  color: var(--gray-dark);
+  margin: 0; /* Remove default margins */
+  text-align: left;
+  max-width: calc(100% - 30px); /* Adjust to prevent overlap with remove button */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-name.prompt-text { /* Styling for the prompt text when no file selected */
+  color: var(--gray-darker);
+  font-style: italic;
+}
+
+.file-name span { /* Bolding parts of file name display */
+  font-weight: bold;
+}
+
+.file-upload-section { 
+  /* Container specific styles if any, beyond base container */
+  padding: var(--spacing-small) 0; /* Example */
+}
+
+.advanced-toggles-container .model-selector-simple { 
+  /* Specific layout for toggles in advanced section */
+  /* Inherits .model-selector-simple from layout.css - move specific adjustments? */
+  margin-top: var(--spacing-small);
+}
+
+.advanced-options-heading {
+    font-size: 0.9em; 
+    color: var(--gray-darker);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 var(--spacing-small) 0; 
+    padding-bottom: var(--spacing-small);
+    border-bottom: 1px solid var(--gray-medium);
+}
+
+/* Prompt Syntax Highlighting (related to forms/display) */
+.formatted-prompt {
+  font-family: var(--font-monospace);
+  font-size: 13px; 
+  line-height: 1.6;
+  color: var(--gray-darkest);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.prompt-keyword {
+  color: var(--color-info-border-left); /* Using info blue */
+  font-weight: bold;
+}
+
+.prompt-comment {
+  color: var(--gray-dark);
+  font-style: italic;
+}
+
+.prompt-placeholder {
+  color: #e36209; /* Keep specific orange or use variable? */
+  background-color: var(--audacy-orange-light);
+  padding: 1px 3px;
+  border-radius: var(--border-radius-small);
+  font-weight: bold;
+}
+
+.prompt-backtick {
+  color: var(--color-error); /* Using error red */
+}
+
+.prompt-string {
+  color: #032f62; /* Keep specific dark blue */
+}
+
+.prompt-delimiter {
+  color: var(--audacy-purple-alt); /* Using alt purple */
+  font-weight: bold;
+}
+
+/* Info display within results prompt box */
+.campaign-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-small);
+  margin-bottom: var(--spacing-medium);
+}
+
+.info-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-medium);
+  align-items: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+}
+
+.info-label {
+  font-weight: 700;
+  color: var(--audacy-orange);
+  font-size: 0.9em;
+}
+
+.info-value {
+  font-weight: 500;
+  color: var(--gray-darkest);
+  font-size: 0.9em;
+}
+
+.campaign-context {
+  margin-top: var(--spacing-medium);
+  border-top: 1px solid var(--gray-medium-light);
+  padding-top: var(--spacing-medium);
+}
+
+.context-item {
+  margin-bottom: var(--spacing-medium);
+}
+
+.context-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-dark);
+  display: block;
+  margin-bottom: var(--border-radius-small);
+}
+
+.context-value {
+  margin: 0;
+  padding: 0;
+  color: var(--gray-darkest);
+  line-height: 1.5;
+} 

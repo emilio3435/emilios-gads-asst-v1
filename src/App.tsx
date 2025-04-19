@@ -4,7 +4,19 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
-import './App.css';
+// import './App.css'; // Remove old import
+
+// Import new CSS files
+import './theme.css';
+import './base.css';
+import './layout.css';
+import './buttons.css';
+import './forms.css';
+import './modals.css';
+import './chat.css';
+import './tables.css';
+import './utilities.css';
+import './media.css';
 
 // Define the structure for a history entry
 interface HistoryEntry {
@@ -611,6 +623,48 @@ function App() {
 
     const handleEditInputs = () => {
         setShowResults(false); // Go back to form view, state is preserved
+    };
+
+    // Function to load a specific analysis from history
+    const handleLoadHistory = (entryId: string) => {
+        const entryToLoad = analysisHistory.find(entry => entry.id === entryId);
+        if (!entryToLoad) {
+            console.error('Could not find history entry with ID:', entryId);
+            setError('Failed to load history item.');
+            return;
+        }
+
+        // Restore inputs
+        setSelectedTactics(entryToLoad.inputs.selectedTactics);
+        setSelectedKPIs(entryToLoad.inputs.selectedKPIs);
+        setCurrentSituation(entryToLoad.inputs.currentSituation);
+        setTargetCPA(entryToLoad.inputs.targetCPA);
+        setTargetROAS(entryToLoad.inputs.targetROAS);
+        setSelectedModelId(entryToLoad.inputs.selectedModelId);
+        setOutputDetail(entryToLoad.inputs.outputDetail);
+        setFileName(entryToLoad.inputs.fileName); // Restore filename, but not the File object
+        setFile(null); // Explicitly clear the File object state
+
+        // Restore results
+        setAnalysisResult(entryToLoad.results.analysisResult);
+        setRawAnalysisResult(entryToLoad.results.rawAnalysisResult);
+        setPromptSent(entryToLoad.results.promptSent);
+        setModelName(entryToLoad.results.modelName);
+
+        // Clear any current error and loading state
+        setError(null);
+        setIsLoading(false);
+
+        // Clear current chat conversation when loading history
+        setHelpConversation([]);
+        sessionStorage.removeItem('helpConversation');
+        setHelpQuestion('');
+        setHelpContextFile(null);
+        setHelpContextFileName(null);
+
+        // Switch to results view
+        setShowResults(true);
+        setShowHelpModal(false); // Ensure help modal is closed
     };
 
     if (showResults) {

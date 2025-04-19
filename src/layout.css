@@ -1,0 +1,236 @@
+/* === Main App Layout === */
+.App {
+  text-align: center;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-large);
+  background-color: var(--color-white);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Keep specific shadow or use variable */
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-large);
+  padding-top: var(--spacing-medium);
+}
+
+/* Layout for Input Form View */
+.App:not(:has(.analysis-page-container)) {
+  padding: var(--spacing-large);
+  max-width: 800px;
+  margin: 0 auto;
+  gap: var(--spacing-medium);
+}
+
+/* === Header === */
+.app-header {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-small) 0; 
+  margin-bottom: var(--spacing-small);
+}
+
+.header-controls-container {
+  display: flex;
+  gap: var(--spacing-small); 
+  align-items: center;
+}
+
+/* === Results Page Layout === */
+.back-button-container {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centering items */
+  text-align: left;
+  margin-bottom: 0;
+  padding: var(--spacing-large) var(--spacing-large) var(--spacing-medium) var(--spacing-large);
+  padding-top: 65px; /* Keep specific padding-top for logo space */
+  border-bottom: 1px solid var(--gray-medium);
+  width: 100%;
+  background-color: var(--color-white);
+  z-index: 10;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.navigation-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+  font-size: 14px;
+  color: var(--gray-darker);
+}
+
+.results-header-logo {
+  position: absolute;
+  top: 15px; 
+  left: 50%;
+  transform: translateX(-50%);
+  height: 40px;
+  width: auto;
+  z-index: 100;
+}
+
+.analysis-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+.results-display {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  background-color: var(--color-white);
+  overflow-y: auto;
+  padding-top: var(--spacing-large);
+  padding-bottom: var(--spacing-large);
+}
+
+.prompt-display-box {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--gray-medium);
+  padding: var(--spacing-large);
+  border-radius: var(--border-radius-medium);
+  background-color: var(--gray-lightest);
+  margin-bottom: var(--spacing-large);
+}
+
+/* === Form Layout === */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-medium);
+  width: 100%;
+  margin-bottom: var(--spacing-small);
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-small);
+}
+
+.select-container,
+.input-container,
+.text-area-container,
+.file-upload-section {
+  width: 100%;
+  margin-bottom: var(--spacing-medium);
+}
+
+.file-info-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-small);
+  padding: var(--spacing-small);
+  background-color: var(--gray-lighter);
+  border-radius: var(--border-radius-small);
+}
+
+/* === Other Layout Containers === */
+.input-section { /* Container for buttons below results */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-medium);
+  margin-top: var(--spacing-large);
+  margin-bottom: 30px; /* Keep specific bottom margin? */
+  width: 100%;
+  padding: 0 var(--spacing-large);
+  box-sizing: border-box;
+  flex-wrap: wrap;
+}
+
+.main-action-buttons { /* Container for Analyze/View Analysis buttons */
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    width: 100%;
+    margin: var(--spacing-large) 0;
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: var(--spacing-large);
+}
+
+.advanced-options-trigger-area {
+  width: 100%;
+  text-align: center; /* Or adjust as needed */
+  margin-top: var(--spacing-small);
+}
+
+.advanced-toggles-container {
+  width: 100%;
+  padding: var(--spacing-medium);
+  margin-top: var(--spacing-small);
+  border: 1px solid var(--gray-medium);
+  border-radius: var(--border-radius-medium);
+  background-color: var(--gray-lighter);
+}
+
+.analysis-ready-container { 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-small);
+  margin-top: var(--spacing-large);
+}
+
+.input-to-analysis-navigation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+  padding-top: var(--spacing-large);
+  border-top: 1px solid var(--gray-light);
+}
+
+.input-to-analysis-navigation .navigation-info {
+  margin-bottom: var(--spacing-medium);
+}
+
+/* History Section Layout */
+.history-section {
+    margin-top: 40px; /* Keep specific margin? */
+    padding-top: var(--spacing-large);
+    border-top: 1px solid var(--gray-light);
+    width: 100%;
+}
+
+.history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    clear: both; /* Clear the float for the button */
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-medium) var(--spacing-small);
+    border-bottom: 1px solid var(--gray-light);
+}
+
+.history-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--border-radius-small); /* Use small border radius as gap? */
+} 
