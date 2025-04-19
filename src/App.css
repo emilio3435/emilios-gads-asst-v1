@@ -2443,3 +2443,38 @@ select:focus {
     max-width: 150px; /* Adjust max width for smaller screens */
   }
 }
+
+/* Style for the new inquiry button - updated for floating */
+.new-inquiry-button {
+  /* Match other button styles */
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 25px; /* Rounded edges */
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.95em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  
+  /* Floating styles */
+  position: fixed;
+  bottom: 30px; /* Adjust position from bottom */
+  right: 30px; /* Adjust position from right */
+  z-index: 1000; /* Ensure it's above most other elements */
+  
+  /* Color */
+  background-color: #078574; /* Audacy Teal */
+  color: white;
+}
+
+.new-inquiry-button:hover {
+  background-color: #056b5d; /* Darker Teal on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* Enhance shadow on hover */
+}

@@ -458,6 +458,35 @@ function App() {
         setShowResults(true);
     };
 
+    // Function to handle starting a new inquiry
+    const handleNewInquiry = () => {
+        // Reset form state
+        setSelectedTactics('');
+        setSelectedKPIs('');
+        setFile(null);
+        setFileName(null);
+        setCurrentSituation('');
+        setTargetCPA(null);
+        setTargetROAS(null);
+        
+        // Reset results state
+        setAnalysisResult(null);
+        setRawAnalysisResult(null);
+        setPromptSent(null);
+        setModelName(null);
+        setError(null);
+        
+        // Clear chat history
+        setHelpConversation([]);
+        sessionStorage.removeItem('helpConversation');
+        setHelpQuestion(''); // Clear any lingering question text
+        setHelpContextFile(null); // Clear help context file
+        setHelpContextFileName(null);
+
+        // Go back to the form view
+        setShowResults(false);
+    };
+
     // Add this helper function near the top of your file, before the App component
     const cleanMarkdownCodeBlocks = (content: string): string => {
         // Remove ```html and ``` markdown code block delimiters
@@ -538,7 +567,19 @@ function App() {
                     </div>
                     
                     <div className="input-section">
-                        {/* Re-added Download button (exports to RTF) */}
+                        {/* Chat button moved to the left and text updated */}
+                        <button
+                            className="help-button"
+                            onClick={() => setShowHelpModal(true)}
+                        >
+                            {/* Replaced SVG with a chat bubble icon */}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                            </svg>
+                            Chat with Audacy
+                        </button>
+
+                        {/* Download button moved to the right */}
                         <button className="export-button" onClick={handleExportToRtf}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -547,18 +588,6 @@ function App() {
                             </svg>
                             Download
                         </button> 
-
-                        <button
-                            className="help-button"
-                            onClick={() => setShowHelpModal(true)}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                            Get Help
-                        </button>
                     </div>
                     
                     {/* Prompt Modal (no changes needed) */}
@@ -767,6 +796,19 @@ function App() {
                         </div>
                     )}
                 </div>
+                {/* Add floating New Inquiry Button here, only when showing results */}
+                {showResults && (
+                    <button 
+                        className="new-inquiry-button" 
+                        onClick={handleNewInquiry}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Inquiry
+                    </button>
+                )}
             </div>
         );
     }
