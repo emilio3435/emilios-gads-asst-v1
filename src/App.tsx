@@ -31,7 +31,7 @@ function App() {
     const [helpContextFile, setHelpContextFile] = useState<File | null>(null);
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
-    const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.5-pro-preview-03-25');
+    const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.0-flash');
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -119,15 +119,17 @@ function App() {
     };
 
     const recommendations: { [key: string]: string[] } = {
-        'SEM': ['ROAS', 'CPA', 'CTR', 'CPC'],
-        'SEO': ['Conversion Rate', 'Impressions', 'Clicks'],
-        'Display Ads': ['CTR', 'Impressions', 'Clicks', 'Conversions'],
-        'Video Display Ads': ['Impressions', 'Clicks', 'Conversions'],
-        'YouTube': ['Impressions', 'Clicks', 'Conversions'],
-        'OTT': ['Impressions', 'Conversions'],
-        'Social Ads': ['CTR', 'Impressions', 'Clicks', 'Conversions'],
+        'SEM': ['ROAS', 'CPA', 'Conversions', 'Conversion Rate', 'CTR'],
+        'SEO': ['Conversions', 'Conversion Rate', 'Clicks', 'CTR'],
+        'Display Ads': ['Impressions', 'Clicks', 'CTR'],
+        'Video Display Ads': ['Impressions', 'Clicks', 'CTR'],
+        'YouTube': ['Impressions', 'Clicks', 'CTR'],
+        'OTT': ['Impressions'],
+        'Social Ads': ['Impressions', 'Clicks', 'CTR', 'Conversions'],
         'Email eDirect': ['CTR', 'Conversion Rate', 'Conversions'],
         'Amazon DSP': ['ROAS', 'Conversions', 'CPA'],
+        'Podcasting': ['Impressions'],
+        'Streaming Audio': ['Impressions', 'Clicks', 'CTR']
     };
 
     const getRecommendationMessage = (tactic: string | null) => {
@@ -206,7 +208,7 @@ function App() {
         setHelpConversation(updatedConversation);
 
         // --- Define API Base URL ---
-        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || ''; // Default to empty string if not set
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; // Use import.meta.env for Vite
 
         try {
             // Create FormData to support file uploads
@@ -233,7 +235,7 @@ function App() {
             }
 
             // Send the help request to the server
-            const response = await fetch(`${apiBaseUrl}/api/get-help`, { // Use template literal
+            const response = await fetch(`${apiBaseUrl}/analyze`, { // Remove /api prefix
                 method: 'POST',
                 body: formData,
             });
@@ -407,10 +409,10 @@ function App() {
         setIsLoading(true);
 
         // --- Define API Base URL ---
-        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || ''; // Default to empty string if not set
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; // Use import.meta.env for Vite
 
         try {
-            const response = await fetch(`${apiBaseUrl}/api/analyze`, { // Use template literal
+            const response = await fetch(`${apiBaseUrl}/analyze`, { // Remove /api prefix
                 method: 'POST',
                 body: formData,
             });
@@ -726,7 +728,7 @@ function App() {
                                             )}
                                         </div>
 
-                                        {/* File upload trigger moved here */} 
+                                        {/* File upload trigger moved here */}
                                         <div className="file-upload-area">
                                             <label htmlFor="helpContextFile" className="upload-file-icon-button" title="Upload context file (optional)">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -845,6 +847,25 @@ function App() {
                             <option value="ROAS">ROAS</option>
                         </select>
                     </div>
+                    {/* Re-add the KPI recommendation popup */}
+                    {selectedTactics && getRecommendationMessage(selectedTactics) && showKpiRecommendation && (
+                        <div className="kpi-recommendation-popup">
+                            <div className="kpi-recommendation-content">
+                                <div className="kpi-recommendation-header">
+                                    <span>Recommended KPIs</span>
+                                    <button 
+                                        className="kpi-recommendation-close"
+                                        onClick={() => setShowKpiRecommendation(false)}
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                                <div className="kpi-recommendation-body">
+                                    {getRecommendationMessage(selectedTactics)}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {selectedKPIs === 'CPA' && (
                         <div className="input-container">
@@ -904,28 +925,44 @@ function App() {
                 >
                     Choose File
                 </label>
-                {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
-                {file && (
-                    <button className="remove-file-button" onClick={() => { setFile(null); setFileName(null); }}>
-                        Remove File
-                    </button>
+
+                {/* Container for file name and remove button, shown only when a file is selected */}
+                {file && fileName && (
+                    <div className="file-info-container">
+                        <p className="file-name" title={fileName}>
+                            {fileName}
+                        </p>
+                        <button 
+                            className="remove-file-button icon-style" 
+                            onClick={() => { setFile(null); setFileName(null); }}
+                            title="Remove file"
+                        >
+                            ×
+                        </button>
+                    </div>
                 )}
-                {fileName === null && file === null && <p className="file-name">Please select a CSV, XLSX, or PDF file.</p>}
+
+                {/* Message shown when no file is selected */}
+                {!file && !fileName && (
+                    <p className="file-name prompt-text">Please select a CSV, XLSX, or PDF file.</p>
+                )}
             </div>
 
-            <button 
-                className="rounded-element submit-button" 
-                onClick={handleSubmit} 
-                disabled={isLoading}
-                title="Submit the data and inputs to generate the AI analysis."
-            >
-                {isLoading ? '' : 'Analyze'}
-            </button>
+            {/* Conditionally render the Analyze button OR the loading indicator */}
+            {!isLoading && (
+                <button 
+                    className="rounded-element submit-button" 
+                    onClick={handleSubmit} 
+                    disabled={isLoading} // Technically redundant now but good practice
+                    title="Submit the data and inputs to generate the AI analysis."
+                >
+                    Analyze
+                </button>
+            )}
 
             {isLoading && (
                 <div className="spinner-container">
                     <div className="spinner"></div>
-                    <img src={audacyLogo} alt="Audacy Logo" className="spinner-logo" />
                     <p>Analyzing your data, please wait...</p>
                 </div>
             )}

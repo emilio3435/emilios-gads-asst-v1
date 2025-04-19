@@ -38,8 +38,10 @@ body {
 }
 
 h1 {
-  font-size: 22px;
-  margin: 0 0 10px 0;
+  font-size: 2.2em; /* Slightly larger */
+  margin: 5px 0 15px 0; /* Adjusted margin */
+  color: #5029a7; /* Audacy Purple */
+  font-weight: 700; /* Make it bolder */
 }
 
 .app-instructions {
@@ -1587,10 +1589,12 @@ label.choose-file-button {
   z-index: 2000;
   width: 280px;
   animation: slideInRight 0.5s, fadeOut 0.7s 14.3s;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .kpi-recommendation-content {
-  background-color: #FE7333;
+  background-color: #5029a7;
+  color: white;
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   overflow: hidden;
@@ -1600,20 +1604,23 @@ label.choose-file-button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
-  background-color: rgba(0, 0, 0, 0.1);
+  padding: 8px 12px;
+  background-color: #3a1e7a;
+  border-bottom: 1px solid #6f42c1;
 }
 
 .kpi-recommendation-header span {
-  font-weight: bold;
+  font-weight: 600;
   color: white;
+  font-size: 0.9em;
 }
 
 .kpi-recommendation-close {
   background: none;
   border: none;
-  color: white;
-  font-size: 18px;
+  color: #d1c4e9;
+  font-size: 20px;
+  font-weight: 300;
   cursor: pointer;
   width: 24px;
   height: 24px;
@@ -1621,17 +1628,21 @@ label.choose-file-button {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  line-height: 1;
 }
 
 .kpi-recommendation-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .kpi-recommendation-body {
-  padding: 12px 15px;
+  padding: 10px 15px;
   color: white;
-  font-weight: 500;
+  font-weight: 400;
+  font-size: 0.85em;
+  line-height: 1.5;
 }
 
 @keyframes slideInRight {
@@ -1981,20 +1992,7 @@ select:focus {
 }
 
 .choose-file-button {
-  background-color: #5029a7;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 0.9em;
-  text-align: center;
-  margin-bottom: 0;
-}
-
-.choose-file-button:hover {
-  background-color: #3a1e7a;
+  margin-bottom: 0; /* Remove bottom margin if file info is shown */
 }
 
 .remove-file-button {
@@ -2370,4 +2368,80 @@ select:focus {
 
 .prompt-modal label {
   /* ... existing code ... */
+}
+
+.file-upload-section {
+  display: flex;
+  flex-direction: column; /* Default stack vertically */
+  align-items: center;   /* Center items horizontally */
+  gap: 10px;            /* Space between button and info/prompt */
+  margin-bottom: 20px;  /* Space below the section */
+  width: 100%;          /* Take full width */
+}
+
+/* New container for file name and remove button */
+.file-info-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f8f9fa; /* Light grey background */
+  padding: 5px 10px;        /* Padding inside the container */
+  border-radius: 15px;      /* Rounded corners */
+  border: 1px solid #dee2e6; /* Subtle border */
+  max-width: 80%;           /* Prevent it getting too wide */
+}
+
+/* Adjust file name styling within the new container */
+.file-info-container .file-name {
+  margin: 0; /* Remove default margins */
+  font-size: 0.9em;
+  color: #495057; /* Darker text */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px; /* Limit width to prevent overflow */
+  flex-grow: 1; /* Allow it to take available space */
+}
+
+/* Remove file button styling (using icon style) */
+.file-info-container .remove-file-button.icon-style {
+  background: none;
+  border: none;
+  color: #6c757d; /* Grey color */
+  font-size: 1.3em; /* Make the 'x' slightly larger */
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1;
+  margin: 0;
+  transition: color 0.2s;
+}
+
+.file-info-container .remove-file-button.icon-style:hover {
+  color: #dc3545; /* Red on hover */
+}
+
+/* Style for the prompt text when no file is selected */
+.file-upload-section .file-name.prompt-text {
+  color: #6c757d; /* Grey color */
+  font-style: italic;
+  font-size: 0.9em;
+}
+
+/* Make sure the original choose file button still looks right */
+.choose-file-button {
+  margin-bottom: 0; /* Remove bottom margin if file info is shown */
+}
+
+
+/* Responsive adjustments if needed */
+@media (max-width: 768px) {
+  .file-upload-section {
+    /* Keep vertical stacking on small screens maybe? Or adjust flex */
+  }
+  .file-info-container {
+    max-width: 90%;
+  }
+  .file-info-container .file-name {
+    max-width: 150px; /* Adjust max width for smaller screens */
+  }
 }
