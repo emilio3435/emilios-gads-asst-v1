@@ -782,20 +782,6 @@ function App() {
                                             >
                                                 {isHelpLoading ? 'Loading...' : 'Send'}
                                             </button>
-                                            
-                                            {helpConversation.length > 0 && (
-                                                <button 
-                                                    className="clear-help-button"
-                                                    onClick={() => {
-                                                        setHelpConversation([]);
-                                                        setHelpQuestion('');
-                                                        helpInputRef.current?.focus();
-                                                        sessionStorage.removeItem('helpConversation');
-                                                    }}
-                                                >
-                                                    Clear Conversation
-                                                </button>
-                                            )}
                                         </div>
 
                                         {/* File upload trigger moved here */}
