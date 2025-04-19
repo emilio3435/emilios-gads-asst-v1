@@ -2011,7 +2011,7 @@ select:focus {
 }
 
 .submit-button {
-  background-color: #5029a7;
+  background-color: #FE5000;
   color: white;
   padding: 10px 30px;
   border: none;
@@ -2030,14 +2030,16 @@ select:focus {
 }
 
 .submit-button:hover {
-  background-color: #3a1e7a;
+  background-color: #e64500;
 }
 
 .submit-button:disabled {
-  background-color: #6c757d;
+  background-color: #FFB999;
+  color: #FFFFFF;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  opacity: 0.7;
 }
 
 @media (max-width: 768px) {
