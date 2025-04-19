@@ -32,7 +32,8 @@ function App() {
     const [helpContextFileName, setHelpContextFileName] = useState<string | null>(null);
     const [helpConversation, setHelpConversation] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [selectedModelId, setSelectedModelId] = useState<string>('gemini-2.0-flash');
-    const [outputDetail, setOutputDetail] = useState<'brief' | 'detailed'>('detailed');
+    const [outputDetail, setOutputDetail] = useState<'brief' | 'detailed'>('brief');
+    const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -506,6 +507,10 @@ function App() {
         return cleaned;
     };
 
+    const handleEditInputs = () => {
+        setShowResults(false); // Go back to form view, state is preserved
+    };
+
     if (showResults) {
         return (
             <div className="App">
@@ -522,20 +527,40 @@ function App() {
                     <div className="results-display">
                         <div className="prompt-display-box">
                             <div className="campaign-info">
-                                <div className="info-item">
-                                    <span className="info-label">Tactic:</span>
-                                    <span className="info-value">{selectedTactics}</span>
-                                </div>
-                                <div className="info-item">
-                                    <span className="info-label">KPI:</span>
-                                    <span className="info-value">{selectedKPIs}</span>
-                                </div>
-                                {fileName && (
+                                {/* Row 1 */} 
+                                <div className="info-row">
                                     <div className="info-item">
-                                        <span className="info-label">File:</span>
-                                        <span className="info-value">{fileName}</span>
+                                        <span className="info-label">Tactic:</span>
+                                        <span className="info-value">{selectedTactics}</span>
                                     </div>
-                                )}
+                                    <div className="info-item">
+                                        <span className="info-label">KPI:</span>
+                                        <span className="info-value">{selectedKPIs}</span>
+                                    </div>
+                                    {fileName && (
+                                        <div className="info-item">
+                                            <span className="info-label">File:</span>
+                                            <span className="info-value">{fileName}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Row 2 */} 
+                                <div className="info-row">
+                                    {/* Model Selection Display */}
+                                    <div className="info-item">
+                                        <span className="info-label">Model:</span>
+                                        <span className="info-value">
+                                            {selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'Better' : 'Faster'}
+                                        </span>
+                                    </div>
+                                    {/* Output Detail Display */}
+                                    <div className="info-item">
+                                        <span className="info-label">Detail:</span>
+                                        <span className="info-value">
+                                            {outputDetail === 'detailed' ? 'Detailed' : 'Brief'}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                             {/* Add Current Situation/Goals below campaign info if it exists */}
                             {currentSituation && (
@@ -574,27 +599,32 @@ function App() {
                     </div>
                     
                     <div className="input-section">
-                        {/* Chat button moved to the left and text updated */}
+                        {/* Discuss this Analysis Button */}
                         <button
                             className="help-button"
                             onClick={() => setShowHelpModal(true)}
                         >
-                            {/* Replaced SVG with a chat bubble icon */}
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                             </svg>
-                            Chat with Audacy
+                            Discuss this Analysis
                         </button>
 
-                        {/* Download button moved to the right */}
+                        {/* Download RTF Button */}
                         <button className="export-button" onClick={handleExportToRtf}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
-                            Download
-                        </button> 
+                            Download RTF
+                        </button>
+
+                        {/* Edit Inputs Button */}
+                        <button className="edit-inputs-button" onClick={handleEditInputs}>
+                            Edit Inputs
+                        </button>
+
                     </div>
                     
                     {/* Prompt Modal (no changes needed) */}
@@ -825,24 +855,7 @@ function App() {
             <div className="app-header">
                 <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
                 <div className="header-controls-container">
-                    <div className="model-selector-simple">
-                        <span className="model-selector-label">Analysis Speed:</span>
-                        <button 
-                            className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
-                            onClick={() => handleModelSelection('speed')}
-                            title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
-                        >
-                            Faster
-                        </button>
-                        <button 
-                            className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
-                            onClick={() => handleModelSelection('quality')}
-                            title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
-                        >
-                            Better Quality
-                        </button>
-                    </div>
-                    <div className="model-selector-simple">
+                    <div className="model-selector-simple detail-toggle">
                         <span className="model-selector-label">Output Detail:</span>
                         <button 
                             className={`model-button ${outputDetail === 'brief' ? 'active' : ''}`}
@@ -981,7 +994,6 @@ function App() {
                 />
             </div>
             
-            {/* Moved file upload section below Current Situation & Goals */}
             <div className="file-upload-section">
                 <input
                     type="file"
@@ -1019,6 +1031,45 @@ function App() {
                     <p className="file-name prompt-text">Please select a CSV, XLSX, or PDF file.</p>
                 )}
             </div>
+
+            {/* --- Advanced Options Button (Stays Here) --- */}
+            <div className="advanced-options-trigger-area">
+                <button 
+                    className="advanced-options-button"
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    title="Show/hide advanced options"
+                >
+                    {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+                </button>
+            </div>
+            {/* --- End Advanced Options Button --- */}
+
+            {/* --- Advanced Options revealed content (Now only Speed) --- */}
+            {showAdvancedOptions && (
+                <div className="advanced-toggles-container revealed">
+                    <h4 className="advanced-options-heading">Advanced Options</h4>
+                    {/* Analysis Speed Toggle */}
+                    <div className="model-selector-simple speed-toggle">
+                       <span className="model-selector-label">Analysis Speed:</span>
+                       <button 
+                           className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
+                           onClick={() => handleModelSelection('speed')}
+                           title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
+                       >
+                           Faster
+                       </button>
+                       <button 
+                           className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
+                           onClick={() => handleModelSelection('quality')}
+                           title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
+                       >
+                           Better Quality
+                       </button>
+                    </div>
+                    {/* Output Detail Toggle - Removed from here */}
+                 </div>
+            )}
+            {/* --- End Advanced Options revealed content --- */}
 
             {/* Conditionally render the Analyze button OR the loading indicator OR the View Analysis button */}
             {!isLoading && !analysisResult && (

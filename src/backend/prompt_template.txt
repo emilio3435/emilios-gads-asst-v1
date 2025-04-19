@@ -105,7 +105,7 @@ Format your output using ONLY the HTML structure and tags defined below. Ensure 
 </section>
 
 <section class="recommendations">
-  <h2>Actionable Recommendations</h2>
+  <h2>Recommendations</h2>
   <div class="recommendation">
     <h3>[Audacy-specific recommendation title 1, possibly indicating impact like (High Impact)]</h3>
     <p>[Why this matters in simple terms, with Audacy-specific value]</p>

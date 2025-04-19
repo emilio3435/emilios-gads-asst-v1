@@ -268,35 +268,34 @@ input[type='file'] {
 
 .campaign-info {
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.info-row {
+  display: flex;
   flex-wrap: wrap;
   gap: 15px;
-  margin-bottom: 0;
-  margin-right: 0;
-  background-color: #f9f9f9;
-  padding: 10px 15px;
-  border-radius: 8px;
-  max-width: 100%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  align-items: center;
 }
 
 .info-item {
   display: flex;
-  flex-direction: column;
-  min-width: 120px;
+  align-items: center;
+  gap: 5px;
 }
 
 .info-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #666;
-  margin-bottom: 4px;
+  font-weight: 700;
+  color: #FE5000;
+  font-size: 0.9em;
 }
 
 .info-value {
-  font-weight: 600;
-  color: #FE5000;
-  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9em;
 }
 
 .campaign-context {
@@ -329,7 +328,7 @@ input[type='file'] {
   text-align: center;
   font-size: smaller;
   color: #666;
-  margin-top: 25px;
+  margin-top: 40px;
   padding-bottom: 15px;
 }
 
@@ -350,29 +349,52 @@ input[type='file'] {
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 40px;
+  gap: 15px;
   margin-top: 20px;
   margin-bottom: 30px;
   width: 100%;
-  padding: 0 30px;
+  padding: 0 20px;
   box-sizing: border-box;
+  flex-wrap: wrap;
 }
 
-.show-input-button, .export-button, .help-button {
-  min-width: 160px;
+.show-input-button, .export-button, .help-button, .copy-button, .edit-inputs-button {
+  min-width: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 10px 18px;
   border: none;
   border-radius: 25px;
   cursor: pointer;
   transition: all 0.3s;
-  font-size: 0.95em;
+  font-size: 0.9em;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   font-weight: 500;
   letter-spacing: 0.2px;
+  text-align: center;
+}
+
+.copy-button {
+  background-color: #e0e0e0;
+  color: #333;
+  min-width: 120px;
+}
+
+.copy-button:hover {
+  background-color: #cccccc;
+  transform: translateY(-1px);
+}
+
+.edit-inputs-button {
+  background-color: #078574;
+  color: white;
+}
+
+.edit-inputs-button:hover {
+  background-color: #056b5d;
+  transform: translateY(-1px);
 }
 
 .help-button {
@@ -382,19 +404,7 @@ input[type='file'] {
 
 .help-button:hover {
   background-color: #6732aa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.show-input-button {
-  background-color: #078574;
-  color: white;
-}
-
-.show-input-button:hover {
-  background-color: #056b5d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
 }
 
 .export-button {
@@ -404,8 +414,7 @@ input[type='file'] {
 
 .export-button:hover {
   background-color: #e04500;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
 }
 
 .analysis-page-container {
@@ -426,6 +435,8 @@ input[type='file'] {
   text-align: left;
   background-color: #fff;
   overflow-y: auto;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
 .results-display h2:first-child {
@@ -440,16 +451,13 @@ input[type='file'] {
 }
 
 .prompt-display-box {
-  background-color: #f8f9fa;
-  border: 1px solid #ced4da;
-  border-radius: 8px;
-  padding: 15px 20px;
-  margin-bottom: 25px;
-  text-align: left;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  border: 1px solid #e0e0e0;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  margin-bottom: 30px;
 }
 
 .prompt-display-box p {
@@ -2068,11 +2076,20 @@ select:focus {
 /* Header Styles */
 .app-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Space out logo and controls */
   align-items: center;
   width: 100%;
-  padding: 10px 0;
+  padding: 10px 0; 
   margin-bottom: 10px;
+  /* Remove border if it exists */
+  /* border-bottom: 1px solid #eee; */ 
+}
+
+.header-controls-container {
+  display: flex;
+  gap: 10px; 
+  align-items: center;
+  /* Removed flex-wrap and justify-content: flex-end from previous attempt */
 }
 
 /* Simplified Model Selector Styles */
@@ -2484,6 +2501,172 @@ select:focus {
 /* Added container for header controls */
 .header-controls-container {
   display: flex;
-  gap: 15px; /* Adjust gap between toggles as needed */
+  gap: 10px; /* Reduced gap slightly */
   align-items: center;
+  flex-wrap: wrap; /* Allow wrapping */
+  justify-content: flex-end; /* Align items to the right */
+}
+
+/* Card Styling for Analysis Sections */
+.results-display section {
+  background-color: #ffffff; /* White background for the card */
+  border: 1px solid #e8e8e8; /* Subtle border */
+  border-radius: 8px; /* Rounded corners */
+  padding: 20px 25px; /* Padding inside the card */
+  margin-bottom: 25px; /* Space between cards */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow */
+  overflow: hidden; /* Ensure content stays within borders */
+}
+
+/* Optional: Subtle alternating background for better separation */
+.results-display section:nth-child(odd) {
+  /* background-color: #fdfdfd; */ /* Slightly off-white, uncomment if desired */
+}
+
+/* Adjust Heading styles within sections */
+.results-display section h2 {
+  margin-top: 0; /* Remove top margin for heading inside card */
+  margin-bottom: 18px; /* Space below heading */
+  padding-bottom: 10px; /* Space below border */
+  border-bottom: 2px solid #5029a7; /* Keep Audacy purple border */
+  font-size: 1.5em; /* Adjust heading size if needed */
+  color: #5029a7; /* Ensure heading color */
+  width: auto; /* Don't force full width */
+  display: inline-block; /* Make border fit content */
+}
+
+.results-display section h3 {
+  color: #FE5000; /* Audacy Orange for H3 */
+  margin-top: 15px;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #fddac7; /* Lighter orange border */
+  font-size: 1.2em;
+  display: inline-block;
+  width: auto;
+}
+
+/* Remove old h3::after styling if it exists */
+.results-display section h3::after {
+    content: none;
+}
+
+/* Ensure lists inside cards have appropriate spacing */
+.results-display section ul,
+.results-display section ol {
+  padding-left: 25px; /* Indentation for lists */
+  margin-top: 10px;
+}
+
+.results-display section li {
+  margin-bottom: 10px; /* Space between list items */
+}
+
+
+/* Remove redundant styling from .analysis class if it exists */
+.analysis h2, .analysis h3, .analysis p, .analysis ul, .analysis ol, .analysis li {
+  /* Reset or remove styles here if they conflict with section styling */
+  /* Example: margin: initial; padding: initial; border: none; */
+}
+
+/* Add specific classes to toggles if needed for ordering */
+.speed-toggle {
+  /* Specific styles if needed */
+}
+.detail-toggle {
+  /* Specific styles if needed */
+}
+
+.advanced-options-button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  color: #777;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  margin-left: 5px;
+}
+
+.advanced-options-button:hover {
+  background-color: #f5f5f5;
+  border-color: #aaa;
+  color: #333;
+}
+
+/* Optional: Style the container for the toggles if needed */
+.advanced-toggles-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Remove positioning from header controls container if needed */
+.header-controls-container {
+  /* Remove styles like justify-content: flex-end if they cause issues */
+}
+
+/* Area where the trigger button sits - Adjusted */
+.advanced-options-trigger-area {
+  width: 100%;
+  text-align: right; /* Align button to the right */
+  margin-top: -5px; /* Pull it up slightly closer to text area */
+  margin-bottom: 15px; /* Space below button */
+  padding-right: 5px; /* Align with form fields */
+  box-sizing: border-box;
+}
+
+.advanced-options-button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  color: #777;
+  padding: 4px 10px; /* Slightly adjust padding if needed */
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  /* margin-left: 0; */ /* Remove margin-left if it was added */
+}
+
+.advanced-options-button:hover {
+  background-color: #f5f5f5;
+  border-color: #aaa;
+  color: #333;
+}
+
+/* Styling for the container when options are revealed - Adjusted */
+.advanced-toggles-container.revealed {
+  display: flex;
+  flex-direction: column; 
+  align-items: center; 
+  gap: 15px;
+  background-color: #f9f9f9;
+  padding: 15px 20px; 
+  margin: 0 0 20px 0; 
+  border: 1px solid #eee;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Heading inside revealed container */
+.advanced-options-heading {
+    font-size: 0.8em; 
+    color: #888; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 10px 0; 
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+    text-align: center;
+}
+
+/* Speed toggle inside revealed container */
+.advanced-toggles-container.revealed .model-selector-simple.speed-toggle {
+   background-color: #f0f0f0;
+   border: 1px solid #ddd;
+   padding: 8px 12px;
+   margin-bottom: 0; 
 }

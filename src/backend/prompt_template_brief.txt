@@ -52,7 +52,7 @@ Format your output using ONLY the HTML structure and tags defined below. Keep co
 </section>
 
 <section class="positive-spin">
-  <h2>Positive Spin</h2>
+  <h2>Highlights</h2>
   <ul>
     <li>[Brief positive finding #1]</li>
     <li>[Brief positive finding #2 (optional)]</li>
@@ -60,7 +60,7 @@ Format your output using ONLY the HTML structure and tags defined below. Keep co
 </section>
 
 <section class="optimization-opportunities">
-  <h2>Optimization Opportunities</h2>
+  <h2>Recommendations</h2>
   <ul>
     <li>[Critical optimization #1 using Audacy capabilities]</li>
     <li>[Critical optimization #2 using Audacy capabilities (optional)]</li>
