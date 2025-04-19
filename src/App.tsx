@@ -4,19 +4,6 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
-// import './App.css'; // Remove old import
-
-// Import new CSS files
-import './theme.css';
-import './base.css';
-import './layout.css';
-import './buttons.css';
-import './forms.css';
-import './modals.css';
-import './chat.css';
-import './tables.css';
-import './utilities.css';
-import './media.css';
 
 // Define the structure for a history entry
 interface HistoryEntry {
@@ -625,46 +612,37 @@ function App() {
         setShowResults(false); // Go back to form view, state is preserved
     };
 
-    // Function to load a specific analysis from history
+    // Function to load a previous analysis from history
     const handleLoadHistory = (entryId: string) => {
         const entryToLoad = analysisHistory.find(entry => entry.id === entryId);
-        if (!entryToLoad) {
-            console.error('Could not find history entry with ID:', entryId);
-            setError('Failed to load history item.');
-            return;
+        if (entryToLoad) {
+            // Restore input states
+            setSelectedTactics(entryToLoad.inputs.selectedTactics);
+            setSelectedKPIs(entryToLoad.inputs.selectedKPIs);
+            setFileName(entryToLoad.inputs.fileName); // Restore the file *name*
+            setCurrentSituation(entryToLoad.inputs.currentSituation);
+            setTargetCPA(entryToLoad.inputs.targetCPA);
+            setTargetROAS(entryToLoad.inputs.targetROAS);
+            setSelectedModelId(entryToLoad.inputs.selectedModelId);
+            setOutputDetail(entryToLoad.inputs.outputDetail);
+            
+            // Restore result states
+            setAnalysisResult(entryToLoad.results.analysisResult);
+            setRawAnalysisResult(entryToLoad.results.rawAnalysisResult);
+            setPromptSent(entryToLoad.results.promptSent);
+            setModelName(entryToLoad.results.modelName);
+            
+            // Clear error and current file object (file itself isn't stored)
+            setError(null);
+            setFile(null); // IMPORTANT: The actual file object is not persisted
+            
+            // Switch to results view
+            setShowResults(true);
+            setShowHelpModal(false); // Close help modal if open
+        } else {
+            console.error("History entry not found:", entryId);
+            setError("Could not load the selected history item.");
         }
-
-        // Restore inputs
-        setSelectedTactics(entryToLoad.inputs.selectedTactics);
-        setSelectedKPIs(entryToLoad.inputs.selectedKPIs);
-        setCurrentSituation(entryToLoad.inputs.currentSituation);
-        setTargetCPA(entryToLoad.inputs.targetCPA);
-        setTargetROAS(entryToLoad.inputs.targetROAS);
-        setSelectedModelId(entryToLoad.inputs.selectedModelId);
-        setOutputDetail(entryToLoad.inputs.outputDetail);
-        setFileName(entryToLoad.inputs.fileName); // Restore filename, but not the File object
-        setFile(null); // Explicitly clear the File object state
-
-        // Restore results
-        setAnalysisResult(entryToLoad.results.analysisResult);
-        setRawAnalysisResult(entryToLoad.results.rawAnalysisResult);
-        setPromptSent(entryToLoad.results.promptSent);
-        setModelName(entryToLoad.results.modelName);
-
-        // Clear any current error and loading state
-        setError(null);
-        setIsLoading(false);
-
-        // Clear current chat conversation when loading history
-        setHelpConversation([]);
-        sessionStorage.removeItem('helpConversation');
-        setHelpQuestion('');
-        setHelpContextFile(null);
-        setHelpContextFileName(null);
-
-        // Switch to results view
-        setShowResults(true);
-        setShowHelpModal(false); // Ensure help modal is closed
     };
 
     if (showResults) {
@@ -1152,36 +1130,20 @@ function App() {
             )}
             {/* --- End Advanced Options revealed content --- */}
 
-            {/* Conditionally render the Analyze button OR the loading indicator OR the View Analysis button */}
-            {!isLoading && !analysisResult && (
+            {/* Conditionally render the Analyze button OR the loading indicator */}
+            {!isLoading ? (
                 <button
                     className="rounded-element submit-button"
                     onClick={handleSubmit}
-                    disabled={!file || !selectedTactics || !selectedKPIs} // Add disabled state based on required fields
+                    disabled={!file || !selectedTactics || !selectedKPIs} // Keep disabled state based on required fields
                     title="Submit the data and inputs to generate the AI analysis."
                 >
                     Analyze
                 </button>
-            )}
-
-            {isLoading && (
+            ) : (
                 <div className="spinner-container">
                     <div className="spinner"></div>
                     <p>Analyzing your data, please wait...</p>
-                </div>
-            )}
-
-            {/* Show View Analysis button IN PLACE of Analyze button when ready */}
-            {!isLoading && analysisResult && !showResults && (
-                <div className="analysis-ready-container"> {/* New container for alignment */}
-                    <p className="analysis-complete-message">Analysis Complete ✔️</p>
-                    <button className="rounded-element view-analysis-button" onClick={handleViewAnalysis}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        View Analysis
-                    </button>
                 </div>
             )}
 
@@ -1216,7 +1178,7 @@ function App() {
                                 </div>
                                 <button 
                                     className="view-history-button"
-                                    // onClick={() => handleLoadHistory(entry.id)} // We'll add this function next
+                                    onClick={() => handleLoadHistory(entry.id)}
                                 >
                                     View Details
                                 </button>

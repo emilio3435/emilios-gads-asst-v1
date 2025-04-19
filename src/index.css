@@ -1,3 +1,14 @@
+@import './base.css';
+@import './layout.css';
+@import './forms.css';
+@import './buttons.css';
+@import './chat.css';
+@import './modals.css';
+@import './tables.css';
+@import './utilities.css';
+@import './theme.css';
+@import './media.css';
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
