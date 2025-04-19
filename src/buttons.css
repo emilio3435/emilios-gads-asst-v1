@@ -153,12 +153,7 @@ button {
   font-size: 1em;
   font-weight: 600;
   text-align: center;
-  margin-top: var(--spacing-small);
-  margin-bottom: var(--spacing-small);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  max-width: 200px;
+  margin: var(--spacing-large) 0 0 0;
 }
 
 .submit-button:hover:not(:disabled) {

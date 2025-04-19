@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
-import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
 import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 
@@ -13,8 +11,6 @@ interface HistoryEntry {
   timestamp: number;
   inputs: {
     clientName: string;
-    startDate: number | null;
-    endDate: number | null;
     selectedTactics: string;
     selectedKPIs: string;
     fileName: string | null;
@@ -79,8 +75,6 @@ function App() {
     const [fileName, setFileName] = useState<string | null>(null);
     const [currentSituation, setCurrentSituation] = useState<string>('');
     const [clientName, setClientName] = useState<string>('');
-    const [startDate, setStartDate] = useState<Date | null>(null);
-    const [endDate, setEndDate] = useState<Date | null>(null);
     const [analysisResult, setAnalysisResult] = useState<string | null>(null);
     const [rawAnalysisResult, setRawAnalysisResult] = useState<string | null>(null);
     const [promptSent, setPromptSent] = useState<string | null>(null);
@@ -491,6 +485,7 @@ function App() {
         formData.append('targetROAS', JSON.stringify(targetROAS));
         formData.append('modelId', selectedModelId);
         formData.append('outputDetail', outputDetail);
+        formData.append('clientName', clientName);
 
         setIsLoading(true);
 
@@ -532,8 +527,6 @@ function App() {
                 timestamp: Date.now(),
                 inputs: {
                     clientName,
-                    startDate: startDate ? startDate.getTime() : null,
-                    endDate: endDate ? endDate.getTime() : null,
                     selectedTactics,
                     selectedKPIs,
                     fileName,
@@ -643,6 +636,8 @@ function App() {
             setTargetROAS(entryToLoad.inputs.targetROAS);
             setSelectedModelId(entryToLoad.inputs.selectedModelId);
             setOutputDetail(entryToLoad.inputs.outputDetail);
+            // Restore new fields
+            setClientName(entryToLoad.inputs.clientName);
             
             // Restore result states
             setAnalysisResult(entryToLoad.results.analysisResult);
@@ -661,23 +656,6 @@ function App() {
         } else {
             console.error("History entry not found:", entryId);
             setError("Could not load the selected history item.");
-        }
-    };
-
-    // Helper function to format date range for history display
-    const formatDateRange = (startTimestamp: number | null, endTimestamp: number | null): string => {
-        const options: Intl.DateTimeFormatOptions = { year: '2-digit', month: 'numeric', day: 'numeric' };
-        const startDateStr = startTimestamp ? new Date(startTimestamp).toLocaleDateString(undefined, options) : null;
-        const endDateStr = endTimestamp ? new Date(endTimestamp).toLocaleDateString(undefined, options) : null;
-
-        if (startDateStr && endDateStr) {
-            return `${startDateStr} - ${endDateStr}`;
-        } else if (startDateStr) {
-            return `From ${startDateStr}`;
-        } else if (endDateStr) {
-            return `Until ${endDateStr}`;
-        } else {
-            return 'N/A';
         }
     };
 
@@ -1001,45 +979,6 @@ function App() {
                     />
                 </div>
                 
-                {/* Date Range Selection - Add this section */}
-                <div className="form-grid date-range-grid"> {/* Use a class for potential specific styling */}
-                    <div className="form-column">
-                        <div className="input-container">
-                             <label>Date Range (Start):</label>
-                             <DatePicker
-                                 selected={startDate}
-                                 onChange={(date: Date | null) => setStartDate(date)}
-                                 selectsStart
-                                 startDate={startDate}
-                                 endDate={endDate}
-                                 placeholderText="Select start date"
-                                 className="text-input date-picker-input"
-                                 dateFormat="MM/dd/yyyy"
-                                 isClearable
-                                 title="Select the start date for the analysis period."
-                             />
-                        </div>
-                    </div>
-                    <div className="form-column">
-                        <div className="input-container">
-                            <label>Date Range (End):</label>
-                            <DatePicker
-                                selected={endDate}
-                                onChange={(date: Date | null) => setEndDate(date)}
-                                selectsEnd
-                                startDate={startDate}
-                                endDate={endDate}
-                                minDate={startDate ?? undefined} // Use undefined if startDate is null
-                                placeholderText="Select end date"
-                                className="text-input date-picker-input"
-                                dateFormat="MM/dd/yyyy"
-                                isClearable
-                                title="Select the end date for the analysis period."
-                            />
-                        </div>
-                    </div>
-                </div>
-
                 <div className="form-grid">
                     <div className="form-column">
                         <div className="select-container">
@@ -1230,18 +1169,19 @@ function App() {
                 )}
                 {/* --- End Advanced Options revealed content --- */}
 
-                {/* Conditionally render the Analyze button OR the loading indicator */}
+                {/* Removed the wrapping div, button/spinner/error are now direct children of .assistant-card */}
+                {/* Conditionally render the Analyze button OR the loading indicator */} 
                 {!isLoading ? (
                     <button
                         className="rounded-element submit-button"
                         onClick={handleSubmit}
-                        disabled={!file || !selectedTactics || !selectedKPIs} // Keep disabled state based on required fields
+                        disabled={!file || !selectedTactics || !selectedKPIs} 
                         title="Submit the data and inputs to generate the AI analysis."
                     >
                         Analyze
                     </button>
                 ) : (
-                    <div className="spinner-container">
+                    <div className="spinner-container"> 
                         <div className="spinner"></div>
                         <p>Analyzing your data, please wait...</p>
                     </div>
@@ -1280,8 +1220,7 @@ function App() {
                                         </span>
                                         {/* Context details */}
                                         <span className="history-context-details">
-                                            Client: {entry.inputs.clientName || 'N/A'} | 
-                                            Range: {formatDateRange(entry.inputs.startDate, entry.inputs.endDate)}
+                                            Client: {entry.inputs.clientName || 'N/A'} 
                                         </span>
                                     </div>
                                     <button 
