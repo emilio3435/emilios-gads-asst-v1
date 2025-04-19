@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import htmlToRtf from 'html-to-rtf';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 import './App.css';
@@ -77,8 +78,12 @@ function App() {
     }, [helpConversation]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        // Clear previous results when file changes
         setAnalysisResult(null);
+        setRawAnalysisResult(null);
+        setPromptSent(null);
         setError(null);
+        
         if (event.target.files && event.target.files.length > 0) {
             const selectedFile = event.target.files[0];
             if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.pdf')) {
@@ -134,6 +139,11 @@ function App() {
 
     const handleTacticChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedTactics(event.target.value);
+        // Clear previous results when tactic changes
+        setAnalysisResult(null);
+        setRawAnalysisResult(null);
+        setPromptSent(null);
+        
         // Show KPI recommendation popup if we have recommendations for this tactic
         if (event.target.value && recommendations[event.target.value]) {
             setShowKpiRecommendation(true);
@@ -146,6 +156,10 @@ function App() {
 
     const handleKPIChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedKPIs(event.target.value);
+        // Clear previous results when KPI changes
+        setAnalysisResult(null);
+        setRawAnalysisResult(null);
+        setPromptSent(null);
     };
 
     const handleTargetCPAChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,31 +247,34 @@ function App() {
             }
 
             const data = await response.json();
-            console.log('Raw response object from /api/get-help:', data); // Log the whole object
+            console.log("<<< Received data from /get-help:", data);
+
+            // 1. Get the raw response text
+            const rawResponseText = data.response || '';
             
-            // Get the response text, defaulting to an empty string if missing
-            const rawResponseText = data.response || ''; 
-            console.log('Raw response text:', rawResponseText); 
+            // 2. Parse Markdown to HTML
+            const parsedHtml = await marked.parse(rawResponseText);
+            console.log("<<< Parsed HTML from Markdown:", parsedHtml);
 
-            // Sanitize the HTML received from the backend
-            let sanitizedHtml = DOMPurify.sanitize(rawResponseText); 
-            console.log('Sanitized HTML:', sanitizedHtml); // Log after sanitize
+            // 3. Sanitize the *parsed* HTML 
+            let sanitizedHtml = DOMPurify.sanitize(parsedHtml);
+            // console.log("<<< Sanitized HTML:", sanitizedHtml); // Keep this log if helpful
 
-            // Clean potential markdown artifacts (like ```html)
-            // It's often better to do this *before* sanitizing if the goal is just to remove the backticks
-            // However, let's keep the current order for now unless issues persist
+            // 4. Clean any potential leftover markdown block fences (optional, might not be needed)
             sanitizedHtml = cleanMarkdownCodeBlocks(sanitizedHtml);
-            console.log('Cleaned HTML:', sanitizedHtml); // Log after cleaning markdown
+            console.log("<<< Final Sanitized HTML:", sanitizedHtml);
             
-            // Add AI response to conversation state
+            // Add AI response to conversation
             const newAiMessage = {
                 type: 'assistant',
-                content: sanitizedHtml, // Store the cleaned, sanitized HTML
+                content: sanitizedHtml,
                 timestamp: new Date()
             };
+            console.log("<<< New AI message object:", newAiMessage);
             
             // Update conversation with the AI response
             setHelpConversation([...updatedConversation, newAiMessage]);
+            console.log("<<< Updated helpConversation state:", [...updatedConversation, newAiMessage]);
         } catch (error: any) {
             console.error('Error getting help:', error);
             const errorMessage = `<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`;
@@ -404,12 +421,18 @@ function App() {
             }
 
             const data = await response.json();
-            const sanitizedHtml = DOMPurify.sanitize(data.html);
-            setAnalysisResult(sanitizedHtml);
-            setRawAnalysisResult(data.raw);
+            
+            // Directly sanitize the received HTML, assuming backend sends HTML
+            const rawHtmlContent = data.html || ''; 
+            const sanitizedHtml = DOMPurify.sanitize(rawHtmlContent);
+            console.log("<<< Sanitized Analysis HTML (assuming backend sent HTML):", sanitizedHtml);
+
+            setAnalysisResult(sanitizedHtml); // Store the sanitized HTML
+            setRawAnalysisResult(data.raw); 
             setPromptSent(data.prompt);
             setModelName(data.modelName);
-            setShowResults(true);
+            setShowResults(true); // Show the results page
+            setShowHelpModal(false); // Ensure help modal is closed when showing new results
         } catch (error: any) {
             console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
@@ -600,10 +623,15 @@ function App() {
                     
                     {/* Help Modal */}
                     {showHelpModal && (
-                        <div className="prompt-modal-overlay">
+                        <div className="prompt-modal-backdrop">
                             <div className="prompt-modal help-modal">
-                                <h2>Chat with Audacy AI</h2>
-                                <button onClick={() => setShowHelpModal(false)} className="close-button">&times;</button>
+                                <div className="modal-header">
+                                    <h2>Chat with Audacy AI</h2>
+                                    <div className="modal-header-buttons">
+                                        <button onClick={() => {/* Minimize logic placeholder */}} className="minimize-button" title="Minimize Chat">{/* Minimize Icon */}</button>
+                                        <button onClick={() => setShowHelpModal(false)} className="close-button" title="Close Chat">&times;</button>
+                                    </div>
+                                </div>
                                 
                                 {/* Conversation History */}
                                 {helpConversation.length > 0 && (
@@ -628,9 +656,9 @@ function App() {
                                             <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
                                                 <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
                                                     {message.type === 'user' ? (
-                                                        <p>{message.content}</p>
+                                                        <div dangerouslySetInnerHTML={{ __html: message.content }} /> 
                                                     ) : (
-                                                        <div dangerouslySetInnerHTML={{ __html: cleanMarkdownCodeBlocks(message.content) }} />
+                                                        <div dangerouslySetInnerHTML={{ __html: message.content }} />
                                                     )}
                                                 </div>
                                                 <div className="message-time">
@@ -740,12 +768,14 @@ function App() {
                     <button 
                         className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
                         onClick={() => handleModelSelection('speed')}
+                        title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
                     >
                         Faster
                     </button>
                     <button 
                         className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
                         onClick={() => handleModelSelection('quality')}
+                        title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
                     >
                         Better Quality
                     </button>
@@ -753,6 +783,10 @@ function App() {
             </div>
 
             <h1>Marketing Assistant</h1>
+            <p className="app-instructions">
+                Upload your campaign data (CSV, XLSX, or PDF), select the relevant Tactic and KPI, and describe the client's situation and goals. 
+                The AI will analyze the data and provide actionable insights tailored for Audacy AEs.
+            </p>
             
             <div className="form-grid">
                 <div className="form-column">
@@ -764,17 +798,20 @@ function App() {
                             value={selectedTactics}
                             onChange={handleTacticChange}
                             required
+                            title="Select the primary marketing tactic used in the campaign data."
                         >
                             <option value="" disabled>Select Tactic</option>
+                            <option value="Amazon DSP">Amazon DSP</option>
+                            <option value="Display Ads">Display Ads</option>
+                            <option value="Email eDirect">Email eDirect</option>
+                            <option value="OTT">OTT</option>
+                            <option value="Podcasting">Podcasting</option>
                             <option value="SEM">SEM</option>
                             <option value="SEO">SEO</option>
-                            <option value="Display Ads">Display Ads</option>
+                            <option value="Social Ads">Social Ads</option>
+                            <option value="Streaming Audio">Streaming Audio</option>
                             <option value="Video Display Ads">Video Display Ads</option>
                             <option value="YouTube">YouTube</option>
-                            <option value="OTT">OTT</option>
-                            <option value="Social Ads">Social Ads</option>
-                            <option value="Email eDirect">Email eDirect</option>
-                            <option value="Amazon DSP">Amazon DSP</option>
                         </select>
                     </div>
                 </div>
@@ -788,16 +825,18 @@ function App() {
                             value={selectedKPIs}
                             onChange={handleKPIChange}
                             required
+                            title="Select the main Key Performance Indicator relevant to the campaign goals."
                         >
                             <option value="" disabled>Select KPI</option>
-                            <option value="ROAS">ROAS</option>
-                            <option value="CPA">CPA</option>
-                            <option value="CTR">CTR</option>
-                            <option value="CPC">CPC</option>
-                            <option value="Conversion Rate">Conversion Rate</option>
-                            <option value="Impressions">Impressions</option>
+                            {/* Alphabetized List */}
                             <option value="Clicks">Clicks</option>
+                            <option value="Conversion Rate">Conversion Rate</option>
                             <option value="Conversions">Conversions</option>
+                            <option value="CPA">CPA</option>
+                            <option value="CPC">CPC</option>
+                            <option value="CTR">CTR</option>
+                            <option value="Impressions">Impressions</option>
+                            <option value="ROAS">ROAS</option>
                         </select>
                     </div>
 
@@ -839,6 +878,7 @@ function App() {
                     onChange={handleSituationChange}
                     placeholder="Describe your current marketing situation and goals..."
                     rows={3}
+                    title="Briefly describe the client's current situation, challenges, or the context for this analysis."
                 />
             </div>
             
@@ -851,7 +891,11 @@ function App() {
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                 />
-                <label htmlFor="fileInput" className="choose-file-button">
+                <label 
+                    htmlFor="fileInput" 
+                    className="choose-file-button"
+                    title="Upload campaign performance data (CSV, XLSX, or PDF)."
+                >
                     Choose File
                 </label>
                 {fileName && <p className="file-name"><span>Selected File:</span> {fileName}</p>}
@@ -863,7 +907,12 @@ function App() {
                 {fileName === null && file === null && <p className="file-name">Please select a CSV, XLSX, or PDF file.</p>}
             </div>
 
-            <button className="rounded-element submit-button" onClick={handleSubmit} disabled={isLoading}>
+            <button 
+                className="rounded-element submit-button" 
+                onClick={handleSubmit} 
+                disabled={isLoading}
+                title="Submit the data and inputs to generate the AI analysis."
+            >
                 {isLoading ? '' : 'Analyze'}
             </button>
 
