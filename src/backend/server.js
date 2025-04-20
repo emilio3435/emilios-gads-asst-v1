@@ -195,8 +195,6 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     const tacticsString = req.body.tactics ? JSON.parse(req.body.tactics) : '';
     const kpisString = req.body.kpis ? JSON.parse(req.body.kpis) : '';
     const currentSituation = req.body.currentSituation || '';
-    const targetCPA = req.body.targetCPA || '';
-    const targetROAS = req.body.targetROAS || '';
     const modelId = req.body.modelId || 'gemini-2.0-flash'; // Default to flash if not provided
     const outputDetail = req.body.outputDetail || 'detailed'; // Get output detail, default to detailed
     console.log(`Received outputDetail: ${outputDetail}`);
@@ -235,6 +233,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     let finalPrompt = ''; // Define finalPrompt here to be accessible in response
     let dataString = ''; // Initialize dataString here
     let fileName = req.file ? req.file.originalname : 'N/A'; // Get filename early
+    let rawFileContent = ''; // Variable to store raw content
 
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -243,6 +242,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         if (!req.file) {
             console.log('No file uploaded.');
             dataString = 'No file content provided.'; 
+            rawFileContent = 'No file uploaded.';
         } else {
             fileName = req.file.originalname;
             const fileBuffer = req.file.buffer;
@@ -250,9 +250,9 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
             const lowerCaseFileName = fileName.toLowerCase();
 
             if (lowerCaseFileName.endsWith('.csv')) {
-                // CSV Parsing logic...
                 console.log('Parsing CSV file...');
                 const fileContent = fileBuffer.toString('utf-8');
+                rawFileContent = fileContent; // Store raw CSV string
                 const parseResult = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
                 if (parseResult.errors.length > 0) {
                     console.error('CSV parsing errors:', parseResult.errors);
@@ -261,13 +261,13 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
                 dataString = JSON.stringify(parseResult.data, null, 2);
                 console.log('CSV parsed successfully.');
             } else if (lowerCaseFileName.endsWith('.xlsx')) {
-                // XLSX Parsing logic...
                 console.log('Parsing Excel file...');
                 const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 const excelData = XLSX.utils.sheet_to_json(worksheet);
                 dataString = JSON.stringify(excelData, null, 2);
+                rawFileContent = dataString; // For Excel, JSON string is probably best we can do easily
                 console.log('Excel parsed successfully.');
             } else if (lowerCaseFileName.endsWith('.pdf')) {
                  // PDF Parsing logic...
@@ -287,6 +287,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
                         fullText += pageText + '\n';
                     }
                     dataString = fullText.trim();
+                    rawFileContent = dataString; // Store extracted PDF text
                     console.log(`PDF parsed successfully. Extracted ${dataString.length} characters.`);
                 } catch (pdfError) {
                     console.error('PDF parsing error with pdfjs-dist:', pdfError);
@@ -296,6 +297,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
                 }
             } else {
                 console.log('Unsupported file type.');
+                rawFileContent = 'Unsupported file type.';
                 throw new Error('Unsupported file type. Please upload CSV, XLSX, or PDF.'); // Throw error
             }
         }
@@ -409,7 +411,8 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
       html: htmlAnalysis, // The main HTML analysis
       raw: rawText,       // Raw text version of the HTML analysis
       prompt: finalPrompt,  // Send the final generated prompt
-      modelName: displayModelName  // Send the display model name (Audacy branded) instead of actual model name
+      modelName: displayModelName,  // Send the display model name
+      rawFileContent: rawFileContent // <<< ADDED: Send raw file content back
     });
     console.log('Response sent to client.');
         }
@@ -446,7 +449,9 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
       currentSituation,
       desiredOutcome,
       conversationHistory: conversationHistoryJson,
-      modelId // Extract modelId from the request
+      modelId, // Extract modelId from the request
+      analysisResult, // NEW: Extract analysisResult if provided
+      originalFileContent // NEW: Extract original file content if provided
     } = req.body;
 
     const contextFile = req.file; // Get the uploaded file
@@ -543,10 +548,22 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
       campaignContext += "===== END CAMPAIGN CONTEXT =====\n\n";
     }
 
+    // NEW: Add analysis context if available
+    let analysisContext = '';
+    if (analysisResult) {
+      analysisContext = `===== PREVIOUS ANALYSIS RESULT =====\n${analysisResult}\n===== END PREVIOUS ANALYSIS RESULT =====\n\n`;
+    }
+
+    // NEW: Add original file context if available
+    let originalDataContext = '';
+    if (originalFileContent) {
+      originalDataContext = `===== ORIGINAL UPLOADED FILE CONTENT =====\n${originalFileContent}\n===== END ORIGINAL UPLOADED FILE CONTENT =====\n\n`;
+    }
+
     // NEW Streamlined Prompt
     const promptForHelp = `You are a helpful AI assistant specializing in digital marketing analytics for Audacy. Your goal is to help users understand their marketing campaign data.
 
-${previousConversationFormatted}${campaignContext}${additionalContext ? `===== ADDITIONAL CONTEXT =====\n${additionalContext}\n===== END ADDITIONAL CONTEXT =====\n\n` : ''}
+${originalDataContext}${previousConversationFormatted}${campaignContext}${analysisContext}${additionalContext ? `===== ADDITIONAL CONTEXT =====\n${additionalContext}\n===== END ADDITIONAL CONTEXT =====\n\n` : ''}
 CURRENT QUESTION: ${req.body.question}
 
 `; // Removed response guidelines

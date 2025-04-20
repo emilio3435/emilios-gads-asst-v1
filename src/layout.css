@@ -48,9 +48,15 @@
   padding: var(--spacing-medium) var(--spacing-large);
   border-bottom: 1px solid var(--gray-light); 
   margin-bottom: var(--spacing-large);
-  position: relative; /* For potential absolute positioning inside if needed */
   width: 100%; /* Ensure it spans the container */
   box-sizing: border-box; /* Include padding in width */
+  /* --- Hide this entire bar --- */
+  display: none; 
+  /* Remove previous sticky styles */
+  /* position: sticky; */
+  /* top: 0; */
+  /* background-color: var(--color-white); */
+  /* z-index: 1000; */ 
 }
 
 .navigation-info {
@@ -66,9 +72,9 @@
   top: 15px; 
   left: 50%;
   transform: translateX(-50%);
-  height: 40px;
+  height: 35px; /* Slightly smaller logo */
   width: auto;
-  z-index: 100;
+  z-index: 10; 
 }
 
 .analysis-page-container {
@@ -79,8 +85,11 @@
   margin: 0;
   padding: 0;
   position: relative;
-  z-index: 5;
   box-sizing: border-box;
+  /* Remove previous padding */
+  /* padding-top: 70px; */ 
+  /* Add new smaller padding for logo/button */
+  padding-top: 60px; /* Adjust this value as needed */
 }
 
 .results-display {
@@ -383,4 +392,49 @@
     display: flex;
     flex-direction: column;
     gap: var(--border-radius-small); /* Use small border radius as gap? */
+}
+
+/* === New Standalone Back Button === */
+.page-back-button {
+  position: absolute;
+  top: 18px; /* Align roughly with logo top */
+  left: var(--spacing-large);
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  color: var(--audacy-purple);
+  z-index: 10; /* Same level as logo */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-small);
+  font-size: 1em;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.page-back-button svg {
+  stroke: var(--audacy-purple);
+  width: 18px; /* Adjust size */
+  height: 18px;
+  transition: stroke 0.2s ease;
+}
+
+.page-back-button:hover {
+  color: var(--audacy-purple-dark);
+}
+
+.page-back-button:hover svg {
+  stroke: var(--audacy-purple-dark);
+}
+/* === End New Back Button === */
+
+.results-display {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  background-color: var(--color-white);
+  overflow-y: auto;
+  padding-top: var(--spacing-large);
+  padding-bottom: var(--spacing-large);
 } 

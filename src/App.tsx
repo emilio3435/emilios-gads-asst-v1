@@ -15,8 +15,6 @@ interface HistoryEntry {
     selectedKPIs: string;
     fileName: string | null;
     currentSituation: string;
-    targetCPA: number | null;
-    targetROAS: number | null;
     selectedModelId: string;
     outputDetail: 'brief' | 'detailed';
   };
@@ -84,8 +82,6 @@ function App() {
     const [showResults, setShowResults] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [targetCPA, setTargetCPA] = useState<number | null>(null);
-    const [targetROAS, setTargetROAS] = useState<number | null>(null);
     const [isExportMenuOpen, setIsExportMenuOpen] = useState<boolean>(false);
     const [showHelpModal, setShowHelpModal] = useState<boolean>(false);
     const [helpQuestion, setHelpQuestion] = useState<string>('');
@@ -102,6 +98,7 @@ function App() {
     const [selectedHistoryEntryId, setSelectedHistoryEntryId] = useState<string | null>(null);
     const [showChatHistoryModal, setShowChatHistoryModal] = useState<boolean>(false);
     const [viewingChatHistory, setViewingChatHistory] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
+    const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -250,14 +247,6 @@ function App() {
         setPromptSent(null);
     };
 
-    const handleTargetCPAChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setTargetCPA(event.target.value ? parseFloat(event.target.value) : null);
-    };
-
-    const handleTargetROASChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setTargetROAS(event.target.value ? parseFloat(event.target.value) : null);
-    };
-
     const handleClientNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setClientName(event.target.value);
     };
@@ -312,9 +301,13 @@ function App() {
             formData.append('kpi', selectedKPIs || '');
             formData.append('fileName', fileName || '');
             formData.append('currentSituation', currentSituation || '');
+            // Add the main analysis result if it exists
+            if (analysisResult) {
+                formData.append('analysisResult', analysisResult);
+            }
             
             // Add conversation history to help provide context - always include it
-            formData.append('conversationHistory', JSON.stringify(updatedConversation));
+            formData.append('conversationHistory', JSON.stringify(updatedConversation)); // Sends the *updated* history
             
             // Add selected model ID to use the same model as the analysis
             formData.append('modelId', selectedModelId);
@@ -322,6 +315,11 @@ function App() {
             // Append the context file if it exists
             if (helpContextFile) {
                 formData.append('contextFile', helpContextFile);
+            }
+
+            // --- NEW: Append original file content if available ---
+            if (originalFileContent) {
+                formData.append('originalFileContent', originalFileContent);
             }
 
             // Send the help request to the server
@@ -484,8 +482,6 @@ function App() {
         formData.append('tactics', JSON.stringify(selectedTactics));
         formData.append('kpis', JSON.stringify(selectedKPIs));
         formData.append('currentSituation', currentSituation);
-        formData.append('targetCPA', JSON.stringify(targetCPA));
-        formData.append('targetROAS', JSON.stringify(targetROAS));
         formData.append('modelId', selectedModelId);
         formData.append('outputDetail', outputDetail);
         formData.append('clientName', clientName);
@@ -521,6 +517,8 @@ function App() {
             setRawAnalysisResult(data.raw); 
             setPromptSent(data.prompt);
             setModelName(data.modelName);
+            // --- NEW: Store original file content ---
+            setOriginalFileContent(data.rawFileContent || null);
 
             // --- Add to History ---
             const newHistoryEntry: HistoryEntry = {
@@ -532,8 +530,6 @@ function App() {
                     selectedKPIs,
                     fileName,
                     currentSituation,
-                    targetCPA,
-                    targetROAS,
                     selectedModelId,
                     outputDetail,
                 },
@@ -595,8 +591,6 @@ function App() {
         setFileName(null);
         setCurrentSituation('');
         setClientName('');
-        setTargetCPA(null);
-        setTargetROAS(null);
         // Reset results & status
         setAnalysisResult(null);
         setRawAnalysisResult(null);
@@ -614,6 +608,8 @@ function App() {
         setHelpQuestion(''); // Clear any lingering question text
         setHelpContextFile(null); // Clear help context file
         setHelpContextFileName(null);
+        // --- NEW: Clear original file content ---
+        setOriginalFileContent(null);
 
         // Reset advanced options (optional, based on desired behavior)
         // setSelectedModelId('gemini-2.0-flash'); 
@@ -651,8 +647,6 @@ function App() {
             setFileName(entry.inputs.fileName || null);
             setFile(null); // Can't restore the actual file object
             setCurrentSituation(entry.inputs.currentSituation || '');
-            setTargetCPA(entry.inputs.targetCPA !== undefined ? entry.inputs.targetCPA : null);
-            setTargetROAS(entry.inputs.targetROAS !== undefined ? entry.inputs.targetROAS : null);
             setSelectedModelId(entry.inputs.selectedModelId || 'gemini-2.0-flash');
             setOutputDetail(entry.inputs.outputDetail || 'brief');
 
@@ -661,6 +655,9 @@ function App() {
             setRawAnalysisResult(entry.results.rawAnalysisResult || null);
             setPromptSent(entry.results.promptSent || null);
             setModelName(entry.results.modelName || null);
+            // --- NEW: Load original file content from history (IF we decide to save it) ---
+            // For now, we are NOT saving it to history, so clear it when loading history.
+            setOriginalFileContent(null);
 
             // Set flags and show results
             setError(null);
@@ -713,25 +710,21 @@ function App() {
     if (showResults) {
         return (
             <div className="App">
-                <div className="back-button-container">
-                    {/* Add Back button here */}
-                    <button onClick={handleBackToForm} className="sleek-back-button" title="Back to Input Form">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {/* <div className="back-button-container"> */} {/* Old header hidden via CSS */}
+                    {/* Logo remains, styled via CSS */}
+                    {/* <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" /> */}
+                    {/* Navigation info removed */}
+                {/* </div> */}
+                <div className="analysis-page-container">
+                    {/* New Standalone Logo & Back Button */} 
+                    <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" />
+                    <button onClick={handleBackToForm} className="page-back-button" title="Back to Input Form">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline> 
                         </svg>
                          Back
                     </button>
-                    {/* Logo remains */}
-                    <img src={audacyLogoHoriz} alt="Audacy Logo" className="results-header-logo" />
                     
-                    {/* Navigation info on the right */}
-                    <div className="navigation-info">
-                        <span className="nav-step">Input</span>
-                        <span className="nav-arrow">→</span>
-                        <span className="nav-step active">Analysis</span>
-                    </div>
-                </div>
-                <div className="analysis-page-container">
                     <div className="results-display">
                         <div className="prompt-display-box">
                             <div className="campaign-info">
@@ -1102,33 +1095,6 @@ function App() {
                                 </div>
                             </div>
                         )}
-
-                        {selectedKPIs === 'CPA' && (
-                            <div className="input-container">
-                                <label htmlFor="targetCPA">Target CPA:</label>
-                                <input
-                                    type="number"
-                                    id="targetCPA"
-                                    value={targetCPA !== null ? targetCPA : ''}
-                                    onChange={handleTargetCPAChange}
-                                    placeholder="Enter Target CPA"
-                                    className="text-input"
-                                />
-                            </div>
-                        )}
-                        {selectedKPIs === 'ROAS' && (
-                            <div className="input-container">
-                                <label htmlFor="targetROAS">Target ROAS:</label>
-                                <input
-                                    type="number"
-                                    id="targetROAS"
-                                    value={targetROAS !== null ? targetROAS : ''}
-                                    onChange={handleTargetROASChange}
-                                    placeholder="Enter Target ROAS"
-                                    className="text-input"
-                                />
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -1330,7 +1296,6 @@ function App() {
                                     </div>
                                     <div className="message-time">
                                         {/* Ensure timestamp exists and is valid before formatting */}
-                                        {/* Need to handle potential string timestamps from storage */}
                                         {message.timestamp ? formatHistoryTimestamp(new Date(message.timestamp).getTime()) : ''}
                                     </div>
                                 </div>
