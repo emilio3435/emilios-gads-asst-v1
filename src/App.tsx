@@ -555,6 +555,10 @@ function App() {
             });
             // --- End Add to History ---
 
+            // >>> Clear chat history when a new analysis is successful <<<
+            setHelpConversation([]);
+            sessionStorage.removeItem('helpConversation');
+
             setShowResults(true); // Show the results page
             setShowHelpModal(false); // Ensure help modal is closed when showing new results
             setIsViewingHistory(false); // Set to false as this is a fresh analysis
@@ -599,6 +603,14 @@ function App() {
         setIsLoading(false);
         setIsViewingHistory(false); // Reset viewing history flag
         setSelectedHistoryEntryId(null); // Reset selected history entry
+
+        // >>> Clear chat history and related state <<<
+        setHelpConversation([]);
+        sessionStorage.removeItem('helpConversation');
+        setHelpQuestion(''); // Clear any lingering question text
+        setHelpContextFile(null); // Clear help context file
+        setHelpContextFileName(null);
+
         // Reset advanced options (optional, based on desired behavior)
         // setSelectedModelId('gemini-2.0-flash'); 
         // setOutputDetail('brief');
