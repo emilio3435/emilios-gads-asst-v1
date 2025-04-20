@@ -814,24 +814,38 @@ function App() {
                     </div>
                     
                     <div className="input-section">
-                        {/* Review Inputs Button (Removed) */}
-                         {/* <button className="edit-inputs-button" onClick={handleEditInputs}>
-                             Review Inputs
-                         </button> */}
-
-                        {/* Discuss this Analysis Button (Conditionally Render) */}
-                        { !isViewingHistory && (
+                        {/* Conditionally render button based on isViewingHistory */}
+                        {isViewingHistory ? (
+                            // --- Button to View Chat for Loaded History ---
+                            (() => {
+                                // Find the loaded entry to check for chat availability
+                                const loadedEntry = analysisHistory.find(h => h.id === selectedHistoryEntryId);
+                                const chatAvailable = loadedEntry && Array.isArray(loadedEntry.results.helpConversation) && loadedEntry.results.helpConversation.length > 0;
+                                
+                                return (
+                                    <button
+                                        className="help-button view-history-chat-button" // Add specific class if needed
+                                        onClick={() => handleViewChatHistory(selectedHistoryEntryId!)} // Use existing handler
+                                        disabled={!chatAvailable} // Disable if no chat
+                                        title={chatAvailable ? "View chat history for this analysis" : "No chat history available for this analysis"}
+                                    >
+                                        {/* Replace icon - e.g., History icon */}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                        View Associated Chat
+                                    </button>
+                                );
+                            })()
+                        ) : (
+                            // --- Original Button to Start New Chat ---
                             <button
                                 className="help-button"
                                 onClick={() => setShowHelpModal(true)}
-                                // No need for disabled prop now, as it won't render when viewing history
                                 title={"Discuss this Analysis"}
                             >
                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                 Discuss this Analysis
                             </button>
                         )}
-
                     </div>
                     
                     {/* Prompt Modal */}
