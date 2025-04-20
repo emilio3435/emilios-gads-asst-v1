@@ -210,19 +210,43 @@
     width: 100%;
 }
 
+.history-section h2 {
+    /* Position title top-left, absolutely */
+    position: absolute;
+    top: var(--spacing-medium); /* Match button's top */
+    left: var(--spacing-large); /* Match button's right as left offset */
+    margin: 0; /* Remove all margins */
+    padding: 0; /* Remove all padding */
+    border-bottom: none; /* Remove separator */
+    width: auto; /* Allow natural width */
+    text-align: left; /* Align left */
+    color: var(--audacy-purple); /* Set color to Audacy Purple */
+    font-size: 1.1em; /* Optional: Adjust size if needed */
+}
+
 .history-list {
+    /* Ensure list starts below the absolutely positioned header */
     list-style: none;
     padding: 0;
-    margin: 0;
-    clear: both; /* Clear the float for the button */
+    margin: 0; 
+    clear: both; 
+    padding-top: 15px; /* Further reduced padding */
 }
 
 .history-item {
+    /* Turn list items into cards */
+    background-color: var(--color-white);
+    border: 1px solid var(--gray-light);
+    border-radius: var(--border-radius-medium);
+    padding: var(--spacing-medium);
+    margin-bottom: var(--spacing-medium); /* Space between history cards */
+    box-shadow: var(--shadow-small);
+    /* Keep flex layout for internal content */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-medium) var(--spacing-small);
-    border-bottom: 1px solid var(--gray-light);
+    /* Remove list item bottom border */
+    /* border-bottom: 1px solid var(--gray-light); REMOVED */
 }
 
 .history-item-info {
@@ -266,5 +290,7 @@
 
 .history-card {
     /* Specific styles for history card if needed */
-     padding-top: var(--spacing-medium); /* Slightly less top padding if h2 is close */
+     padding-top: var(--spacing-medium); 
+     padding-bottom: var(--spacing-medium);
+     position: relative; /* Add relative positioning for absolute children */
 } 

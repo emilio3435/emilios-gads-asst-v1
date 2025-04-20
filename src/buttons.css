@@ -255,20 +255,42 @@ button {
 
 /* History Buttons */
 .clear-history-button {
-    background-color: var(--color-error-bg);
-    color: var(--color-error-text);
-    border: 1px solid var(--color-error-border);
-    padding: 6px 12px;
-    border-radius: var(--border-radius-small);
+    /* Style like other action buttons, but maybe secondary */
+    position: absolute; 
+    top: var(--spacing-medium); 
+    right: var(--spacing-large); 
+    background-color: var(--gray-medium-light); /* Secondary button color */
+    color: var(--color-error); /* Keep red text for warning */
+    border: 1px solid var(--gray-medium); /* Subtle border */
+    padding: 6px 12px; /* Consistent padding */
+    border-radius: var(--border-radius-round); /* Rounded */
     cursor: pointer;
-    font-size: 0.85em;
+    font-size: 0.85em; 
+    font-weight: 500;
     transition: all 0.2s;
-    float: right; 
-    margin-bottom: var(--spacing-small);
+    float: none;
+    margin: 0;
+    display: inline-flex; /* Align icon and text */
+    align-items: center;
+    gap: var(--spacing-extra-small); /* Space between icon and text */
 }
 
 .clear-history-button:hover {
-    background-color: var(--color-error-border);
+    background-color: var(--gray-medium); 
+    color: var(--color-error-text-dark); 
+    border-color: var(--gray-medium-dark);
+    box-shadow: var(--shadow-small); /* Subtle shadow on hover */
+}
+
+.clear-history-button svg {
+    width: 14px; /* Icon size */
+    height: 14px;
+    stroke: var(--color-error); /* Red icon stroke */
+    stroke-width: 2;
+}
+
+.clear-history-button:hover svg {
+    stroke: var(--color-error-text-dark);
 }
 
 .view-history-button {
