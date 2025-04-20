@@ -99,8 +99,17 @@ function App() {
     const [showChatHistoryModal, setShowChatHistoryModal] = useState<boolean>(false);
     const [viewingChatHistory, setViewingChatHistory] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const itemsPerPage = 5; // Show 5 history items per page
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    // --- Pagination Calculations ---
+    const totalPages = Math.ceil(analysisHistory.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedHistory = analysisHistory.slice(startIndex, endIndex);
+    // --- End Pagination Calculations ---
 
     // Focus on help input when modal opens
     useEffect(() => {
@@ -545,12 +554,12 @@ function App() {
             // Update state and localStorage
             setAnalysisHistory(prevHistory => {
                 const updatedHistory = [newHistoryEntry, ...prevHistory];
-                // Keep only the latest N entries (e.g., 20)
-                const HISTORY_LIMIT = 20;
+                const HISTORY_LIMIT = 20; // Keep limit logic if desired
                 if (updatedHistory.length > HISTORY_LIMIT) {
                     updatedHistory.length = HISTORY_LIMIT; // Truncate the array
                 }
                 localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
+                setCurrentPage(1); // <<< Reset to first page on new entry
                 return updatedHistory;
             });
             // --- End Add to History ---
@@ -610,6 +619,8 @@ function App() {
         setHelpContextFileName(null);
         // --- NEW: Clear original file content ---
         setOriginalFileContent(null);
+        // --- NEW: Reset pagination ---
+        setCurrentPage(1);
 
         // Reset advanced options (optional, based on desired behavior)
         // setSelectedModelId('gemini-2.0-flash'); 
@@ -856,22 +867,6 @@ function App() {
                                 {/* Conversation History */}
                                 {helpConversation.length > 0 && (
                                     <div className="help-conversation" ref={chatContainerRef}>
-                                        <div className="conversation-controls">
-                                            <button 
-                                                className="new-chat-button"
-                                                onClick={() => {
-                                                    setHelpConversation([]);
-                                                    sessionStorage.removeItem('helpConversation');
-                                                }}
-                                            >
-                                                Start New Chat
-                                            </button>
-                                            <span className="conversation-info">
-                                                {helpConversation.length > 0 && 
-                                                    sessionStorage.getItem('helpConversation') ? 
-                                                    '(Includes messages from current session)' : ''}
-                                            </span>
-                                        </div>
                                         {helpConversation.map((message, index) => (
                                             <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
                                                 <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
@@ -1226,7 +1221,7 @@ function App() {
                             Clear History
                         </button>
                         <ul className="history-list">
-                            {analysisHistory.map((entry) => {
+                            {paginatedHistory.map((entry) => {
                                 const clientNameText = entry.inputs.clientName || 'N/A';
                                 const isClientNA = clientNameText === 'N/A';
                                 return (
@@ -1272,6 +1267,42 @@ function App() {
                                 );
                             })}
                         </ul>
+                        {/* --- Add Pagination Controls --- */}
+                        {totalPages > 1 && (
+                            <div className="pagination-controls">
+                                {/* Previous Button (Optional, for better UX) */} 
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="pagination-arrow"
+                                    title="Previous Page"
+                                >
+                                    &lt;
+                                </button>
+
+                                {/* Page Numbers */} 
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                    <button
+                                        key={page}
+                                        className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                                        onClick={() => setCurrentPage(page)}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+
+                                {/* Next Button (Optional) */} 
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="pagination-arrow"
+                                    title="Next Page"
+                                >
+                                    &gt;
+                                </button>
+                            </div>
+                        )}
+                        {/* --- End Pagination Controls --- */}
                     </div>
                 </div> /* End History Card */
             )}

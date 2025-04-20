@@ -282,7 +282,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start; /* Left-align text within this container */
-    gap: 2px; /* Reduced gap between lines */
+    gap: var(--border-radius-small); /* Use small border radius as gap? */
     /* Allow this container to grow and push button/time right */
     flex-grow: 1;
     /* Add padding to prevent text hitting the button/time */
@@ -437,4 +437,51 @@
   overflow-y: auto;
   padding-top: var(--spacing-large);
   padding-bottom: var(--spacing-large);
-} 
+}
+
+/* === Pagination Styles === */
+.pagination-controls {
+  display: flex;
+  justify-content: flex-end; /* Align to the right */
+  align-items: center;
+  gap: var(--spacing-small);
+  padding: var(--spacing-medium) 0 0 0; /* Padding above, none on sides/below */
+  margin-top: var(--spacing-small); /* Space between list and controls */
+  width: 100%; /* Take full width */
+}
+
+.pagination-controls button {
+  background-color: var(--gray-lightest);
+  border: 1px solid var(--gray-medium);
+  color: var(--gray-darker);
+  padding: 5px 10px;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  font-size: 0.9em;
+  min-width: 30px; /* Ensure numbers aren't too small */
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.pagination-controls button:disabled {
+  background-color: var(--gray-lighter);
+  color: var(--gray-medium-dark);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.pagination-controls button:not(:disabled):hover {
+  background-color: var(--gray-medium-light);
+  border-color: var(--gray-medium-dark);
+}
+
+.pagination-controls button.pagination-number.active {
+  background-color: var(--audacy-purple);
+  border-color: var(--audacy-purple);
+  color: var(--color-white);
+  font-weight: bold;
+}
+
+.pagination-controls button.pagination-arrow {
+  font-weight: bold;
+}
+/* === End Pagination Styles === */ 
