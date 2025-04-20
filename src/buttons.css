@@ -32,7 +32,7 @@ button {
 
 /* Buttons in the results input section */
 .show-input-button, 
-/* .help-button,  <-- Remove .help-button from this list */
+.help-button, 
 .copy-button, 
 .edit-inputs-button {
   min-width: 140px;
@@ -76,17 +76,6 @@ button {
 .help-button {
   background-color: var(--audacy-purple-alt);
   color: var(--color-white);
-  padding: 12px 24px;
-  font-size: 1em;
-  font-weight: 600;
-  line-height: 1.4;
-  box-sizing: border-box;
-  border: 1px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-small);
-  justify-content: center;
-  min-width: auto;
 }
 
 .help-button:hover {
@@ -239,46 +228,37 @@ button {
   color: var(--audacy-purple-dark);
 }
 
-/* === New Analysis Button === */
+/* New Inquiry Floating Button */
 .new-inquiry-button {
-  /* Remove fixed positioning */
-  /* position: fixed; */
-  /* bottom: 20px; */
-  /* right: 20px; */
-  /* z-index: 100; */
-
-  /* Keep styling */
-  background-color: var(--audacy-orange); 
-  color: var(--color-white);
-  /* Add transparent border to match space */
-  border: 1px solid transparent;
-  padding: 12px 24px; 
-  border-radius: var(--border-radius-round);
-  cursor: pointer;
-  font-size: 1em;
-  font-weight: 600;
-  /* Add explicit line-height */
-  line-height: 1.4;
-  /* Ensure box-sizing */
-  box-sizing: border-box;
-  display: inline-flex; /* Align icon and text */
-  align-items: center;
-  gap: var(--spacing-small);
-  transition: all 0.2s;
-  box-shadow: var(--shadow-medium);
-  /* Add some default margin if needed when stacked */
-  margin-top: var(--spacing-small); 
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    background-color: var(--audacy-orange); 
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--border-radius-round);
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-small);
+    box-shadow: var(--shadow-large);
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .new-inquiry-button:hover {
-  background-color: var(--audacy-orange-dark); 
-  box-shadow: var(--shadow-large);
-  transform: translateY(-2px);
+    background-color: var(--audacy-orange-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); /* Keep specific shadow? */
 }
 
 .new-inquiry-button svg {
-  stroke: var(--color-white);
-  stroke-width: 2;
+    stroke: var(--color-white);
+    stroke-width: 2;
 }
 
 /* History Buttons */

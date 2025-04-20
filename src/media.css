@@ -29,40 +29,14 @@
 
   .input-section { /* Buttons below results */
       gap: var(--spacing-small);
-      /* Add stacking for mobile */
-      flex-direction: column;
-      align-items: center;
-  }
-
-  /* Style buttons within the input section for mobile */
-  .input-section .help-button,
-  .input-section .view-history-chat-button,
-  .input-section .new-inquiry-button {
-      width: 90%; /* Make buttons take most of the width */
-      max-width: 350px; /* Optional: prevent them getting too wide */
-      justify-content: center; /* Center text/icon within button */
   }
   
-  /* Add margin below the first button when stacked */
-  .input-section .help-button,
-  .input-section .view-history-chat-button {
-      margin-bottom: var(--spacing-medium);
-  }
-
-  /* Allow tables to scroll horizontally on mobile */
-  table {
-      display: block;
-      overflow-x: auto;
-      white-space: nowrap; /* Prevent text wrapping within cells causing width issues */
-  }
-
   .campaign-info {
     /* Styles moved from App.css specific media query */
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
     margin-top: var(--spacing-small);
-    font-size: 0.9em;
   }
 
   /* Form Element Adjustments */
@@ -108,6 +82,31 @@
       flex-wrap: wrap; /* Allow wrapping on small screens */
       gap: var(--spacing-small);
   }
+
+  /* History Card Adjustments */
+  .history-item {
+      padding: var(--spacing-small) var(--spacing-medium); /* Reduce padding slightly */
+      margin-bottom: var(--spacing-small); /* Reduce bottom margin */
+  }
+
+  .history-item-info {
+      padding-right: var(--spacing-small); /* Reduce padding next to button */
+      gap: 2px; /* Further reduce gap between text lines */
+  }
+
+  .history-client-name {
+      font-size: 0.95em; /* Slightly smaller main text */
+  }
+
+  .history-details,
+  .history-timestamp {
+      font-size: 0.8em; /* Smaller secondary text */
+  }
+
+  .history-item-actions .button-small {
+      padding: 4px 8px; /* Make button slightly smaller */
+      font-size: 0.75em;
+  }
 }
 
 @media (max-width: 480px) {
@@ -130,11 +129,10 @@
       font-size: 0.9em;
   }
   
-  /* REMOVE old fixed positioning for new-inquiry-button on mobile */
-  /* .new-inquiry-button {
+  .new-inquiry-button {
       bottom: 15px;
       right: 15px;
       padding: 10px 18px;
       font-size: 14px;
-  } */
+  }
 } 

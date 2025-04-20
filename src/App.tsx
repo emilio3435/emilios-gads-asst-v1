@@ -104,6 +104,7 @@ function App() {
     const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const itemsPerPage = 5; // Show 5 history items per page
+    const [activeView, setActiveView] = useState<'new' | 'history'>('new');
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -113,32 +114,6 @@ function App() {
     const endIndex = startIndex + itemsPerPage;
     const paginatedHistory = analysisHistory.slice(startIndex, endIndex);
     // --- End Pagination Calculations ---
-
-    // --- useEffect Hooks ---
-
-    // Effect to handle Escape key closing modals
-    useEffect(() => {
-        const handleEscapeKey = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                if (showHelpModal) {
-                    setShowHelpModal(false);
-                }
-                if (showChatHistoryModal || showPrompt) {
-                    setShowPrompt(false);
-                }
-            }
-        };
-
-        // Add listener only if a modal is potentially open
-        if (showHelpModal || showChatHistoryModal || showPrompt) {
-            window.addEventListener('keydown', handleEscapeKey);
-        }
-
-        // Cleanup function to remove the listener
-        return () => {
-            window.removeEventListener('keydown', handleEscapeKey);
-        };
-    }, [showHelpModal, showChatHistoryModal, showPrompt]); // Re-run if any modal's visibility changes
 
     // Focus on help input when modal opens
     useEffect(() => {
@@ -559,7 +534,6 @@ function App() {
             setOriginalFileContent(data.rawFileContent || null);
 
             // --- Add to History ---
-            const currentChatToSave = [...helpConversation]; // Capture the chat state *before* clearing
             const newHistoryEntry: HistoryEntry = {
                 id: `analysis-${Date.now()}`,
                 timestamp: Date.now(),
@@ -573,35 +547,34 @@ function App() {
                     outputDetail,
                 },
                 results: {
-                    analysisResult: sanitizedHtml, 
+                    analysisResult: sanitizedHtml, // Save the sanitized HTML
                     rawAnalysisResult: data.raw,
                     modelName: data.modelName,
                     promptSent: data.prompt,
-                    helpConversation: currentChatToSave // Use the captured chat state
+                    helpConversation: [...helpConversation] // Save a copy of the current chat
                 }
             };
             
-            // Update state and localStorage, THEN clear the chat
+            // Update state and localStorage
             setAnalysisHistory(prevHistory => {
                 const updatedHistory = [newHistoryEntry, ...prevHistory];
-                const HISTORY_LIMIT = 20; 
+                const HISTORY_LIMIT = 20; // Keep limit logic if desired
                 if (updatedHistory.length > HISTORY_LIMIT) {
-                    updatedHistory.length = HISTORY_LIMIT; 
+                    updatedHistory.length = HISTORY_LIMIT; // Truncate the array
                 }
                 localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
-                setCurrentPage(1); 
-
-                // >>> Clear chat history state AFTER history is updated <<<
-                setHelpConversation([]);
-                sessionStorage.removeItem('helpConversation');
-                
+                setCurrentPage(1); // <<< Reset to first page on new entry
                 return updatedHistory;
             });
             // --- End Add to History ---
 
-            setShowResults(true); 
-            setShowHelpModal(false); 
-            setIsViewingHistory(false); 
+            // >>> Clear chat history when a new analysis is successful <<<
+            setHelpConversation([]);
+            sessionStorage.removeItem('helpConversation');
+
+            setShowResults(true); // Show the results page
+            setShowHelpModal(false); // Ensure help modal is closed when showing new results
+            setIsViewingHistory(false); // Set to false as this is a fresh analysis
         } catch (error: any) {
             console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
@@ -680,15 +653,8 @@ function App() {
 
     // Function to load a previous analysis from history
     const handleLoadHistory = (entryId: string) => {
-        console.log(`[handleLoadHistory] Attempting to load entry ID: ${entryId}`); // <<< Log Entry ID
         const entry = analysisHistory.find(h => h.id === entryId);
-        console.log('[handleLoadHistory] Found entry:', entry); // <<< Log the entire entry
         if (entry) {
-            // Log the specific chat history part
-            console.log('[handleLoadHistory] Entry chat history:', entry.results?.helpConversation);
-            console.log('[handleLoadHistory] Is chat history an array?:', Array.isArray(entry.results?.helpConversation));
-            console.log('[handleLoadHistory] Chat history length:', entry.results?.helpConversation?.length);
-
             // Load data from history into state
             setClientName(entry.inputs.clientName || '');
             setSelectedTactics(entry.inputs.selectedTactics || '');
@@ -755,6 +721,18 @@ function App() {
             return historyDate.toLocaleDateString(undefined, dateOptions);
         }
     };
+
+    // <<< ADDED: Function to clear analysis history >>>
+    const handleClearHistory = () => {
+        if (window.confirm('Are you sure you want to clear all analysis history? This cannot be undone.')) {
+            setAnalysisHistory([]);
+            localStorage.removeItem('analysisHistory');
+            setCurrentPage(1); // Reset pagination
+            setActiveView('new'); // Switch back to the new analysis tab
+            console.log("Analysis history cleared.");
+        }
+    };
+    // <<< END ADDED FUNCTION >>>
 
     if (showResults) {
         return (
@@ -849,54 +827,24 @@ function App() {
                     </div>
                     
                     <div className="input-section">
-                        {/* Conditionally render button based on isViewingHistory */}
-                        {isViewingHistory ? (
-                            // --- Button to View Chat for Loaded History ---
-                            (() => {
-                                // Find the loaded entry to check for chat availability
-                                console.log('[Button Logic] Checking entry ID:', selectedHistoryEntryId); // <<< Log ID used by button
-                                const loadedEntry = analysisHistory.find(h => h.id === selectedHistoryEntryId);
-                                console.log('[Button Logic] Found entry:', loadedEntry); // <<< Log entry found by button
-                                const chatAvailable = loadedEntry && Array.isArray(loadedEntry.results?.helpConversation) && loadedEntry.results.helpConversation.length > 0;
-                                console.log('[Button Logic] Chat available?:', chatAvailable); // <<< Log result of check
-                                
-                                return (
-                                    <button
-                                        className="help-button view-history-chat-button" // Add specific class if needed
-                                        onClick={() => handleViewChatHistory(selectedHistoryEntryId!)} // Use existing handler
-                                        disabled={!chatAvailable} // Disable if no chat
-                                        title={chatAvailable ? "View chat history for this analysis" : "No chat history available for this analysis"}
-                                    >
-                                        {/* Replace icon - e.g., History icon */}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                                        View Associated Chat
-                                    </button>
-                                );
-                            })()
-                        ) : (
-                            // --- Original Button to Start New Chat ---
+                        {/* Review Inputs Button (Removed) */}
+                         {/* <button className="edit-inputs-button" onClick={handleEditInputs}>
+                             Review Inputs
+                         </button> */}
+
+                        {/* Discuss this Analysis Button (Conditionally Render) */}
+                        { !isViewingHistory && (
                             <button
                                 className="help-button"
                                 onClick={() => setShowHelpModal(true)}
+                                // No need for disabled prop now, as it won't render when viewing history
                                 title={"Discuss this Analysis"}
                             >
                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                 Discuss this Analysis
                             </button>
                         )}
-                        {/* --- Moved New Analysis Button Here --- */}
-                        {/* Render this button ONLY when showing results */}
-                        <button 
-                            className="new-inquiry-button" 
-                            onClick={handleNewInquiry}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            New Analysis
-                        </button>
-                        {/* --- End Moved Button --- */}
+
                     </div>
                     
                     {/* Prompt Modal */}
@@ -1025,8 +973,7 @@ function App() {
                     )}
                 </div>
                 {/* Add floating New Inquiry Button here, only when showing results */}
-                {/* --- REMOVED from here --- */}
-                {/* {showResults && (
+                {showResults && (
                     <button 
                         className="new-inquiry-button" 
                         onClick={handleNewInquiry}
@@ -1037,362 +984,396 @@ function App() {
                         </svg>
                         New Analysis
                     </button>
-                )} */}
+                )}
             </div>
         );
     }
 
     return (
         <div className="App">
-            {/* Assistant Card */}
-            <div className="card assistant-card">
-                <div className="app-header">
-                    <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
-                    <div className="header-controls-container">
-                        <div className="model-selector-simple detail-toggle">
-                            <span className="model-selector-label">Output Detail:</span>
-                            <button 
-                                className={`model-button ${outputDetail === 'brief' ? 'active' : ''}`}
-                                onClick={() => handleOutputDetailChange('brief')}
-                                title="Brief Output: Focuses on essential findings and recommendations."
-                            >
-                                Brief
-                            </button>
-                            <button 
-                                className={`model-button ${outputDetail === 'detailed' ? 'active' : ''}`}
-                                onClick={() => handleOutputDetailChange('detailed')}
-                                title="Detailed Output: Provides comprehensive explanations and context."
-                            >
-                                Detailed
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            {/* Tab Navigation */}
+            <div className="tab-navigation">
+                <button
+                    className={`tab-button ${activeView === 'new' ? 'active' : ''}`}
+                    onClick={() => setActiveView('new')}
+                >
+                    New Analysis
+                </button>
+                <button
+                    className={`tab-button ${activeView === 'history' ? 'active' : ''} ${analysisHistory.length === 0 ? 'disabled' : ''}`}
+                    onClick={() => analysisHistory.length > 0 && setActiveView('history')}
+                    disabled={analysisHistory.length === 0}
+                    title={analysisHistory.length === 0 ? "No history available" : "View past analyses"}
+                >
+                    History ({analysisHistory.length})
+                </button>
+            </div>
 
-                <h1>Audacy Analysis Assistant</h1>
-                <div className="app-instructions">
-                    <p className="instructions-title">Get Your AI-Powered Analysis:</p>
-                    <span className="instruction-step">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                        <strong>Upload:</strong> Add the campaign data file (CSV, XLSX, PDF).
-                    </span>
-                    <span className="instruction-step">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        <strong>Select:</strong> Choose the main Tactic and KPI to focus on.
-                    </span>
-                    <span className="instruction-step">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                        <strong>Describe:</strong> Briefly outline the client's situation and goals (this helps tailor the insights!).
-                    </span>
-                    <p className="instructions-footer">Click "Analyze" for actionable insights designed for AEs.</p>
-                </div>
-                
-                {/* Client Name Input - Add this section */}
-                <div className="input-container full-width">
-                    <label htmlFor="clientName">Client / Advertiser Name:</label>
-                    <input
-                        type="text"
-                        id="clientName"
-                        value={clientName}
-                        onChange={handleClientNameChange} // Ensure handler is connected
-                        placeholder="Enter client or advertiser name"
-                        className="text-input"
-                        title="Enter the name of the client or advertiser for this analysis."
-                    />
-                </div>
-                
-                <div className="form-grid">
-                    <div className="form-column">
-                        <div className="select-container">
-                            <label htmlFor="tactics-list">Select Tactic:</label>
-                            <select
-                                id="tactics-list"
-                                className="tactics-list"
-                                value={selectedTactics}
-                                onChange={handleTacticChange}
-                                required
-                                title="Select the primary marketing tactic used in the campaign data."
-                            >
-                                <option value="" disabled>Select Tactic</option>
-                                <option value="Amazon DSP">Amazon DSP</option>
-                                <option value="Display Ads">Display Ads</option>
-                                <option value="Email eDirect">Email eDirect</option>
-                                <option value="OTT">OTT</option>
-                                <option value="Podcasting">Podcasting</option>
-                                <option value="SEM">SEM</option>
-                                <option value="SEO">SEO</option>
-                                <option value="Social Ads">Social Ads</option>
-                                <option value="Streaming Audio">Streaming Audio</option>
-                                <option value="Video Display Ads">Video Display Ads</option>
-                                <option value="YouTube">YouTube</option>
-                            </select>
-                        </div>
-                    </div>
+            {/* Tab Content Area */}
+            <div className="tab-content">
 
-                    <div className="form-column">
-                        <div className="select-container">
-                            <label htmlFor="kpi-list">Select KPI:</label>
-                            <select
-                                id="kpi-list"
-                                className="kpi-list"
-                                value={selectedKPIs}
-                                onChange={handleKPIChange}
-                                required
-                                title="Select the main Key Performance Indicator relevant to the campaign goals."
-                            >
-                                <option value="" disabled>Select KPI</option>
-                                {/* Alphabetized List */}
-                                <option value="Clicks">Clicks</option>
-                                <option value="Conversion Rate">Conversion Rate</option>
-                                <option value="Conversions">Conversions</option>
-                                <option value="CPA">CPA</option>
-                                <option value="CPC">CPC</option>
-                                <option value="CTR">CTR</option>
-                                <option value="Impressions">Impressions</option>
-                                <option value="ROAS">ROAS</option>
-                            </select>
+                {/* === Render New Analysis Form === */}
+                {activeView === 'new' && (
+                    <div className="card assistant-card">
+                        {/* === Assistant Card Header === */}
+                        <div className="app-header">
+                            <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
+                            <div className="header-controls-container">
+                                <div className="model-selector-simple detail-toggle">
+                                    <span className="model-selector-label">Output Detail:</span>
+                                    <button
+                                        className={`model-button ${outputDetail === 'brief' ? 'active' : ''}`}
+                                        onClick={() => handleOutputDetailChange('brief')}
+                                        title="Brief Output: Focuses on essential findings and recommendations."
+                                    >
+                                        Brief
+                                    </button>
+                                    <button
+                                        className={`model-button ${outputDetail === 'detailed' ? 'active' : ''}`}
+                                        onClick={() => handleOutputDetailChange('detailed')}
+                                        title="Detailed Output: Provides comprehensive explanations and context."
+                                    >
+                                        Detailed
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        {/* Re-add the KPI recommendation popup */}
-                        {selectedTactics && getRecommendationMessage(selectedTactics) && showKpiRecommendation && (
-                            <div className="kpi-recommendation-popup">
-                                <div className="kpi-recommendation-content">
-                                    <div className="kpi-recommendation-header">
-                                        <span>Recommended KPIs</span>
-                                        <button 
-                                            className="kpi-recommendation-close"
-                                            onClick={() => setShowKpiRecommendation(false)}
-                                        >
-                                            ×
-                                        </button>
+                        {/* === End Header === */}
+
+                        <h1>Audacy Assistant</h1>
+                        <div className="app-instructions">
+                            <p className="instructions-title">Get Your AI-Powered Analysis:</p>
+                            <span className="instruction-step">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                <strong>Upload:</strong> Add the campaign data file (CSV, XLSX, PDF).
+                            </span>
+                            <span className="instruction-step">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <strong>Select:</strong> Choose the main Tactic and KPI to focus on.
+                            </span>
+                            <span className="instruction-step">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                <strong>Describe:</strong> Briefly outline the client's situation and goals (this helps tailor the insights!).
+                            </span>
+                            <p className="instructions-footer">Click "Analyze" for actionable insights designed for AEs.</p>
+                        </div>
+
+                        {/* Client Name Input - MOVED HERE */}
+                        <div className="input-container full-width">
+                            <label htmlFor="clientName">Client / Advertiser Name:</label>
+                            <input
+                                type="text"
+                                id="clientName"
+                                value={clientName}
+                                onChange={handleClientNameChange} // Ensure handler is connected
+                                placeholder="Enter client or advertiser name"
+                                className="text-input"
+                                title="Enter the name of the client or advertiser for this analysis."
+                            />
+                        </div>
+
+                        {/* Form Grid (Tactics/KPIs) - MOVED HERE */}
+                        <div className="form-grid">
+                            <div className="form-column">
+                                <div className="select-container">
+                                    <label htmlFor="tactics-list">Select Tactic:</label>
+                                    <select
+                                        id="tactics-list"
+                                        className="tactics-list"
+                                        value={selectedTactics}
+                                        onChange={handleTacticChange}
+                                        required
+                                        title="Select the primary marketing tactic used in the campaign data."
+                                    >
+                                        <option value="" disabled>Select Tactic</option>
+                                        <option value="Amazon DSP">Amazon DSP</option>
+                                        <option value="Display Ads">Display Ads</option>
+                                        <option value="Email eDirect">Email eDirect</option>
+                                        <option value="OTT">OTT</option>
+                                        <option value="Podcasting">Podcasting</option>
+                                        <option value="SEM">SEM</option>
+                                        <option value="SEO">SEO</option>
+                                        <option value="Social Ads">Social Ads</option>
+                                        <option value="Streaming Audio">Streaming Audio</option>
+                                        <option value="Video Display Ads">Video Display Ads</option>
+                                        <option value="YouTube">YouTube</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="form-column">
+                                <div className="select-container">
+                                    <label htmlFor="kpi-list">Select KPI:</label>
+                                    <select
+                                        id="kpi-list"
+                                        className="kpi-list"
+                                        value={selectedKPIs}
+                                        onChange={handleKPIChange}
+                                        required
+                                        title="Select the main Key Performance Indicator relevant to the campaign goals."
+                                    >
+                                        <option value="" disabled>Select KPI</option>
+                                        {/* Alphabetized List */}
+                                        <option value="Clicks">Clicks</option>
+                                        <option value="Conversion Rate">Conversion Rate</option>
+                                        <option value="Conversions">Conversions</option>
+                                        <option value="CPA">CPA</option>
+                                        <option value="CPC">CPC</option>
+                                        <option value="CTR">CTR</option>
+                                        <option value="Impressions">Impressions</option>
+                                        <option value="ROAS">ROAS</option>
+                                    </select>
+                                </div>
+                                {/* KPI recommendation popup */}
+                                {selectedTactics && getRecommendationMessage(selectedTactics) && showKpiRecommendation && (
+                                    <div className="kpi-recommendation-popup">
+                                        <div className="kpi-recommendation-content">
+                                            <div className="kpi-recommendation-header">
+                                                <span>Recommended KPIs</span>
+                                                <button
+                                                    className="kpi-recommendation-close"
+                                                    onClick={() => setShowKpiRecommendation(false)}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                            <div className="kpi-recommendation-body">
+                                                {getRecommendationMessage(selectedTactics)}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="kpi-recommendation-body">
-                                        {getRecommendationMessage(selectedTactics)}
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Situation Textarea - MOVED HERE */}
+                        <div className="text-area-container">
+                            <label htmlFor="currentSituation">Current Situation & Goals:</label>
+                            <textarea
+                                id="currentSituation"
+                                className="text-area"
+                                value={currentSituation}
+                                onChange={handleSituationChange}
+                                placeholder="Describe your current marketing situation and goals... (Optional)"
+                                rows={3}
+                                title="Briefly describe the client's current situation, challenges, or the context for this analysis."
+                            />
+                        </div>
+
+                        {/* File Upload Section - MOVED HERE */}
+                        <div className="file-upload-section">
+                            <input
+                                type="file"
+                                id="fileInput"
+                                accept=".csv, .xlsx, .pdf"
+                                onChange={handleFileChange}
+                                style={{ display: 'none' }}
+                            />
+                            <label
+                                htmlFor="fileInput"
+                                className="choose-file-button"
+                                title="Upload campaign performance data (CSV, XLSX, or PDF)."
+                            >
+                                Choose File
+                            </label>
+
+                            {/* Container for file name and remove button */}
+                            {file && fileName && (
+                                <div className="file-info-container">
+                                    <p className="file-name" title={fileName}>
+                                        {fileName}
+                                    </p>
+                                    <button
+                                        className="remove-file-button icon-style"
+                                        onClick={() => { setFile(null); setFileName(null); }}
+                                        title="Remove file"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Message shown when no file is selected */}
+                            {!file && !fileName && (
+                                <p className="file-name prompt-text">Please select a CSV, XLSX, or PDF file.</p>
+                            )}
+                        </div>
+
+                        {/* Advanced Options Trigger - MOVED HERE */}
+                        <div className="advanced-options-trigger-area">
+                            <button
+                                className="advanced-options-button"
+                                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                                title="Show/hide advanced options"
+                            >
+                                {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+                            </button>
+                        </div>
+
+                        {/* Advanced Options Content - MOVED HERE */}
+                        {showAdvancedOptions && (
+                            <div className="advanced-toggles-container revealed">
+                                <h4 className="advanced-options-heading">Advanced Options</h4>
+                                {/* Analysis Speed Toggle */}
+                                <div className="model-selector-simple speed-toggle">
+                                    <span className="model-selector-label">Analysis Speed:</span>
+                                    <div className="model-button-group">
+                                        <button
+                                            className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
+                                            onClick={() => handleModelSelection('speed')}
+                                            title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
+                                        >
+                                            Faster
+                                        </button>
+                                        <button
+                                            className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
+                                            onClick={() => handleModelSelection('quality')}
+                                            title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
+                                        >
+                                            Better Quality
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         )}
-                    </div>
-                </div>
 
-                <div className="text-area-container">
-                    <label htmlFor="currentSituation">Current Situation & Goals:</label>
-                    <textarea
-                        id="currentSituation"
-                        className="text-area"
-                        value={currentSituation}
-                        onChange={handleSituationChange}
-                        placeholder="Describe your current marketing situation and goals..."
-                        rows={3}
-                        title="Briefly describe the client's current situation, challenges, or the context for this analysis."
-                    />
-                </div>
-                
-                <div className="file-upload-section">
-                    <input
-                        type="file"
-                        id="fileInput"
-                        accept=".csv, .xlsx, .pdf"
-                        onChange={handleFileChange}
-                        style={{ display: 'none' }}
-                    />
-                    <label 
-                        htmlFor="fileInput" 
-                        className="choose-file-button"
-                        title="Upload campaign performance data (CSV, XLSX, or PDF)."
-                    >
-                        Choose File
-                    </label>
-
-                    {/* Container for file name and remove button, shown only when a file is selected */}
-                    {file && fileName && (
-                        <div className="file-info-container">
-                            <p className="file-name" title={fileName}>
-                                {fileName}
-                            </p>
-                            <button 
-                                className="remove-file-button icon-style" 
-                                onClick={() => { setFile(null); setFileName(null); }}
-                                title="Remove file"
+                        {/* Analyze Button / Spinner / Error - MOVED HERE */}
+                        {!isLoading ? (
+                            <button
+                                className="rounded-element submit-button"
+                                onClick={handleSubmit}
+                                disabled={!file || !selectedTactics || !selectedKPIs}
+                                title="Submit the data and inputs to generate the AI analysis."
                             >
-                                ×
+                                Analyze
                             </button>
-                        </div>
-                    )}
-
-                    {/* Message shown when no file is selected */}
-                    {!file && !fileName && (
-                        <p className="file-name prompt-text">Please select a CSV, XLSX, or PDF file.</p>
-                    )}
-                </div>
-
-                {/* --- Advanced Options Button (Stays Here) --- */}
-                <div className="advanced-options-trigger-area">
-                    <button 
-                        className="advanced-options-button"
-                        onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                        title="Show/hide advanced options"
-                    >
-                        {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
-                    </button>
-                </div>
-                {/* --- End Advanced Options Button --- */}
-
-                {/* --- Advanced Options revealed content (Now only Speed) --- */}
-                {showAdvancedOptions && (
-                    <div className="advanced-toggles-container revealed">
-                        <h4 className="advanced-options-heading">Advanced Options</h4>
-                        {/* Analysis Speed Toggle */}
-                        <div className="model-selector-simple speed-toggle">
-                           <span className="model-selector-label">Analysis Speed:</span>
-                           {/* Wrap buttons in a new div */}
-                           <div className="model-button-group">
-                               <button 
-                                   className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
-                                   onClick={() => handleModelSelection('speed')}
-                                   title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
-                               >
-                                   Faster
-                               </button>
-                               <button 
-                                   className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
-                                   onClick={() => handleModelSelection('quality')}
-                                   title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
-                               >
-                                   Better Quality
-                               </button>
-                            </div>
-                        </div>
-                        {/* Output Detail Toggle - Removed from here */}
-                     </div>
-                )}
-                {/* --- End Advanced Options revealed content --- */}
-
-                {/* Removed the wrapping div, button/spinner/error are now direct children of .assistant-card */}
-                {/* Conditionally render the Analyze button OR the loading indicator */} 
-                {!isLoading ? (
-                    <button
-                        className="rounded-element submit-button"
-                        onClick={handleSubmit}
-                        disabled={!file || !selectedTactics || !selectedKPIs} 
-                        title="Submit the data and inputs to generate the AI analysis."
-                    >
-                        Analyze
-                    </button>
-                ) : (
-                    <div className="spinner-container"> 
-                        <div className="spinner"></div>
-                        <p>Analyzing your data, please wait...</p>
-                    </div>
-                )}
-
-                {error && <div className="error-message">{error}</div>}
-            </div> {/* End Assistant Card */}
-
-            {/* History Card - Conditionally render the card itself */}
-            {analysisHistory.length > 0 && (
-                <div className="card history-card">
-                    <div className="history-section">
-                        <h2>Analysis History</h2>
-                        <button 
-                            className="clear-history-button"
-                            onClick={() => {
-                                if (window.confirm('Are you sure you want to clear all analysis history?')) {
-                                    setAnalysisHistory([]);
-                                    localStorage.removeItem('analysisHistory');
-                                }
-                            }}
-                        >
-                            Clear History
-                        </button>
-                        <ul className="history-list">
-                            {paginatedHistory.map((entry) => {
-                                const clientNameText = entry.inputs.clientName || 'N/A';
-                                const isClientNA = clientNameText === 'N/A';
-                                return (
-                                    <li 
-                                        key={entry.id} 
-                                        className={`history-item ${selectedHistoryEntryId === entry.id ? 'selected' : ''}`}
-                                        onClick={() => handleLoadHistory(entry.id)} // Attach onClick here
-                                        title="Click to view this analysis"
-                                    >
-                                        {/* Left Aligned Info Block */}
-                                        <div className="history-item-info">
-                                            {/* Client Name */}
-                                            <span className={`history-client-name ${isClientNA ? 'client-na' : ''}`}>
-                                                {clientNameText}
-                                            </span>
-                                            {/* Tactic / KPI / Filename */}
-                                            <span className="history-details">
-                                                {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
-                                                {entry.inputs.fileName && 
-                                                    <span className="history-filename"> ({entry.inputs.fileName})</span>
-                                                }
-                                            </span>
-                                            {/* Timestamp - MOVED HERE */}
-                                            <span className="history-timestamp">
-                                                {formatHistoryTimestamp(entry.timestamp)}
-                                            </span>
-                                        </div>
-
-                                        {/* Right Aligned Actions Block (Only View Chat Button) */}
-                                        <div className="history-item-actions">
-                                            {/* Render View Chat button, disable if no chat history */}
-                                            <button 
-                                                className="view-chat-button button-small" 
-                                                onClick={(e) => { e.stopPropagation(); handleViewChatHistory(entry.id); }} // KEEP stopPropagation
-                                                disabled={!entry.results.helpConversation || !Array.isArray(entry.results.helpConversation) || entry.results.helpConversation.length === 0}
-                                                title={(!entry.results.helpConversation || !Array.isArray(entry.results.helpConversation) || entry.results.helpConversation.length === 0) ? "No chat history available" : "View associated chat history"}
-                                            >
-                                                View Chat
-                                            </button>
-                                            {/* Timestamp REMOVED from here */}
-                                        </div>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                        {/* --- Add Pagination Controls --- */}
-                        {totalPages > 1 && (
-                            <div className="pagination-controls">
-                                {/* Previous Button (Optional, for better UX) */} 
-                                <button 
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                    className="pagination-arrow"
-                                    title="Previous Page"
-                                >
-                                    &lt;
-                                </button>
-
-                                {/* Page Numbers */} 
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                    <button
-                                        key={page}
-                                        className={`pagination-number ${currentPage === page ? 'active' : ''}`}
-                                        onClick={() => setCurrentPage(page)}
-                                    >
-                                        {page}
-                                    </button>
-                                ))}
-
-                                {/* Next Button (Optional) */} 
-                                <button 
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                    className="pagination-arrow"
-                                    title="Next Page"
-                                >
-                                    &gt;
-                                </button>
+                        ) : (
+                            <div className="spinner-container">
+                                <div className="spinner"></div>
+                                <p>Analyzing your data, please wait...</p>
                             </div>
                         )}
-                        {/* --- End Pagination Controls --- */}
-                    </div>
-                </div> /* End History Card */
-            )}
-            {/* --- End Analysis History Section --- */}
+                        {error && <div className="error-message">{error}</div>}
 
-            {/* --- Chat History Review Modal --- */}
+                    </div> /* End assistant-card for 'new' view */
+                )}
+
+                {/* === Render History View === */}
+                {activeView === 'history' && (
+                    <div className="card history-card">
+                        {/* --- History Card Content --- */}
+                        <div className="history-section">
+                             <h2>Analysis History</h2>
+                             {analysisHistory.length > 0 ? (
+                                <button
+                                    className="clear-history-button"
+                                    onClick={handleClearHistory}
+                                    title="Clear all analysis history"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                    Clear History
+                                </button>
+                             ) : (
+                                <p className="no-history-message">No analysis history available.</p>
+                             )}
+
+                             {analysisHistory.length > 0 && (
+                                 <ul className="history-list">
+                                    {paginatedHistory.map((entry) => (
+                                        <li
+                                            key={entry.id}
+                                            className={`history-item ${selectedHistoryEntryId === entry.id ? 'selected' : ''}`}
+                                            onClick={() => handleLoadHistory(entry.id)}
+                                            title="Click to load this analysis"
+                                        >
+                                            <div className="history-item-info">
+                                                <span className={`history-client-name ${!entry.inputs.clientName ? 'client-na' : ''}`}>
+                                                    {entry.inputs.clientName || 'Client N/A'}
+                                                </span>
+                                                <span className="history-details">
+                                                    {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
+                                                </span>
+                                                <span className="history-timestamp">
+                                                    {formatHistoryTimestamp(entry.timestamp)}
+                                                </span>
+                                            </div>
+                                            <div className="history-item-actions">
+                                                <button
+                                                    className="view-chat-button button-small"
+                                                    onClick={(e) => { e.stopPropagation(); handleViewChatHistory(entry.id); }}
+                                                    disabled={!entry.results.helpConversation || entry.results.helpConversation.length === 0}
+                                                    title={(!entry.results.helpConversation || entry.results.helpConversation.length === 0) ? "No chat history available" : "View associated chat history"}
+                                                >
+                                                    View Chat
+                                                </button>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+
+                            {/* --- Pagination Controls --- */}
+                            {analysisHistory.length > 0 && totalPages > 1 && (
+                                <div className="pagination-controls">
+                                    <button
+                                        className="pagination-arrow"
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        &lt;
+                                    </button>
+                                    {[...Array(totalPages)].map((_, index) => {
+                                        const pageNum = index + 1;
+                                        // Show only a limited number of pages around the current page
+                                        const showPage =
+                                            pageNum === 1 ||
+                                            pageNum === totalPages ||
+                                            (pageNum >= currentPage - 1 && pageNum <= currentPage + 1);
+
+                                        // Show ellipsis if pages are skipped
+                                        const showEllipsisBefore = pageNum === currentPage - 2 && currentPage > 3;
+                                        const showEllipsisAfter = pageNum === currentPage + 2 && currentPage < totalPages - 2;
+
+                                        if (showEllipsisBefore || showEllipsisAfter) {
+                                            return <span key={`ellipsis-${pageNum}`} className="pagination-ellipsis">...</span>;
+                                        }
+
+                                        if (showPage) {
+                                            return (
+                                                <button
+                                                    key={pageNum}
+                                                    className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                                                    onClick={() => setCurrentPage(pageNum)}
+                                                >
+                                                    {pageNum}
+                                                </button>
+                                            );
+                                        }
+                                        return null;
+                                    })}
+                                    <button
+                                        className="pagination-arrow"
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        &gt;
+                                    </button>
+                                </div>
+                            )}
+                            {/* --- End Pagination Controls --- */}
+                        </div>
+                        {/* --- End History Card Content --- */}
+                    </div> /* End history-card for 'history' view */
+                )}
+
+            </div> {/* End tab-content */}
+
+            {/* --- Chat History Review Modal (Keep here as it's global) --- */}
             {showChatHistoryModal && (
                 <div className="prompt-modal-backdrop">
                     <div className="prompt-modal chat-history-modal"> 

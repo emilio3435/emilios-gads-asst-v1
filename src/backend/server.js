@@ -563,20 +563,12 @@ app.post('/get-help', upload.single('contextFile'), async (req, res) => {
     }
 
     // NEW Streamlined Prompt
-    const promptForHelp = `You are a helpful AI assistant specializing in digital marketing analytics for Audacy. Your goal is to help users (Audacy Account Executives) understand their marketing campaign data and formulate actionable insights.
-
-IMPORTANT INSTRUCTIONS:
-- Your responses MUST be clear, concise text explanations suitable for a human reader.
-- Do NOT generate or include any Python code, pandas code, or any other programming language code snippets.
-- Do NOT attempt to generate charts, complex visualizations, or use unsupported functions.
-- Focus ONLY on providing textual analysis, insights, explanations, and recommendations based on the provided context and the user's question.
-- You MAY use simple Markdown formatting (like bullet points or bold text) ONLY if it significantly enhances readability. Prioritize plain text explanations.
+    const promptForHelp = `You are a helpful AI assistant specializing in digital marketing analytics for Audacy. Your goal is to help users understand their marketing campaign data.
 
 ${originalDataContext}${previousConversationFormatted}${campaignContext}${analysisContext}${additionalContext ? `===== ADDITIONAL CONTEXT =====\n${additionalContext}\n===== END ADDITIONAL CONTEXT =====\n\n` : ''}
 CURRENT QUESTION: ${req.body.question}
 
-ASSISTANT RESPONSE (Text explanation only):
-`; // Added clarification for response start
+`; // Removed response guidelines
 
     // Enhanced logging for debugging prompt issues
     console.log("=================================================================================");
