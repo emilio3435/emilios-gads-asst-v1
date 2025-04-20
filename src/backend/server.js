@@ -118,7 +118,7 @@ function getIndustryContext(dataString, currentSituation) {
 
 // Create Express app
 const app = express();
-const DEFAULT_PORT = 5002;
+const DEFAULT_PORT = 5001;
 const MAX_PORT_ATTEMPTS = 10;
 
 // Middleware setup
@@ -185,19 +185,25 @@ async function callModelWithRetry(model, prompt, maxRetries = 5) {
 
 // POST endpoint for analyzing marketing data
 app.post('/analyze', upload.single('file'), async (req, res) => {
-  console.log('--- New request to /analyze ---');
+  console.log('--- [/analyze] Request received ---'); // LOG 1: Request Start
   try {
     // Log incoming request data
-    console.log('Request body:', req.body);
-    console.log('File:', req.file ? req.file.originalname : 'No file uploaded');
+    console.log('[/analyze] Request body (summary):', { 
+        tactics: req.body.tactics, 
+        kpis: req.body.kpis, 
+        currentSituation: !!req.body.currentSituation, // Log existence, not full text
+        modelId: req.body.modelId, 
+        outputDetail: req.body.outputDetail 
+    });
+    console.log('[/analyze] File:', req.file ? req.file.originalname : 'No file uploaded');
 
-    // Extract form data with defaults to avoid undefined errors
+    // Extract form data
     const tacticsString = req.body.tactics ? JSON.parse(req.body.tactics) : '';
     const kpisString = req.body.kpis ? JSON.parse(req.body.kpis) : '';
     const currentSituation = req.body.currentSituation || '';
-    const modelId = req.body.modelId || 'gemini-2.0-flash'; // Default to flash if not provided
-    const outputDetail = req.body.outputDetail || 'detailed'; // Get output detail, default to detailed
-    console.log(`Received outputDetail: ${outputDetail}`);
+    const modelId = req.body.modelId || 'gemini-2.0-flash';
+    const outputDetail = req.body.outputDetail || 'detailed';
+    console.log(`[/analyze] Parsed - modelId: ${modelId}, outputDetail: ${outputDetail}`); // LOG 2: Parsed Params
 
     // Determine model based on ID
     const allowedModels = [
@@ -236,11 +242,14 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     let rawFileContent = ''; // Variable to store raw content
 
     try {
+      console.log('[/analyze] Entering file processing/model call block'); // LOG 3: Start Processing Block
       const model = genAI.getGenerativeModel({ model: modelName });
+      console.log(`[/analyze] Initialized model: ${modelName}`); // LOG 4: Model Initialized
 
         // --- Process Uploaded File --- 
+        console.log('[/analyze] Starting file processing...'); // LOG 5: Before File Processing
         if (!req.file) {
-            console.log('No file uploaded.');
+            console.log('[/analyze] No file uploaded.');
             dataString = 'No file content provided.'; 
             rawFileContent = 'No file uploaded.';
         } else {
@@ -255,7 +264,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
                 rawFileContent = fileContent; // Store raw CSV string
                 const parseResult = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
                 if (parseResult.errors.length > 0) {
-                    console.error('CSV parsing errors:', parseResult.errors);
+                    console.error('[/analyze] CSV parsing errors:', parseResult.errors);
                     throw new Error('Failed to parse CSV file.'); // Throw error to be caught
                 }
                 dataString = JSON.stringify(parseResult.data, null, 2);
@@ -288,9 +297,9 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
                     }
                     dataString = fullText.trim();
                     rawFileContent = dataString; // Store extracted PDF text
-                    console.log(`PDF parsed successfully. Extracted ${dataString.length} characters.`);
+                    console.log(`[/analyze] PDF parsed successfully. Extracted ${dataString.length} characters.`);
                 } catch (pdfError) {
-                    console.error('PDF parsing error with pdfjs-dist:', pdfError);
+                    console.error('[/analyze] PDF parsing error with pdfjs-dist:', pdfError);
                     let errorMessage = 'Failed to parse PDF file.';
                     if (pdfError instanceof Error) errorMessage += ` Details: ${pdfError.message}`;
                     throw new Error(errorMessage); // Throw error
@@ -301,6 +310,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
                 throw new Error('Unsupported file type. Please upload CSV, XLSX, or PDF.'); // Throw error
             }
         }
+        console.log('[/analyze] File processing finished.'); // LOG 6: After File Processing
         // --- End File Processing ---
 
         // --- Select and Read Prompt Template --- 
@@ -317,7 +327,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
         // --- Get Industry Context (AFTER processing file) ---
         const industryContext = getIndustryContext(dataString, currentSituation);
-        console.log(`Detected industry context: ${industryContext ? Object.keys(audacyIndustryContext).find(key => audacyIndustryContext[key] === industryContext) : 'None'}`);
+        console.log(`[/analyze] Detected industry context: ${industryContext ? Object.keys(audacyIndustryContext).find(key => audacyIndustryContext[key] === industryContext) : 'None'}`);
         // --- End Get Industry Context ---
         
         // --- Fill Prompt Placeholders --- 
@@ -330,37 +340,28 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
         finalPrompt = finalPrompt.replace('{{dataString}}', dataString); // Use processed dataString
         finalPrompt = finalPrompt.replace('{{industryContext}}', industryContext ? industryContext.contextDetails : 'General audio advertising context.');
         finalPrompt = finalPrompt.replace('{{industryTips}}', industryContext ? industryContext.specificTips.map(tip => `- ${tip}`).join('\n') : 'Focus on standard audio campaign best practices.');
+        console.log("[/analyze] Final prompt constructed. Length:", finalPrompt.length); // LOG 7: Prompt Constructed
         // --- End Fill Placeholders ---
 
-        // --- Log the final prompt before sending --- 
-        console.log("=================================================================================");
-        console.log("FINAL PROMPT BEING SENT TO MODEL:");
-        console.log("----------------------------------------------------------------------------------");
-        console.log(finalPrompt);
-        console.log("=================================================================================");
+        // --- Log the final prompt before sending (optional, can be long) --- 
+        // console.log("[/analyze] FINAL PROMPT BEING SENT TO MODEL:", finalPrompt);
         // --- End Log --- 
 
         // Call the model
-      result = await callModelWithRetry(model, finalPrompt);
+        console.log('[/analyze] Calling Gemini model...'); // LOG 8: Before Model Call
+        result = await callModelWithRetry(model, finalPrompt);
+        console.log('[/analyze] Gemini model call successful.'); // LOG 9: After Model Call
     
-    } catch (error) {
+    } catch (processingError) {
       // Catch errors from file processing or model call
-      console.error('Error during analysis processing or model call:', error);
-      // Ensure a response is sent even on error
-      // Check if headers are already sent before sending response
+      console.error('[/analyze] Error during processing/model call block:', processingError); // LOG 10: Processing Error
       if (!res.headersSent) {
-           if (error instanceof Error && error.message.includes('Unsupported file type')) {
-               return res.status(400).json({ error: error.message });
-           } else if (error instanceof Error && error.message.includes('Failed to parse')) {
-               return res.status(400).json({ error: error.message });
-           } else {
-                return res.status(500).json({ error: `Server error during analysis step: ${error.message}` });
-           }
+           // Simplified error response for now
+           return res.status(500).json({ error: `Server error during processing: ${processingError.message}` });
       }
-      // If headers were sent, we can't send another response, just log
-       console.error('Headers already sent, could not send error response to client.');
-       return; // Stop further processing in this catch block
-    } // End of outer try block
+      console.error('[/analyze] Headers already sent, could not send processing error response.');
+      return; 
+    } // End of inner try-catch block
     
     // --- Process Model Response (Ensure this runs ONLY if model call was successful) ---
     if (!result) {
@@ -372,13 +373,14 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
     }
 
     try {
-    const response = await result.response;
-    const fullResponseText = response.text();
-    console.log('Raw Gemini response:', fullResponseText);
+        console.log('[/analyze] Processing model response...'); // LOG 11: Before Response Processing
+        const response = await result.response;
+        const fullResponseText = response.text();
+        console.log('[/analyze] Raw Gemini response length:', fullResponseText.length); // Log length, not full text
 
-    // --- Parse the response based on delimiters --- 
-    let htmlAnalysis = '';
-    let rawText = ''; // For the text version of the HTML analysis
+        // --- Parse the response based on delimiters --- 
+        let htmlAnalysis = '';
+        let rawText = ''; // For the text version of the HTML analysis
 
         const htmlMatch = fullResponseText.match(/---HTML_ANALYSIS_START---([\s\S]*?)---HTML_ANALYSIS_END---/);
         if (htmlMatch && htmlMatch[1]) {
@@ -399,25 +401,25 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
             // Fallback: Assume the whole response is HTML if delimiters are missing
             htmlAnalysis = fullResponseText.trim(); 
              rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
-    }
-    // --------------------------------------------
+        }
+        // --------------------------------------------
 
-    console.log('Cleaned Gemini response (HTML):', htmlAnalysis);
+        console.log('[/analyze] Cleaned Gemini response (HTML) length:', htmlAnalysis.length); // Log length
 
-    // Send structured response to client
-        // Ensure response is sent only once
+        // Send structured response to client
         if (!res.headersSent) {
-    res.json({
-      html: htmlAnalysis, // The main HTML analysis
-      raw: rawText,       // Raw text version of the HTML analysis
-      prompt: finalPrompt,  // Send the final generated prompt
-      modelName: displayModelName,  // Send the display model name
-      rawFileContent: rawFileContent // <<< ADDED: Send raw file content back
-    });
-    console.log('Response sent to client.');
+            console.log('[/analyze] Sending final JSON response to client.'); // LOG 12: Before Sending Response
+            res.json({
+                html: htmlAnalysis,
+                raw: rawText,       // Raw text version of the HTML analysis
+                prompt: finalPrompt,  // Send the final generated prompt
+                modelName: displayModelName,  // Send the display model name
+                rawFileContent: rawFileContent // <<< ADDED: Send raw file content back
+            });
+            console.log('[/analyze] Response sent to client.');
         }
     } catch (responseProcessingError) {
-        console.error('Error processing model response:', responseProcessingError);
+        console.error('[/analyze] Error processing model response:', responseProcessingError); // LOG 13: Response Processing Error
         if (!res.headersSent) {
              res.status(500).json({ error: 'Server error processing analysis response', details: responseProcessingError.message });
         }
@@ -426,7 +428,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
   } catch (outerError) {
     // Catch errors from initial setup or logic outside the main try block
-    console.error('--- Outer Error in /analyze --- ');
+    console.error('--- [/analyze] Outer Catch Block Error --- '); // LOG 14: Outer Error
     console.error(outerError);
     if (!res.headersSent) {
          res.status(500).json({ error: 'Server error during analysis setup', details: outerError.message });
@@ -608,42 +610,11 @@ CURRENT QUESTION: ${req.body.question}
   }
 });
 
-// Function to find an available port
-const findAvailablePort = async (startPort, maxAttempts) => {
-  for (let port = startPort; port < startPort + maxAttempts; port++) {
-    try {
-      await new Promise((resolve, reject) => {
-        const server = app.listen(port)
-          .once('error', reject)
-          .once('listening', () => {
-            server.close();
-            resolve();
-          });
-      });
-      return port;
-    } catch (err) {
-      if (err.code !== 'EADDRINUSE') throw err;
-      console.log(`Port ${port} is in use, trying another one...`);
-    }
-  }
-  throw new Error(`Could not find an available port after ${maxAttempts} attempts`);
-};
-
-// Start server with port fallback logic
-const startServer = async () => {
-  try {
-    const port = await findAvailablePort(DEFAULT_PORT, MAX_PORT_ATTEMPTS);
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`Server running on http://0.0.0.0:${port}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error.message);
-    process.exit(1);
-  }
-};
-
-// Initialize server
-startServer();
+// Start server with simplified port logic
+const PORT = process.env.PORT || DEFAULT_PORT;
+app.listen(PORT, '0.0.0.0', () => { // Use 0.0.0.0 to accept connections from any IP
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+});
 
 // Global error handlers
 process.on('uncaughtException', (error) => {
