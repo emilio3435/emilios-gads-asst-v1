@@ -114,6 +114,32 @@ function App() {
     const paginatedHistory = analysisHistory.slice(startIndex, endIndex);
     // --- End Pagination Calculations ---
 
+    // --- useEffect Hooks ---
+
+    // Effect to handle Escape key closing modals
+    useEffect(() => {
+        const handleEscapeKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                if (showHelpModal) {
+                    setShowHelpModal(false);
+                }
+                if (showChatHistoryModal || showPrompt) {
+                    setShowPrompt(false);
+                }
+            }
+        };
+
+        // Add listener only if a modal is potentially open
+        if (showHelpModal || showChatHistoryModal || showPrompt) {
+            window.addEventListener('keydown', handleEscapeKey);
+        }
+
+        // Cleanup function to remove the listener
+        return () => {
+            window.removeEventListener('keydown', handleEscapeKey);
+        };
+    }, [showHelpModal, showChatHistoryModal, showPrompt]); // Re-run if any modal's visibility changes
+
     // Focus on help input when modal opens
     useEffect(() => {
         if (showHelpModal && helpInputRef.current) {
@@ -533,6 +559,7 @@ function App() {
             setOriginalFileContent(data.rawFileContent || null);
 
             // --- Add to History ---
+            const currentChatToSave = [...helpConversation]; // Capture the chat state *before* clearing
             const newHistoryEntry: HistoryEntry = {
                 id: `analysis-${Date.now()}`,
                 timestamp: Date.now(),
@@ -546,34 +573,35 @@ function App() {
                     outputDetail,
                 },
                 results: {
-                    analysisResult: sanitizedHtml, // Save the sanitized HTML
+                    analysisResult: sanitizedHtml, 
                     rawAnalysisResult: data.raw,
                     modelName: data.modelName,
                     promptSent: data.prompt,
-                    helpConversation: [...helpConversation] // Save a copy of the current chat
+                    helpConversation: currentChatToSave // Use the captured chat state
                 }
             };
             
-            // Update state and localStorage
+            // Update state and localStorage, THEN clear the chat
             setAnalysisHistory(prevHistory => {
                 const updatedHistory = [newHistoryEntry, ...prevHistory];
-                const HISTORY_LIMIT = 20; // Keep limit logic if desired
+                const HISTORY_LIMIT = 20; 
                 if (updatedHistory.length > HISTORY_LIMIT) {
-                    updatedHistory.length = HISTORY_LIMIT; // Truncate the array
+                    updatedHistory.length = HISTORY_LIMIT; 
                 }
                 localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
-                setCurrentPage(1); // <<< Reset to first page on new entry
+                setCurrentPage(1); 
+
+                // >>> Clear chat history state AFTER history is updated <<<
+                setHelpConversation([]);
+                sessionStorage.removeItem('helpConversation');
+                
                 return updatedHistory;
             });
             // --- End Add to History ---
 
-            // >>> Clear chat history when a new analysis is successful <<<
-            setHelpConversation([]);
-            sessionStorage.removeItem('helpConversation');
-
-            setShowResults(true); // Show the results page
-            setShowHelpModal(false); // Ensure help modal is closed when showing new results
-            setIsViewingHistory(false); // Set to false as this is a fresh analysis
+            setShowResults(true); 
+            setShowHelpModal(false); 
+            setIsViewingHistory(false); 
         } catch (error: any) {
             console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
@@ -652,8 +680,15 @@ function App() {
 
     // Function to load a previous analysis from history
     const handleLoadHistory = (entryId: string) => {
+        console.log(`[handleLoadHistory] Attempting to load entry ID: ${entryId}`); // <<< Log Entry ID
         const entry = analysisHistory.find(h => h.id === entryId);
+        console.log('[handleLoadHistory] Found entry:', entry); // <<< Log the entire entry
         if (entry) {
+            // Log the specific chat history part
+            console.log('[handleLoadHistory] Entry chat history:', entry.results?.helpConversation);
+            console.log('[handleLoadHistory] Is chat history an array?:', Array.isArray(entry.results?.helpConversation));
+            console.log('[handleLoadHistory] Chat history length:', entry.results?.helpConversation?.length);
+
             // Load data from history into state
             setClientName(entry.inputs.clientName || '');
             setSelectedTactics(entry.inputs.selectedTactics || '');
@@ -819,8 +854,11 @@ function App() {
                             // --- Button to View Chat for Loaded History ---
                             (() => {
                                 // Find the loaded entry to check for chat availability
+                                console.log('[Button Logic] Checking entry ID:', selectedHistoryEntryId); // <<< Log ID used by button
                                 const loadedEntry = analysisHistory.find(h => h.id === selectedHistoryEntryId);
-                                const chatAvailable = loadedEntry && Array.isArray(loadedEntry.results.helpConversation) && loadedEntry.results.helpConversation.length > 0;
+                                console.log('[Button Logic] Found entry:', loadedEntry); // <<< Log entry found by button
+                                const chatAvailable = loadedEntry && Array.isArray(loadedEntry.results?.helpConversation) && loadedEntry.results.helpConversation.length > 0;
+                                console.log('[Button Logic] Chat available?:', chatAvailable); // <<< Log result of check
                                 
                                 return (
                                     <button
