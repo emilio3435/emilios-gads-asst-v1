@@ -161,7 +161,7 @@ button {
   font-size: 1em;
   font-weight: 600;
   text-align: center;
-  margin: var(--spacing-large) 0 0 0;
+  margin: var(--spacing-large) auto 0 auto;
 }
 
 .submit-button:hover:not(:disabled) {
