@@ -29,6 +29,17 @@
 
   .input-section { /* Buttons below results */
       gap: var(--spacing-small);
+      /* Add stacking for mobile */
+      flex-direction: column;
+      align-items: center;
+  }
+
+  /* Style buttons within the input section for mobile */
+  .input-section .help-button,
+  .input-section .new-inquiry-button {
+      width: 90%; /* Make buttons take most of the width */
+      max-width: 350px; /* Optional: prevent them getting too wide */
+      justify-content: center; /* Center text/icon within button */
   }
   
   .campaign-info {
@@ -37,6 +48,7 @@
     width: 100%;
     box-sizing: border-box;
     margin-top: var(--spacing-small);
+    font-size: 0.9em;
   }
 
   /* Form Element Adjustments */
@@ -104,10 +116,11 @@
       font-size: 0.9em;
   }
   
-  .new-inquiry-button {
+  /* REMOVE old fixed positioning for new-inquiry-button on mobile */
+  /* .new-inquiry-button {
       bottom: 15px;
       right: 15px;
       padding: 10px 18px;
       font-size: 14px;
-  }
+  } */
 } 

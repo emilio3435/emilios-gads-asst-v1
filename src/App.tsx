@@ -884,6 +884,19 @@ function App() {
                                 Discuss this Analysis
                             </button>
                         )}
+                        {/* --- Moved New Analysis Button Here --- */}
+                        {/* Render this button ONLY when showing results */}
+                        <button 
+                            className="new-inquiry-button" 
+                            onClick={handleNewInquiry}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            New Analysis
+                        </button>
+                        {/* --- End Moved Button --- */}
                     </div>
                     
                     {/* Prompt Modal */}
@@ -1012,7 +1025,8 @@ function App() {
                     )}
                 </div>
                 {/* Add floating New Inquiry Button here, only when showing results */}
-                {showResults && (
+                {/* --- REMOVED from here --- */}
+                {/* {showResults && (
                     <button 
                         className="new-inquiry-button" 
                         onClick={handleNewInquiry}
@@ -1023,7 +1037,7 @@ function App() {
                         </svg>
                         New Analysis
                     </button>
-                )}
+                )} */}
             </div>
         );
     }
