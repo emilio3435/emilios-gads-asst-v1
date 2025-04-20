@@ -76,6 +76,54 @@ select:hover {
   text-align: center; /* Center align instructions */
 }
 
+/* === Enhanced Instructions Styling === */
+.app-instructions {
+    text-align: left; /* Left align text block */
+    background-color: var(--gray-lightest); /* Subtle background */
+    border: 1px solid var(--gray-light);
+    border-left: 4px solid var(--audacy-purple);
+    padding: var(--spacing-medium);
+    border-radius: var(--border-radius-medium);
+    margin-bottom: var(--spacing-large); /* Keep existing bottom margin */
+}
+
+.instructions-title {
+    font-weight: var(--font-weight-semibold);
+    font-size: 1.05em;
+    color: var(--audacy-purple);
+    margin: 0 0 var(--spacing-medium) 0;
+}
+
+.instruction-step {
+    display: flex;
+    align-items: flex-start; /* Align icon with start of text line */
+    gap: var(--spacing-small);
+    margin-bottom: var(--spacing-small); /* Space between steps */
+    font-size: 0.95em;
+    color: var(--gray-darker);
+    line-height: 1.4;
+}
+
+.instruction-step svg {
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    width: 16px; /* Match SVG size */
+    height: 16px;
+    stroke: var(--audacy-orange); /* Use accent color */
+    margin-top: 2px; /* Fine-tune vertical alignment */
+}
+
+.instruction-step strong {
+    color: var(--gray-darkest); /* Make label darker */
+    margin-right: var(--spacing-extra-small);
+}
+
+.instructions-footer {
+    margin: var(--spacing-medium) 0 0 0;
+    font-size: 0.95em;
+    color: var(--gray-darker);
+}
+/* === End Enhanced Instructions Styling === */
+
 .file-name { /* Display selected file name */
   font-size: 14px;
   color: var(--gray-dark);

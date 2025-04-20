@@ -190,6 +190,20 @@
   background-color: var(--gray-lighter);
 }
 
+/* Ensure toggles within advanced options are right-aligned */
+.advanced-toggles-container .model-selector-simple {
+  display: flex; 
+  justify-content: space-between; /* Align label left, buttons right */
+  align-items: center;
+  margin-top: var(--spacing-small); /* Existing margin */
+}
+
+/* Style the new button group */
+.advanced-toggles-container .model-selector-simple .model-button-group {
+    display: flex;
+    gap: var(--spacing-extra-small); /* Add a SMALL gap between buttons */
+}
+
 .analysis-ready-container { 
   display: flex;
   flex-direction: column;
@@ -264,7 +278,7 @@
 
 .history-item:hover {
     background-color: var(--hover-background-light); /* Lighter hover for cards */
-    border-left-color: var(--audacy-orange); /* Accent on hover */
+    border-left-color: var(--audacy-orange); /* Accent on hover - CHANGED TO ORANGE */
     border-color: var(--border-color-dark); /* Darken border slightly more on hover */
     box-shadow: var(--shadow-medium); /* Increase shadow slightly on hover */
 }

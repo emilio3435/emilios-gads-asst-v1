@@ -1000,11 +1000,23 @@ function App() {
                     </div>
                 </div>
 
-                <h1>Marketing Assistant</h1>
-                <p className="app-instructions">
-                    Upload your campaign data (CSV, XLSX, or PDF), select the relevant Tactic and KPI, and describe the client's situation and goals. 
-                    The AI will analyze the data and provide actionable insights tailored for Audacy AEs.
-                </p>
+                <h1>Audacy Assistant</h1>
+                <div className="app-instructions">
+                    <p className="instructions-title">Get Your AI-Powered Analysis:</p>
+                    <span className="instruction-step">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <strong>Upload:</strong> Add the campaign data file (CSV, XLSX, PDF).
+                    </span>
+                    <span className="instruction-step">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        <strong>Select:</strong> Choose the main Tactic and KPI to focus on.
+                    </span>
+                    <span className="instruction-step">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                        <strong>Describe:</strong> Briefly outline the client's situation and goals (this helps tailor the insights!).
+                    </span>
+                    <p className="instructions-footer">Click "Analyze" for actionable insights designed for AEs.</p>
+                </div>
                 
                 {/* Client Name Input - Add this section */}
                 <div className="input-container full-width">
@@ -1163,20 +1175,23 @@ function App() {
                         {/* Analysis Speed Toggle */}
                         <div className="model-selector-simple speed-toggle">
                            <span className="model-selector-label">Analysis Speed:</span>
-                           <button 
-                               className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
-                               onClick={() => handleModelSelection('speed')}
-                               title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
-                           >
-                               Faster
-                           </button>
-                           <button 
-                               className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
-                               onClick={() => handleModelSelection('quality')}
-                               title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
-                           >
-                               Better Quality
-                           </button>
+                           {/* Wrap buttons in a new div */}
+                           <div className="model-button-group">
+                               <button 
+                                   className={`model-button ${selectedModelId === 'gemini-2.0-flash' ? 'active' : ''}`}
+                                   onClick={() => handleModelSelection('speed')}
+                                   title="Faster Analysis: Uses Gemini 2.0 Flash for quicker, more concise results."
+                               >
+                                   Faster
+                               </button>
+                               <button 
+                                   className={`model-button ${selectedModelId === 'gemini-2.5-pro-preview-03-25' ? 'active' : ''}`}
+                                   onClick={() => handleModelSelection('quality')}
+                                   title="Better Quality Analysis: Uses Gemini 2.5 Pro for slower, more detailed results."
+                               >
+                                   Better Quality
+                               </button>
+                            </div>
                         </div>
                         {/* Output Detail Toggle - Removed from here */}
                      </div>
