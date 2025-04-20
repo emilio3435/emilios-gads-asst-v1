@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Papa from 'papaparse';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import audacyLogo from './assets/audacy-logo.png';
 import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 // Define the structure for a history entry
 interface HistoryEntry {
@@ -787,7 +790,7 @@ function App() {
                         
                         {/* Analysis results */}
                         {analysisResult ? (
-                            <div dangerouslySetInnerHTML={{ __html: analysisResult }} />
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{analysisResult}</ReactMarkdown>
                         ) : (
                             <div className="no-results">
                                 <p>No analysis result available.</p>
@@ -871,9 +874,9 @@ function App() {
                                             <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
                                                 <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
                                                     {message.type === 'user' ? (
-                                                        <div dangerouslySetInnerHTML={{ __html: message.content }} /> 
+                                                        <div>{message.content}</div> 
                                                     ) : (
-                                                        <div dangerouslySetInnerHTML={{ __html: message.content }} />
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{message.content}</ReactMarkdown>
                                                     )}
                                                 </div>
                                                 <div className="message-time">

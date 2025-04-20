@@ -498,4 +498,43 @@
 .pagination-controls button.pagination-arrow {
   font-weight: bold;
 }
-/* === End Pagination Styles === */ 
+/* === End Pagination Styles === */
+
+/* --- Table Styles --- */
+table {
+  width: 100%; /* Make tables take full width of their container */
+  border-collapse: collapse; /* Remove space between borders */
+  margin-top: var(--spacing-medium); /* Add space above tables */
+  margin-bottom: var(--spacing-medium); /* Add space below tables */
+  font-size: 0.9em; /* Slightly smaller font for tables */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  border-radius: var(--border-radius-medium);
+  overflow: hidden; /* Ensures border-radius clips content */
+}
+
+thead th {
+  background-color: var(--gray-lightest); /* Light background for headers */
+  color: var(--text-color-dark); /* Darker text for contrast */
+  font-weight: 600; /* Bold headers */
+  text-align: left; /* Align header text left */
+  padding: var(--spacing-small) var(--spacing-medium); /* Padding for headers */
+  border-bottom: 2px solid var(--gray-light); /* Bottom border for header row */
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--gray-lighter); /* Separator lines for rows */
+}
+
+tbody tr:nth-of-type(even) {
+  background-color: var(--background-color); /* Subtle alternating row color */
+}
+
+tbody tr:last-of-type {
+  border-bottom: none; /* No border on the last row */
+}
+
+td {
+  padding: var(--spacing-small) var(--spacing-medium); /* Padding for table cells */
+  vertical-align: top; /* Align cell content to the top */
+  color: var(--text-color-medium);
+} 
