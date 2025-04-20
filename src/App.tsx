@@ -1003,7 +1003,7 @@ function App() {
                     </div>
                 </div>
 
-                <h1>Audacy Assistant</h1>
+                <h1>Audacy Analysis Assistant</h1>
                 <div className="app-instructions">
                     <p className="instructions-title">Get Your AI-Powered Analysis:</p>
                     <span className="instruction-step">
