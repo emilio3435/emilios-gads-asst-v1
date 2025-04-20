@@ -515,14 +515,12 @@ td {
   display: flex;
   justify-content: center; /* Center tabs */
   margin-bottom: var(--spacing-large); /* Space below tabs */
-  border-bottom: 2px solid var(--gray-light); /* Separator line */
+  border-bottom: 1px solid var(--gray-light); /* UPDATED: Thinner separator line */
 }
 
 .tab-button {
   padding: var(--spacing-medium) var(--spacing-large);
-  margin-bottom: -2px; /* Overlap border-bottom */
   border: none;
-  border-bottom: 2px solid transparent; /* Placeholder for active state */
   background-color: transparent;
   color: var(--text-color-medium);
   cursor: pointer;
@@ -531,19 +529,29 @@ td {
   transition: all 0.2s ease;
 }
 
-.tab-button:hover {
-  color: var(--audacy-purple);
+/* MODIFIED: Apply hover styles only to inactive tabs */
+.tab-button:not(.active):hover {
+  background-color: var(--gray-lightest); /* ADDED: Subtle background on hover */
+  /* color: var(--audacy-purple); REMOVED: Keep original text color on hover */
 }
 
 .tab-button.active {
-  color: var(--audacy-purple);
+  background-color: var(--audacy-purple);
+  color: var(--color-white);
   font-weight: 600;
-  border-bottom-color: var(--audacy-purple); /* Highlight active tab */
+  border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
 }
 
 .tab-button:disabled {
   color: var(--gray-medium);
   cursor: not-allowed;
+}
+
+/* ADDED: Styles for the history count badge */
+.history-count {
+  font-size: 0.9em; /* Slightly smaller font */
+  color: var(--text-color-medium); /* Use medium text color */
+  font-weight: 400; /* Ensure normal weight */
 }
 
 /* === Tab Content === */
