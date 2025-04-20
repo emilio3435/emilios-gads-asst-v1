@@ -369,4 +369,25 @@ button {
    Submit / Action Buttons (Analyze, Send)
    ====================================== */
 
+/* Style for the View Chat button */
+.view-chat-button {
+    background-color: var(--audacy-purple); /* Purple background */
+    color: var(--color-white); /* White text */
+    border: 1px solid var(--audacy-purple); /* Matching border */
+    /* Inherits button-small styles */
+}
+
+.view-chat-button:hover:not(:disabled) {
+    background-color: var(--audacy-purple-dark); /* Darker purple on hover */
+    border-color: var(--audacy-purple-dark);
+}
+
+.view-chat-button:disabled {
+    background-color: var(--gray-lighter); /* Grey background when disabled */
+    color: var(--gray-medium-dark); /* Muted text when disabled */
+    border-color: var(--gray-light); /* Matching border when disabled */
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 /* Add other button styles (.kpi-recommendation-close, chat buttons, modal buttons) below */ 

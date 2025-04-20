@@ -25,6 +25,7 @@ interface HistoryEntry {
     rawAnalysisResult: string | null; // Optionally store raw too
     modelName: string | null;
     promptSent: string | null; // The prompt that was constructed
+    helpConversation: Array<{type: string, content: string, timestamp: Date}>; // Add field for chat history
   };
 }
 
@@ -99,6 +100,8 @@ function App() {
     const [analysisHistory, setAnalysisHistory] = useState<HistoryEntry[]>([]);
     const [isViewingHistory, setIsViewingHistory] = useState<boolean>(false);
     const [selectedHistoryEntryId, setSelectedHistoryEntryId] = useState<string | null>(null);
+    const [showChatHistoryModal, setShowChatHistoryModal] = useState<boolean>(false);
+    const [viewingChatHistory, setViewingChatHistory] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -539,6 +542,7 @@ function App() {
                     rawAnalysisResult: data.raw,
                     modelName: data.modelName,
                     promptSent: data.prompt,
+                    helpConversation: [...helpConversation] // Save a copy of the current chat
                 }
             };
             
@@ -669,6 +673,19 @@ function App() {
             window.scrollTo(0, 0);
         } else {
             setError('Could not load the selected history entry.');
+        }
+    };
+
+    // Function to open the chat history modal
+    const handleViewChatHistory = (entryId: string) => {
+        const entry = analysisHistory.find(h => h.id === entryId);
+        // Ensure helpConversation exists and is an array before accessing length
+        if (entry && Array.isArray(entry.results.helpConversation) && entry.results.helpConversation.length > 0) {
+            setViewingChatHistory(entry.results.helpConversation);
+            setShowChatHistoryModal(true);
+        } else {
+            // Provide feedback if no history is found or if it's unexpectedly not an array
+            alert('No chat history found for this analysis.');
         }
     };
 
@@ -1255,27 +1272,35 @@ function App() {
                                     >
                                         {/* Left Aligned Info Block */}
                                         <div className="history-item-info">
-                                            {/* Combined Client Name : Tactic/KPI Line */}
-                                            <div> 
-                                                <span className={`history-client-name ${isClientNA ? 'client-na' : ''}`}>
-                                                    {clientNameText}
-                                                </span>
-                                                <span className="history-separator">: </span> {/* Colon separator */}
-                                                <span className="history-tactic-kpi">
-                                                    {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
-                                                    {entry.inputs.fileName && 
-                                                        <span className="history-filename"> ({entry.inputs.fileName})</span>
-                                                    }
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Right Aligned Actions Block */}
-                                        <div className="history-item-actions">
+                                            {/* Client Name */}
+                                            <span className={`history-client-name ${isClientNA ? 'client-na' : ''}`}>
+                                                {clientNameText}
+                                            </span>
+                                            {/* Tactic / KPI / Filename */}
+                                            <span className="history-details">
+                                                {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
+                                                {entry.inputs.fileName && 
+                                                    <span className="history-filename"> ({entry.inputs.fileName})</span>
+                                                }
+                                            </span>
+                                            {/* Timestamp - MOVED HERE */}
                                             <span className="history-timestamp">
                                                 {formatHistoryTimestamp(entry.timestamp)}
                                             </span>
-                                            {/* REMOVED View Details Button */}
+                                        </div>
+
+                                        {/* Right Aligned Actions Block (Only View Chat Button) */}
+                                        <div className="history-item-actions">
+                                            {/* Render View Chat button, disable if no chat history */}
+                                            <button 
+                                                className="view-chat-button button-small" 
+                                                onClick={(e) => { e.stopPropagation(); handleViewChatHistory(entry.id); }} // KEEP stopPropagation
+                                                disabled={!entry.results.helpConversation || !Array.isArray(entry.results.helpConversation) || entry.results.helpConversation.length === 0}
+                                                title={(!entry.results.helpConversation || !Array.isArray(entry.results.helpConversation) || entry.results.helpConversation.length === 0) ? "No chat history available" : "View associated chat history"}
+                                            >
+                                                View Chat
+                                            </button>
+                                            {/* Timestamp REMOVED from here */}
                                         </div>
                                     </li>
                                 );
@@ -1285,6 +1310,37 @@ function App() {
                 </div> /* End History Card */
             )}
             {/* --- End Analysis History Section --- */}
+
+            {/* --- Chat History Review Modal --- */}
+            {showChatHistoryModal && (
+                <div className="prompt-modal-backdrop">
+                    <div className="prompt-modal chat-history-modal"> 
+                        <div className="modal-header">
+                            <h2>Chat History Review</h2>
+                            <button onClick={() => setShowChatHistoryModal(false)} className="close-button" title="Close Chat Review">&times;</button>
+                        </div>
+                        
+                        {/* Conversation Display Area */}
+                        <div className="help-conversation modal-chat-display"> {/* Add specific class for styling */} 
+                            {viewingChatHistory.map((message, index) => (
+                                <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
+                                    <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
+                                        {/* Ensure content exists before rendering */}
+                                        <div dangerouslySetInnerHTML={{ __html: message.content || '' }} /> 
+                                    </div>
+                                    <div className="message-time">
+                                        {/* Ensure timestamp exists and is valid before formatting */}
+                                        {/* Need to handle potential string timestamps from storage */}
+                                        {message.timestamp ? formatHistoryTimestamp(new Date(message.timestamp).getTime()) : ''}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* --- End Chat History Review Modal --- */}
+
         </div>
     );
 }

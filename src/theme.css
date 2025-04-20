@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+
 :root {
   /* Audacy Branding Colors */
   --audacy-purple: #5029a7;
@@ -37,7 +39,7 @@
   --color-info-text-strong: #005f99;
 
   /* Font Families */
-  --font-primary: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-primary: 'Manrope', sans-serif;
   --font-monospace: Consolas, Menlo, Courier New, monospace;
 
   /* Common Sizes & Spacing (Examples - adjust as needed) */
