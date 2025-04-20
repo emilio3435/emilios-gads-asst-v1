@@ -228,47 +228,123 @@
     /* Ensure list starts below the absolutely positioned header */
     list-style: none;
     padding: 0;
-    margin: 0; 
-    clear: both; 
+    margin: 0;
+    clear: both;
     padding-top: 15px; /* Further reduced padding */
 }
 
 .history-item {
-    /* Turn list items into cards */
-    background-color: var(--color-white);
-    border: 1px solid var(--gray-light);
-    border-radius: var(--border-radius-medium);
-    padding: var(--spacing-medium);
-    margin-bottom: var(--spacing-medium); /* Space between history cards */
-    box-shadow: var(--shadow-small);
-    /* Keep flex layout for internal content */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    /* Remove list item bottom border */
-    /* border-bottom: 1px solid var(--gray-light); REMOVED */
+    display: flex; /* Use flexbox for layout */
+    justify-content: space-between; /* Push text left, button/time right */
+    align-items: center; /* Align items vertically */
+    padding: var(--spacing-medium); /* Use standard medium padding inside card */
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+
+    /* === Card Styles - Ensure clear separation === */
+    background-color: var(--color-white); /* Explicit background */
+    border: 1px solid var(--border-color-medium); /* Use MEDIUM border for better default visibility */
+    border-radius: var(--border-radius-medium); /* Rounded corners */
+    margin-bottom: var(--spacing-large); /* LARGE spacing for clear vertical separation */
+    box-shadow: var(--shadow-small); /* Slightly more prominent shadow */
+    border-left: 4px solid transparent; /* Keep accent space */
+    /* Remove border-bottom override if it exists */
+    /* border-bottom: none; */
 }
 
+.history-item:hover {
+    background-color: var(--hover-background-light); /* Lighter hover for cards */
+    border-left-color: var(--audacy-orange); /* Accent on hover */
+    border-color: var(--border-color-dark); /* Darken border slightly more on hover */
+    box-shadow: var(--shadow-medium); /* Increase shadow slightly on hover */
+}
+
+.history-item.selected {
+    background-color: var(--selected-background-light); /* Lighter selected for cards */
+    font-weight: 500;
+    border-left-color: var(--audacy-purple); /* Accent when selected */
+    border-color: var(--audacy-purple-alt-light); /* Match border to accent */
+    box-shadow: var(--shadow-large); /* Even more prominent shadow when selected */
+}
+
+/* Container for the left-aligned text block */
 .history-item-info {
     display: flex;
     flex-direction: column;
-    gap: var(--border-radius-small); /* Use small border radius as gap? */
+    align-items: flex-start; /* Left-align text within this container */
+    gap: 2px; /* Reduced gap between lines */
+    /* Allow this container to grow and push button/time right */
+    flex-grow: 1;
+    /* Add padding to prevent text hitting the button/time */
+    padding-right: var(--spacing-medium);
 }
 
-.history-main-details {
-    font-weight: 500; /* Slightly bolder main details */
-    color: var(--gray-darkest);
-    font-size: 0.9em;
+/* Style for Client Name (Now Primary again) */
+.history-client-name {
+    font-size: 1.05em; /* Larger size */
+    font-weight: 600; /* Bold */
+    color: var(--audacy-purple); /* Audacy Purple */
+    line-height: 1.3;
+    /* Add vertical alignment to help with inline block next to it */
+    vertical-align: baseline;
+}
+.history-client-name.client-na {
+    font-weight: 400; /* Normal weight if N/A */
+    color: var(--text-color-light); /* Lighter if N/A */
+    font-style: italic;
 }
 
-.history-context-details {
-    font-size: 0.8em; /* Smaller font for context */
-    color: var(--gray-dark);
-    margin-top: 2px; /* Small space above context line */
+
+/* Style for Tactic/KPI (Now Secondary again) */
+.history-tactic-kpi {
+    font-size: 0.95em; /* Slightly smaller size */
+    font-weight: 600; /* Also Bold */
+    color: var(--audacy-orange); /* Audacy Orange */
+    line-height: 1.3; /* Match line-height */
+    /* Add vertical alignment */
+    vertical-align: baseline;
 }
 
-.nav-step {
-  color: var(--gray-dark);
+/* Style for the separator */
+.history-separator {
+    color: var(--text-color-medium); /* Use a neutral medium color */
+    font-size: 1.05em; /* Match client name size */
+    font-weight: 600; /* Match client name weight */
+    margin: 0 2px; /* Add slight spacing */
+    vertical-align: baseline;
+}
+
+/* Style for Filename (Tertiary) */
+.history-filename {
+    font-size: 0.8em;
+    font-weight: 400;
+    color: var(--text-color-light); /* Light color */
+    line-height: 1.1;
+    margin-left: 5px; /* Indent slightly */
+}
+.history-filename:empty {
+    display: none; /* Hide if no filename */
+}
+
+
+/* Container for Timestamp and Button on the right */
+.history-item-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Align button/time to the right */
+    gap: var(--spacing-extra-small);
+    flex-shrink: 0; /* Prevent this container from shrinking */
+}
+
+/* Timestamp inside history item actions */
+.history-timestamp {
+    font-size: 0.75em;
+    color: var(--text-color-light);
+    background-color: transparent; /* Remove background */
+    padding: 0; /* Remove padding */
+    position: static; /* Remove absolute positioning */
+    text-align: right;
 }
 
 /* === Card Styling === */
@@ -293,4 +369,58 @@
      padding-top: var(--spacing-medium); 
      padding-bottom: var(--spacing-medium);
      position: relative; /* Add relative positioning for absolute children */
+}
+
+/* Timestamp inside history card */
+.history-timestamp {
+    position: absolute;
+    top: var(--spacing-small);  /* Adjust as needed */
+    right: var(--spacing-medium); /* Adjust as needed */
+    font-size: 0.75em;
+    color: var(--gray-dark);
+    background-color: var(--gray-lightest);
+    padding: 2px 6px;
+    border-radius: var(--border-radius-small);
+}
+
+/* Container for the main text content */
+.history-item-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-extra-small);
+    /* Prevent content from overlapping button/timestamp */
+    padding-right: 80px; /* Adjust based on button width + spacing */
+    padding-bottom: 30px; /* Adjust based on button height + spacing */
+}
+
+.history-primary-info {
+    font-weight: 600; /* Bolder main details */
+    color: var(--gray-darkest);
+    font-size: 1em;
+    line-height: 1.3;
+}
+
+.history-secondary-info {
+    font-size: 0.85em; 
+    color: var(--gray-darker);
+    margin-top: 2px; 
+}
+
+.history-secondary-info.client-na {
+    color: var(--gray-medium-dark); /* Gray out N/A client */
+    font-style: italic;
+}
+
+.nav-step {
+  color: var(--gray-dark);
+}
+
+/* Make sure the .view-history-button styles in buttons.css are appropriate */
+/* Example: position: static; if it was absolute */
+
+/* Adjust internal info container if needed */
+.history-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--border-radius-small); /* Use small border radius as gap? */
 } 

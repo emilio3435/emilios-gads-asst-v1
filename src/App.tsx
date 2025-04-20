@@ -98,6 +98,7 @@ function App() {
     const [showAdvancedOptions, setShowAdvancedOptions] = useState<boolean>(false);
     const [analysisHistory, setAnalysisHistory] = useState<HistoryEntry[]>([]);
     const [isViewingHistory, setIsViewingHistory] = useState<boolean>(false);
+    const [selectedHistoryEntryId, setSelectedHistoryEntryId] = useState<string | null>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -460,21 +461,20 @@ function App() {
     };
 
     const handleSubmit = async () => {
+        if (!file || !selectedTactics || !selectedKPIs) {
+            alert('Please select a tactic, KPI, and upload a file.');
+            return;
+        }
+
+        setIsLoading(true);
         setError(null);
-        setAnalysisResult(null);
+        setAnalysisResult(null); // Clear previous results
+        setRawAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
         setShowResults(false);
-
-        if (!file) {
-            setError('Please upload a file for analysis.');
-            return;
-        }
-
-        if (!selectedTactics) {
-            setError('Please select a tactic.');
-            return;
-        }
+        setIsViewingHistory(false); // Reset viewing history flag
+        setSelectedHistoryEntryId(null); // Reset selected history entry
 
         const formData = new FormData();
         formData.append('file', file);
@@ -486,8 +486,6 @@ function App() {
         formData.append('modelId', selectedModelId);
         formData.append('outputDetail', outputDetail);
         formData.append('clientName', clientName);
-
-        setIsLoading(true);
 
         // --- Define API Base URL ---
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; // Use import.meta.env for Vite
@@ -571,6 +569,9 @@ function App() {
 
     const handleBackToForm = () => {
         setShowResults(false);
+        setIsViewingHistory(false); // Ensure this flag is reset
+        setSelectedHistoryEntryId(null); // Reset selected history entry ID
+        // Do NOT clear the form fields here if we want them retained
     };
 
     const handleViewAnalysis = () => {
@@ -579,32 +580,32 @@ function App() {
 
     // Function to handle starting a new inquiry
     const handleNewInquiry = () => {
-        // Reset form state
+        // Reset form fields
         setSelectedTactics('');
         setSelectedKPIs('');
         setFile(null);
         setFileName(null);
         setCurrentSituation('');
+        setClientName('');
         setTargetCPA(null);
         setTargetROAS(null);
-        
-        // Reset results state
+        // Reset results & status
         setAnalysisResult(null);
         setRawAnalysisResult(null);
         setPromptSent(null);
         setModelName(null);
         setError(null);
-        
-        // Clear chat history
-        setHelpConversation([]);
-        sessionStorage.removeItem('helpConversation');
-        setHelpQuestion(''); // Clear any lingering question text
-        setHelpContextFile(null); // Clear help context file
-        setHelpContextFileName(null);
-
-        // Go back to the form view
         setShowResults(false);
-        setIsViewingHistory(false); // Reset history view state
+        setIsLoading(false);
+        setIsViewingHistory(false); // Reset viewing history flag
+        setSelectedHistoryEntryId(null); // Reset selected history entry
+        // Reset advanced options (optional, based on desired behavior)
+        // setSelectedModelId('gemini-2.0-flash'); 
+        // setOutputDetail('brief');
+        // setShowAdvancedOptions(false);
+        
+        // Scroll to top (optional)
+        window.scrollTo(0, 0);
     };
 
     // Add this helper function near the top of your file, before the App component
@@ -625,37 +626,58 @@ function App() {
 
     // Function to load a previous analysis from history
     const handleLoadHistory = (entryId: string) => {
-        const entryToLoad = analysisHistory.find(entry => entry.id === entryId);
-        if (entryToLoad) {
-            // Restore input states
-            setSelectedTactics(entryToLoad.inputs.selectedTactics);
-            setSelectedKPIs(entryToLoad.inputs.selectedKPIs);
-            setFileName(entryToLoad.inputs.fileName); // Restore the file *name*
-            setCurrentSituation(entryToLoad.inputs.currentSituation);
-            setTargetCPA(entryToLoad.inputs.targetCPA);
-            setTargetROAS(entryToLoad.inputs.targetROAS);
-            setSelectedModelId(entryToLoad.inputs.selectedModelId);
-            setOutputDetail(entryToLoad.inputs.outputDetail);
-            // Restore new fields
-            setClientName(entryToLoad.inputs.clientName);
-            
-            // Restore result states
-            setAnalysisResult(entryToLoad.results.analysisResult);
-            setRawAnalysisResult(entryToLoad.results.rawAnalysisResult);
-            setPromptSent(entryToLoad.results.promptSent);
-            setModelName(entryToLoad.results.modelName);
-            
-            // Clear error and current file object (file itself isn't stored)
+        const entry = analysisHistory.find(h => h.id === entryId);
+        if (entry) {
+            // Load data from history into state
+            setClientName(entry.inputs.clientName || '');
+            setSelectedTactics(entry.inputs.selectedTactics || '');
+            setSelectedKPIs(entry.inputs.selectedKPIs || '');
+            setFileName(entry.inputs.fileName || null);
+            setFile(null); // Can't restore the actual file object
+            setCurrentSituation(entry.inputs.currentSituation || '');
+            setTargetCPA(entry.inputs.targetCPA !== undefined ? entry.inputs.targetCPA : null);
+            setTargetROAS(entry.inputs.targetROAS !== undefined ? entry.inputs.targetROAS : null);
+            setSelectedModelId(entry.inputs.selectedModelId || 'gemini-2.0-flash');
+            setOutputDetail(entry.inputs.outputDetail || 'brief');
+
+            // Load results
+            setAnalysisResult(entry.results.analysisResult || null);
+            setRawAnalysisResult(entry.results.rawAnalysisResult || null);
+            setPromptSent(entry.results.promptSent || null);
+            setModelName(entry.results.modelName || null);
+
+            // Set flags and show results
             setError(null);
-            setFile(null); // IMPORTANT: The actual file object is not persisted
-            
-            // Switch to results view
+            setIsLoading(false);
             setShowResults(true);
-            setShowHelpModal(false); // Close help modal if open
-            setIsViewingHistory(true); // Set to true as we are viewing history
+            setIsViewingHistory(true); // Set viewing history flag
+            setSelectedHistoryEntryId(entryId); // Set the selected entry ID
+
+            // Scroll to top (optional, good UX)
+            window.scrollTo(0, 0);
         } else {
-            console.error("History entry not found:", entryId);
-            setError("Could not load the selected history item.");
+            setError('Could not load the selected history entry.');
+        }
+    };
+
+    // Helper function to format timestamp for history display
+    const formatHistoryTimestamp = (timestamp: number): string => {
+        const now = new Date();
+        const historyDate = new Date(timestamp);
+        const diffTime = now.getTime() - historyDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' }; // Format time
+
+        if (diffDays < 1 && now.getDate() === historyDate.getDate()) {
+            // Today
+            return `Today, ${historyDate.toLocaleTimeString(undefined, timeOptions)}`;
+        } else if (diffDays < 2 && now.getDate() - historyDate.getDate() === 1) {
+            // Yesterday
+            return `Yesterday, ${historyDate.toLocaleTimeString(undefined, timeOptions)}`;
+        } else {
+            // Older - just date
+            const dateOptions: Intl.DateTimeFormatOptions = { year: '2-digit', month: 'numeric', day: 'numeric' };
+            return historyDate.toLocaleDateString(undefined, dateOptions);
         }
     };
 
@@ -836,7 +858,7 @@ function App() {
                                                     )}
                                                 </div>
                                                 <div className="message-time">
-                                                    {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    {formatHistoryTimestamp(message.timestamp.getTime())}
                                                 </div>
                                             </div>
                                         ))}
@@ -1207,30 +1229,43 @@ function App() {
                             Clear History
                         </button>
                         <ul className="history-list">
-                            {analysisHistory.map((entry) => (
-                                <li key={entry.id} className="history-item">
-                                    <div className="history-item-info">
-                                        <span className="history-timestamp">
-                                            {new Date(entry.timestamp).toLocaleString()}
-                                        </span>
-                                        {/* Main details */}
-                                        <span className="history-main-details">
-                                            {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
-                                            {entry.inputs.fileName && ` (${entry.inputs.fileName})`}
-                                        </span>
-                                        {/* Context details */}
-                                        <span className="history-context-details">
-                                            Client: {entry.inputs.clientName || 'N/A'} 
-                                        </span>
-                                    </div>
-                                    <button 
-                                        className="view-history-button"
-                                        onClick={() => handleLoadHistory(entry.id)}
+                            {analysisHistory.map((entry) => {
+                                const clientNameText = entry.inputs.clientName || 'N/A';
+                                const isClientNA = clientNameText === 'N/A';
+                                return (
+                                    <li 
+                                        key={entry.id} 
+                                        className={`history-item ${selectedHistoryEntryId === entry.id ? 'selected' : ''}`}
+                                        onClick={() => handleLoadHistory(entry.id)} // Attach onClick here
+                                        title="Click to view this analysis"
                                     >
-                                        View Details
-                                    </button>
-                                </li>
-                            ))}
+                                        {/* Left Aligned Info Block */}
+                                        <div className="history-item-info">
+                                            {/* Combined Client Name : Tactic/KPI Line */}
+                                            <div> 
+                                                <span className={`history-client-name ${isClientNA ? 'client-na' : ''}`}>
+                                                    {clientNameText}
+                                                </span>
+                                                <span className="history-separator">: </span> {/* Colon separator */}
+                                                <span className="history-tactic-kpi">
+                                                    {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
+                                                    {entry.inputs.fileName && 
+                                                        <span className="history-filename"> ({entry.inputs.fileName})</span>
+                                                    }
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Right Aligned Actions Block */}
+                                        <div className="history-item-actions">
+                                            <span className="history-timestamp">
+                                                {formatHistoryTimestamp(entry.timestamp)}
+                                            </span>
+                                            {/* REMOVED View Details Button */}
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 </div> /* End History Card */

@@ -112,10 +112,18 @@ button {
   box-shadow: var(--shadow-small);
 }
 
+.back-button svg {
+  stroke: var(--audacy-purple); /* Use Audacy purple for icon */
+}
+
 .back-button:hover {
   background-color: var(--audacy-purple);
   color: var(--color-white);
   border-color: var(--audacy-purple);
+}
+
+.back-button:hover svg {
+  stroke: var(--color-white); /* Change icon color on hover */
 }
 
 /* Model Selection Buttons (Header/Advanced) */
@@ -259,7 +267,7 @@ button {
     position: absolute; 
     top: var(--spacing-medium); 
     right: var(--spacing-large); 
-    background-color: var(--gray-medium-light); /* Secondary button color */
+    background-color: var(--gray-lightest); /* Use light gray or secondary brand color */
     color: var(--color-error); /* Keep red text for warning */
     border: 1px solid var(--gray-medium); /* Subtle border */
     padding: 6px 12px; /* Consistent padding */
@@ -276,7 +284,7 @@ button {
 }
 
 .clear-history-button:hover {
-    background-color: var(--gray-medium); 
+    background-color: var(--gray-light); /* Use a slightly darker gray or secondary brand hover */
     color: var(--color-error-text-dark); 
     border-color: var(--gray-medium-dark);
     box-shadow: var(--shadow-small); /* Subtle shadow on hover */
@@ -294,18 +302,26 @@ button {
 }
 
 .view-history-button {
-    background-color: var(--gray-medium-light);
-    color: var(--gray-darkest);
+    /* Style as primary action button */
+    position: absolute;
+    bottom: var(--spacing-medium); /* Position at bottom */
+    right: var(--spacing-medium); /* Position at right */
+    background-color: var(--audacy-orange); /* Primary action color (Audacy Orange) */
+    color: var(--color-white);
     border: none;
-    padding: 6px 10px;
-    border-radius: var(--border-radius-small);
+    padding: 6px 14px; /* Adjust padding */
+    border-radius: var(--border-radius-round); /* Rounded */
     cursor: pointer;
     font-size: 0.85em;
-    transition: background-color 0.2s;
+    font-weight: 500; /* Match other buttons */
+    transition: all 0.2s;
+    box-shadow: var(--shadow-small);
 }
 
 .view-history-button:hover {
-    background-color: var(--gray-medium-dark);
+    background-color: var(--audacy-orange-dark); /* Use dark orange for hover */
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-1px);
 }
 
 /* Style for the new sleek back button in results header */
@@ -327,6 +343,7 @@ button {
 
 .sleek-back-button svg {
     margin-right: 6px; /* Space between icon and text */
+    stroke: var(--audacy-purple); /* Use Audacy purple for icon */
     stroke-width: 2.5; /* Slightly bolder icon */
 }
 
@@ -336,6 +353,10 @@ button {
     border-color: var(--gray-medium); 
     box-shadow: var(--shadow-medium);
     transform: translateY(-1px);
+}
+
+.sleek-back-button:hover svg {
+    stroke: var(--audacy-purple-dark); /* Darken icon on hover */
 }
 
 .sleek-back-button:focus {
