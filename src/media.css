@@ -36,12 +36,26 @@
 
   /* Style buttons within the input section for mobile */
   .input-section .help-button,
+  .input-section .view-history-chat-button,
   .input-section .new-inquiry-button {
       width: 90%; /* Make buttons take most of the width */
       max-width: 350px; /* Optional: prevent them getting too wide */
       justify-content: center; /* Center text/icon within button */
   }
   
+  /* Add margin below the first button when stacked */
+  .input-section .help-button,
+  .input-section .view-history-chat-button {
+      margin-bottom: var(--spacing-medium);
+  }
+
+  /* Allow tables to scroll horizontally on mobile */
+  table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap; /* Prevent text wrapping within cells causing width issues */
+  }
+
   .campaign-info {
     /* Styles moved from App.css specific media query */
     max-width: 100%;
