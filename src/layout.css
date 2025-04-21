@@ -345,6 +345,13 @@
     align-items: center; /* Added - center align items like button */
 }
 
+/* Center the main title */
+.assistant-card h1 {
+    text-align: center;
+    width: 100%; /* Ensure it takes full width for centering */
+    margin-bottom: var(--spacing-medium); /* Add some space below title */
+}
+
 .history-card {
     /* Specific styles for history card if needed */
      padding-top: var(--spacing-medium); 
