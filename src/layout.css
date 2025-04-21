@@ -17,15 +17,10 @@
 
 /* Layout for Input Form View */
 .App:not(:has(.analysis-page-container)) {
-  padding: var(--spacing-medium);
+  padding: var(--spacing-large);
   max-width: 800px;
   margin: 0 auto;
-  gap: var(--spacing-small);
-}
-
-/* Hide instructions to fit input fields on one screen */
-.App:not(:has(.analysis-page-container)) .app-instructions {
-  display: none;
+  gap: var(--spacing-medium);
 }
 
 /* === Header === */
@@ -120,7 +115,7 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-small);
+  gap: var(--spacing-medium);
   width: 100%;
   margin-bottom: var(--spacing-small);
 }
@@ -128,7 +123,7 @@
 .form-column {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-extra-small);
+  gap: var(--spacing-small);
 }
 
 .select-container,
@@ -136,7 +131,7 @@
 .text-area-container,
 .file-upload-section {
   width: 100%;
-  margin-bottom: var(--spacing-small);
+  margin-bottom: var(--spacing-medium);
 }
 
 .file-info-container {
@@ -182,13 +177,13 @@
 .advanced-options-trigger-area {
   width: 100%;
   text-align: center; /* Or adjust as needed */
-  margin-top: var(--spacing-extra-small);
+  margin-top: var(--spacing-small);
 }
 
 .advanced-toggles-container {
   width: 100%;
   padding: var(--spacing-medium);
-  margin-top: var(--spacing-extra-small);
+  margin-top: var(--spacing-small);
   border: 1px solid var(--gray-medium);
   border-radius: var(--border-radius-medium);
   background-color: var(--gray-lighter);
@@ -213,7 +208,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-small);
-  margin-top: var(--spacing-medium);
+  margin-top: var(--spacing-large);
 }
 
 .input-to-analysis-navigation {
