@@ -7,7 +7,8 @@ import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
 
 // Add type declaration for dataLayer on window
 declare global {
@@ -36,6 +37,14 @@ interface HistoryEntry {
     promptSent: string | null; // The prompt that was constructed
     helpConversation: Array<{type: string, content: string, timestamp: Date}>; // Add field for chat history
   };
+}
+
+// Define an interface for basic user info from token
+interface UserInfo {
+    name?: string;
+    email?: string;
+    picture?: string;
+    sub?: string; // Google User ID
 }
 
 // Helper function for basic syntax highlighting
@@ -118,6 +127,7 @@ function App() {
     const [activeView, setActiveView] = useState<'new' | 'history'>('new');
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
     const [idToken, setIdToken] = useState<string | null>(null);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -128,7 +138,61 @@ function App() {
     const paginatedHistory = analysisHistory.slice(startIndex, endIndex);
     // --- End Pagination Calculations ---
 
-    // Focus on help input when modal opens
+    // --- Define fetchHistory function HERE (before useEffect that uses it) ---
+    const fetchHistory = useCallback(async (token: string | null) => {
+        if (!token) {
+             console.warn('fetchHistory called without a token.');
+             setError('Cannot fetch history: Not logged in.');
+             setAnalysisHistory([]); 
+            return;
+        }
+        
+        console.log("Attempting to fetch history from backend...");
+        setIsLoading(true); 
+        setError(null);
+        
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/history`, {
+               method: 'GET',
+               headers: { 
+                   'Authorization': `Bearer ${token}`,
+                   'Accept': 'application/json'
+               } 
+           });
+           
+          if (!response.ok) {
+               let errorMsg = `Failed to fetch history: ${response.statusText}`;
+               try {
+                   const errorData = await response.json();
+                   errorMsg = errorData.message || errorMsg;
+               } catch (e) { /* Ignore */ }
+               throw new Error(errorMsg);
+          }
+          
+          const result = await response.json();
+          
+          if (result && Array.isArray(result.data)) {
+               console.log('History fetched successfully:', result.data);
+               const formattedHistory = result.data.map((entry: any) => ({
+                   ...entry,
+               }));
+               setAnalysisHistory(formattedHistory); 
+           } else {
+               console.warn('Received unexpected data format when fetching history:', result);
+               setAnalysisHistory([]);
+           }
+           
+        } catch (error: any) {
+          console.error('Failed to fetch history:', error);
+          setError(error.message || 'Failed to load history.');
+          setAnalysisHistory([]);
+        } finally {
+           setIsLoading(false);
+        }
+    }, [apiBaseUrl]); // Dependency
+
+    // --- useEffect hooks ---
+    // Focus on help input
     useEffect(() => {
         if (showHelpModal && helpInputRef.current) {
             setTimeout(() => {
@@ -137,14 +201,14 @@ function App() {
         }
     }, [showHelpModal]);
 
-    // Scroll to bottom of chat when conversation updates
+    // Scroll chat
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [helpConversation]);
 
-    // Load conversation history from sessionStorage when component mounts
+    // Load/Save help conversation
     useEffect(() => {
         const savedConversation = sessionStorage.getItem('helpConversation');
         if (savedConversation) {
@@ -163,107 +227,43 @@ function App() {
         }
     }, []);
 
-    // Save conversation history to sessionStorage whenever it changes
     useEffect(() => {
         if (helpConversation.length > 0) {
             sessionStorage.setItem('helpConversation', JSON.stringify(helpConversation));
         }
     }, [helpConversation]);
 
-    // Load analysis history from localStorage on mount
+    // Load login state and initial history on mount
     useEffect(() => {
-        const savedHistory = localStorage.getItem('analysisHistory');
-        if (savedHistory) {
+        const storedToken = localStorage.getItem('idToken');
+        const storedUserInfo = localStorage.getItem('userInfo');
+        
+        if (storedToken && storedUserInfo) {
             try {
-                const parsedHistory: HistoryEntry[] = JSON.parse(savedHistory);
-                // Optionally sort history, newest first
-                parsedHistory.sort((a, b) => b.timestamp - a.timestamp);
-                setAnalysisHistory(parsedHistory);
-            } catch (e) {
-                console.error('Error loading analysis history from localStorage:', e);
-                localStorage.removeItem('analysisHistory'); // Clear corrupted data
+                const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
+                console.log('Found token and user info, setting login state.');
+                setIdToken(storedToken);
+                setUserInfo(parsedUserInfo);
+                setIsLoggedIn(true);
+                // Fetch history for the loaded user
+                fetchHistory(storedToken); // Now fetchHistory is defined
+            } catch (error) {
+                 console.error('Error parsing stored user info:', error);
+                 localStorage.removeItem('idToken');
+                 localStorage.removeItem('userInfo');
+                 setIsLoggedIn(false);
+                 setIdToken(null);
+                 setUserInfo(null);
+                 setAnalysisHistory([]);
             }
-        }
-    }, []);
-
-    // Update fetchHistory function
-    const fetchHistory = useCallback(async (token: string | null) => {
-        if (!token) {
-             console.warn('fetchHistory called without a token.');
-             setError('Cannot fetch history: Not logged in.');
-             setAnalysisHistory([]); // Ensure history is empty if no token
-            return;
-        }
-        
-        console.log("Attempting to fetch history from backend...");
-        setIsLoading(true); // Show loading state for history fetch
-        setError(null);
-        
-        try {
-          const response = await fetch(`${apiBaseUrl}/api/history`, {
-               method: 'GET',
-               headers: { 
-                   'Authorization': `Bearer ${token}`,
-                   'Accept': 'application/json' // Good practice
-               } 
-           });
-           
-          if (!response.ok) {
-               let errorMsg = `Failed to fetch history: ${response.statusText}`;
-               try {
-                   const errorData = await response.json();
-                   errorMsg = errorData.message || errorMsg;
-               } catch (e) { /* Ignore if response not JSON */ }
-               throw new Error(errorMsg);
-          }
-          
-          const result = await response.json();
-          
-          // Assuming backend returns { message: string, data: HistoryEntry[] }
-          if (result && Array.isArray(result.data)) {
-               console.log('History fetched successfully:', result.data);
-               // Ensure timestamps from Firestore are converted back to Date objects if needed
-               // Firestore Timestamps might need .toDate() if not automatically handled
-               const formattedHistory = result.data.map((entry: any) => ({
-                   ...entry,
-                   // Example: Convert Firestore Timestamp to Date object if needed
-                   // timestamp: entry.timestamp?.toDate ? entry.timestamp.toDate().getTime() : Date.parse(entry.timestamp)
-                   // If backend already sends epoch number or ISO string, direct use might be okay
-                   // Let's assume for now the backend sends data compatible with HistoryEntry structure
-               }));
-               setAnalysisHistory(formattedHistory); 
-           } else {
-               console.warn('Received unexpected data format when fetching history:', result);
-               setAnalysisHistory([]);
-               // setError('Received invalid history data format from server.');
-           }
-           
-        } catch (error: any) {
-          console.error('Failed to fetch history:', error);
-          setError(error.message || 'Failed to load history.');
-          setAnalysisHistory([]); // Clear history on error
-        } finally {
-           setIsLoading(false);
-        }
-    }, [apiBaseUrl]); // Added apiBaseUrl dependency
-
-    // Modify the useEffect hook that loads history on mount
-    useEffect(() => {
-        // This effect now only handles checking local login status.
-        // History fetching is triggered by handleLoginSuccess or manual refresh.
-        const storedToken = localStorage.getItem('idToken'); // Or wherever you store the token
-        if (storedToken) {
-             console.log('Found token in localStorage, attempting to set login state.');
-             setIdToken(storedToken);
-             setIsLoggedIn(true);
-             // We could trigger fetchHistory here, but handleLoginSuccess does it
-             // fetchHistory(storedToken); 
         } else {
+            console.log('No token or user info found.');
              setIsLoggedIn(false);
              setIdToken(null);
-             setAnalysisHistory([]); // Clear history if not logged in
+             setUserInfo(null);
+             setAnalysisHistory([]);
         }
-    }, []); // Removed fetchHistory dependency here, let login trigger it
+    }, [fetchHistory]); // fetchHistory dependency is correct
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // Clear previous results when file changes
@@ -1037,34 +1037,61 @@ function App() {
     };
     // <<< END ADDED FUNCTION >>>
 
-    // Add a login success handler if it doesn't exist or update it
-    const handleLoginSuccess = (credentialResponse: any) => {
+    // Update handleLoginSuccess
+    const handleLoginSuccess = (credentialResponse: CredentialResponse) => {
         console.log('Google Login Success:', credentialResponse);
         const token = credentialResponse.credential;
         if (token) {
-            setIdToken(token);
-            setIsLoggedIn(true);
-            localStorage.setItem('idToken', token); // Store token locally for persistence
-            fetchHistory(token); // Fetch history immediately after successful login
-            setError(null); // Clear previous errors
+            try {
+                 // Decode the JWT token to get user info
+                 const decodedUserInfo: UserInfo = jwtDecode(token);
+                 console.log('Decoded User Info:', decodedUserInfo);
+
+                 setIdToken(token);
+                 setUserInfo(decodedUserInfo); // Set user info state
+                 setIsLoggedIn(true);
+                 
+                 // Persist token and user info
+                 localStorage.setItem('idToken', token);
+                 localStorage.setItem('userInfo', JSON.stringify(decodedUserInfo)); 
+
+                 fetchHistory(token); // Fetch history for the newly logged-in user
+                 setError(null); // Clear previous errors
+                 setActiveView('history'); // Switch to history view upon successful login
+
+             } catch (error) {
+                 console.error('Error decoding token or setting state:', error);
+                 setError('Login succeeded but failed to process user information.');
+                 // Clear partial login state
+                 localStorage.removeItem('idToken');
+                 localStorage.removeItem('userInfo');
+                 setIsLoggedIn(false);
+                 setIdToken(null);
+                 setUserInfo(null);
+             }
         } else {
             console.error('Login Success but no credential received.');
             setError('Login failed: Could not get authentication credential.');
             setIsLoggedIn(false);
             setIdToken(null);
+            setUserInfo(null);
             localStorage.removeItem('idToken');
+            localStorage.removeItem('userInfo');
         }
     };
     
-    // Add a logout handler
+    // Update handleLogout
     const handleLogout = () => {
          console.log('Logging out...');
          setIsLoggedIn(false);
          setIdToken(null);
+         setUserInfo(null); // Clear user info state
          setAnalysisHistory([]); // Clear history from state
          localStorage.removeItem('idToken'); // Remove token from storage
+         localStorage.removeItem('userInfo'); // Remove user info from storage
          setActiveView('new'); // Go back to the main form view
-         // TODO: Maybe call backend endpoint to invalidate token if applicable
+         // Optional: Add backend call to invalidate session/token if implemented
+         // Optional: Use googleLogout() from @react-oauth/google if needed for cleanup
     };
 
     if (showResults) {
@@ -1340,6 +1367,7 @@ function App() {
         <div className="App">
             {/* Tab Navigation */}
             <div className="tab-navigation">
+                {/* Existing New Analysis Tab Button */}
                 <button
                     className={`tab-button ${activeView === 'new' ? 'active' : ''}`}
                     onClick={() => {
@@ -1356,26 +1384,34 @@ function App() {
                 >
                     New Analysis
                 </button>
+                {/* Existing History Tab Button */}
                 <button
-                    className={`tab-button ${activeView === 'history' ? 'active' : ''} ${analysisHistory.length === 0 ? 'disabled' : ''}`}
+                    className={`tab-button ${activeView === 'history' ? 'active' : ''}`}
                     onClick={() => {
-                        if (analysisHistory.length > 0) {
-                            setActiveView('history');
-                            // --- Data Layer Push ---
-                            window.dataLayer = window.dataLayer || [];
-                            window.dataLayer.push({
-                                'event': 'select_tab',
-                                'event_category': 'Navigation',
-                                'event_action': 'Select Tab',
-                                'event_label': 'History'
-                            });
-                        }
+                        setActiveView('history');
+                         // If not logged in, this view will show the login prompt
+                        // ... data layer push ...
                     }}
-                    disabled={analysisHistory.length === 0}
-                    title={analysisHistory.length === 0 ? "No history available" : "View past analyses"}
+                    // No disabled attribute needed, always allow clicking history
+                    title={isLoggedIn ? "View your analysis history" : "Login to view history"}
                 >
-                    History ({analysisHistory.length})
+                    History {isLoggedIn && analysisHistory.length > 0 ? `(${analysisHistory.length})` : ''} 
                 </button>
+
+                {/* --- NEW: Login Status / Logout Button --- */}
+                <div className="login-status-container">
+                {isLoggedIn && userInfo ? (
+                    <>
+                       <span className="user-info" title={userInfo.email}>Logged in as {userInfo.name || userInfo.email}</span>
+                       <button onClick={handleLogout} className="logout-button" title="Logout">
+                           Logout
+                       </button>
+                    </>
+                ) : (
+                     <span className="login-prompt-nav">Login via History tab</span>
+                )}
+                </div>
+                {/* --- END NEW --- */}
             </div>
 
             {/* Tab Content Area */}

@@ -793,3 +793,78 @@ label.button { display: inline-flex; } /* For file input label */
     margin-top: var(--spacing-medium);
     color: var(--color-error); /* Use existing error color */
 }
+
+/* Login Status in Navigation */
+.tab-navigation {
+  display: flex;
+  justify-content: flex-start; /* Align tabs to left */
+  align-items: center; /* Vertically center items */
+  padding: var(--spacing-small) var(--spacing-large);
+  border-bottom: 1px solid var(--color-border-medium);
+  background-color: var(--color-white);
+  position: relative; /* Needed for absolute positioning of login status */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+/* Keep existing tab button styles */
+.tab-button { /* ... */ }
+
+.login-status-container {
+    margin-left: auto; /* Pushes this container to the right */
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-medium);
+    padding: 0 var(--spacing-small); /* Add some padding */
+}
+
+.user-info {
+    font-size: var(--font-size-small);
+    color: var(--color-text-light);
+}
+
+.user-info[title] { /* Add underline on hover if title (email) exists */
+    cursor: help;
+    text-decoration: underline dashed var(--color-text-subtle) 1px;
+}
+
+.logout-button {
+    /* Style like a small tertiary button */
+    background-color: var(--gray-lighter);
+    color: var(--color-primary);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-extra-small) var(--spacing-small);
+    border-radius: var(--border-radius-medium);
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: none;
+    margin: 0; /* Reset margin */
+}
+
+.logout-button:hover {
+    background-color: var(--gray-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+    box-shadow: var(--shadow-small);
+}
+
+.login-prompt-nav {
+    font-size: var(--font-size-small);
+    color: var(--color-text-subtle);
+    font-style: italic;
+}
+
+/* Responsive adjustment for login status */
+@media (max-width: 600px) {
+    .login-status-container {
+        width: 100%; /* Take full width */
+        justify-content: flex-end; /* Align to right */
+        margin-left: 0;
+        margin-top: var(--spacing-small); /* Add space above */
+        padding: 0; /* Reset padding */
+    }
+    .tab-navigation {
+        justify-content: center; /* Center tabs */
+    }
+}
