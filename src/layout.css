@@ -319,9 +319,10 @@
 /* === Position Action Button === */
 .history-item-actions {
     display: flex;
-    align-items: center;
+    align-items: center; /* Center button text vertically */
     gap: 8px;
     flex-shrink: 0; /* Prevent buttons from shrinking */
+    align-self: flex-start; /* Align the whole actions block to the top */
 }
 
 /* === Card Styling === */
@@ -578,11 +579,8 @@ td {
   }
   
   .history-item-info {
-    flex-direction: row; /* Arrange info horizontally */
-    align-items: baseline; /* Align text nicely */
-    gap: var(--spacing-medium); /* Space between name, details, timestamp */
+    flex-direction: column; /* Keep stacked layout even on desktop */
     flex-grow: 1; /* Allow info to take available space */
-    flex-wrap: wrap; /* Allow wrapping if needed on slightly smaller large screens */
   }
   
   .history-client-name {
@@ -590,12 +588,10 @@ td {
   }
 
   .history-timestamp {
-      margin-left: auto; /* Push timestamp towards the right */
-      margin-top: 0; /* Remove top margin */
-      text-align: right; /* Align text right */
-      color: var(--text-color-light); /* Lighter color */
-      white-space: nowrap; /* Prevent timestamp from wrapping */
-      align-self: baseline; /* Align with text baseline */
+      margin-left: 0; /* Remove auto margin */
+      margin-top: 2px; /* Add small top margin */
+      text-align: left; /* Align text left */
+      color: var(--gray-dark); /* Same color as mobile */
   }
 
   .history-item-actions {
