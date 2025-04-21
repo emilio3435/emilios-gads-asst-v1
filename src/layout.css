@@ -290,14 +290,7 @@
 .history-item-info {
     display: flex;
     flex-direction: column;
-    align-items: flex-start; 
-    gap: var(--spacing-extra-small); /* Reduced gap */
-    flex-grow: 1;
-    padding-right: var(--spacing-medium);
-    text-align: left;
-    line-height: 1.4;
-    color: var(--gray-darker);
-    font-size: 0.9em;
+    gap: var(--border-radius-small); /* Use small border radius as gap? */
 }
 
 .history-client-name {
@@ -376,13 +369,6 @@
 /* Make sure the .view-history-button styles in buttons.css are appropriate */
 /* Example: position: static; if it was absolute */
 
-/* Adjust internal info container if needed */
-.history-item-info {
-    display: flex;
-    flex-direction: column;
-    gap: var(--border-radius-small); /* Use small border radius as gap? */
-}
-
 /* === New Standalone Back Button === */
 .page-back-button {
     position: absolute;
@@ -390,41 +376,43 @@
     left: var(--spacing-large); /* Position on the left */
     z-index: 20; /* Ensure it's above logo if overlap occurs */
     
-    /* Make it purple with white text/icon */
+    /* --- Style like other main buttons --- */
     background-color: var(--audacy-purple);
     color: var(--color-white);
-    border: 1px solid var(--audacy-purple);
+    border: none; /* Remove border like other buttons */
+    padding: 10px 18px; /* Match other buttons */
+    border-radius: var(--border-radius-round); /* Use round radius */
+    box-shadow: var(--shadow-medium); /* Add default shadow */
+    font-size: 0.9em; /* Match other buttons */
+    font-weight: 500; /* Match other buttons */
+    letter-spacing: 0.2px; /* Match other buttons */
     
-    padding: 8px 14px; /* Adjust padding slightly */
-    border-radius: var(--border-radius-medium);
+    /* --- Keep flex properties --- */
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: var(--spacing-x-small);
-    font-size: 0.95em; 
-    font-weight: 500;
+    justify-content: center; /* Center content */
+    gap: var(--spacing-small); /* Adjust gap slightly */
     transition: all 0.2s ease;
     line-height: 1;
 }
 
 .page-back-button svg {
-    /* White icon */
     stroke: var(--color-white);
-    width: 18px; /* Adjust size if needed */
-    height: 18px;
+    width: 16px; /* Slightly smaller icon? */
+    height: 16px;
     stroke-width: 2;
 }
 
 .page-back-button:hover {
-    /* Darker purple on hover */
     background-color: var(--audacy-purple-dark);
     border-color: var(--audacy-purple-dark);
-    color: var(--color-white); /* Keep text white */
-    box-shadow: var(--shadow-small);
+    color: var(--color-white); 
+    box-shadow: var(--shadow-large); /* Enhance shadow on hover */
+    transform: translateY(-1px); /* Add subtle lift */
 }
 
 .page-back-button:hover svg {
-    /* Keep icon white on hover */
     stroke: var(--color-white);
 }
 
