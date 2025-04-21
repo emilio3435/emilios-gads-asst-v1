@@ -158,9 +158,11 @@
   top: 20px;
   right: 20px;
   z-index: 2000;
-  width: 280px;
+  max-width: 280px; /* Set max-width for larger screens */
+  width: calc(100% - 40px); /* Default width for smaller screens */
   animation: slideInRight 0.5s, fadeOut 0.7s 14.3s; /* Move animations to utilities.css? */
   font-family: var(--font-primary);
+  box-sizing: border-box; /* Include padding/border in width calculation */
 }
 
 .kpi-recommendation-content {
@@ -214,6 +216,20 @@
   font-weight: 400;
   font-size: 0.85em;
   line-height: 1.5;
+  /* Ensure text wraps */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 768px) {
+    .kpi-recommendation-popup {
+        /* Adjust positioning and width for mobile */
+        top: 10px;
+        right: 10px;
+        width: calc(100% - 20px); /* Adjust width based on new positioning */
+        max-width: 95%; /* Ensure it doesn't hit absolute edge */
+    }
 }
 
 /* Chat History Modal Specific Styles */
