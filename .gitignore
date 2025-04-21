@@ -30,3 +30,28 @@ yarn-error.log*
 *.swp
 *.swo
 .DS_Store
+
+# Firebase Service Account Key
+server/firebase-service-account-key.json
+
+# Node / Server
+server/node_modules
+server/dist
+
+# Build Output
+dist-ssr
+
+# Dependency directories
+node_modules/
+
+# IDE files
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+
+# macOS files
+.DS_Store

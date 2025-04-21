@@ -78,6 +78,9 @@ const formatPromptForDisplay = (prompt: string | null): string => {
     return formatted; 
 };
 
+// --- Define API Base URL ---
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+
 function App() {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
     const [selectedKPIs, setSelectedKPIs] = useState<string>('');
@@ -183,23 +186,84 @@ function App() {
         }
     }, []);
 
-    // NEW: Placeholder fetchHistory function
-    const fetchHistory = useCallback(async (token: string) => {
-        if (!token) return;
-        console.log("Placeholder: Fetching history with token:", token);
-        // TODO: Implement actual backend call to fetch history
-        // Example: 
-        // try {
-        //   const response = await fetch('/api/history', { headers: { 'Authorization': `Bearer ${token}` } });
-        //   const data = await response.json();
-        //   setAnalysisHistory(data);
-        // } catch (error) {
-        //   console.error('Failed to fetch history:', error);
-        //   setError('Failed to load history.');
-        // }
-        // For now, just logs a message
-        setAnalysisHistory([]); // Clear existing history on new fetch attempt
-    }, []); // Add dependencies if needed, e.g., apiBaseUrl
+    // Update fetchHistory function
+    const fetchHistory = useCallback(async (token: string | null) => {
+        if (!token) {
+             console.warn('fetchHistory called without a token.');
+             setError('Cannot fetch history: Not logged in.');
+             setAnalysisHistory([]); // Ensure history is empty if no token
+            return;
+        }
+        
+        console.log("Attempting to fetch history from backend...");
+        setIsLoading(true); // Show loading state for history fetch
+        setError(null);
+        
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/history`, {
+               method: 'GET',
+               headers: { 
+                   'Authorization': `Bearer ${token}`,
+                   'Accept': 'application/json' // Good practice
+               } 
+           });
+           
+          if (!response.ok) {
+               let errorMsg = `Failed to fetch history: ${response.statusText}`;
+               try {
+                   const errorData = await response.json();
+                   errorMsg = errorData.message || errorMsg;
+               } catch (e) { /* Ignore if response not JSON */ }
+               throw new Error(errorMsg);
+          }
+          
+          const result = await response.json();
+          
+          // Assuming backend returns { message: string, data: HistoryEntry[] }
+          if (result && Array.isArray(result.data)) {
+               console.log('History fetched successfully:', result.data);
+               // Ensure timestamps from Firestore are converted back to Date objects if needed
+               // Firestore Timestamps might need .toDate() if not automatically handled
+               const formattedHistory = result.data.map((entry: any) => ({
+                   ...entry,
+                   // Example: Convert Firestore Timestamp to Date object if needed
+                   // timestamp: entry.timestamp?.toDate ? entry.timestamp.toDate().getTime() : Date.parse(entry.timestamp)
+                   // If backend already sends epoch number or ISO string, direct use might be okay
+                   // Let's assume for now the backend sends data compatible with HistoryEntry structure
+               }));
+               setAnalysisHistory(formattedHistory); 
+           } else {
+               console.warn('Received unexpected data format when fetching history:', result);
+               setAnalysisHistory([]);
+               // setError('Received invalid history data format from server.');
+           }
+           
+        } catch (error: any) {
+          console.error('Failed to fetch history:', error);
+          setError(error.message || 'Failed to load history.');
+          setAnalysisHistory([]); // Clear history on error
+        } finally {
+           setIsLoading(false);
+        }
+    }, [apiBaseUrl]); // Added apiBaseUrl dependency
+
+    // Modify the useEffect hook that loads history on mount
+    useEffect(() => {
+        // This effect now only handles checking local login status.
+        // History fetching is triggered by handleLoginSuccess or manual refresh.
+        const storedToken = localStorage.getItem('idToken'); // Or wherever you store the token
+        if (storedToken) {
+             console.log('Found token in localStorage, attempting to set login state.');
+             setIdToken(storedToken);
+             setIsLoggedIn(true);
+             // We could trigger fetchHistory here, but handleLoginSuccess does it
+             // fetchHistory(storedToken); 
+        } else {
+             setIsLoggedIn(false);
+             setIdToken(null);
+             setAnalysisHistory([]); // Clear history if not logged in
+        }
+    }, []); // Removed fetchHistory dependency here, let login trigger it
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // Clear previous results when file changes
@@ -634,40 +698,77 @@ function App() {
             // --- NEW: Store original file content ---
             setOriginalFileContent(data.rawFileContent || null);
 
-            // --- Add to History ---
-            const newHistoryEntry: HistoryEntry = {
-                id: `analysis-${Date.now()}`,
-                timestamp: Date.now(),
-                inputs: {
-                    clientName,
-                    selectedTactics,
-                    selectedKPIs,
-                    fileName,
-                    currentSituation,
-                    selectedModelId,
-                    outputDetail,
-                },
-                results: {
-                    analysisResult: sanitizedHtml, // Save the sanitized HTML
-                    rawAnalysisResult: data.raw,
-                    modelName: data.modelName,
-                    promptSent: data.prompt,
-                    helpConversation: [...helpConversation] // Save a copy of the current chat
+            // --- SAVE TO HISTORY (Backend Call) --- 
+            if (isLoggedIn && idToken) { // Use idToken from state
+                const historyEntryToSave: HistoryEntry = {
+                    // Ensure the structure matches what the frontend/backend expects
+                    // Note: Backend might generate its own ID and handle timestamp conversion
+                    id: `temp-${Date.now()}`, // Temporary ID for optimistic UI update?
+                    timestamp: Date.now(), // Use current time
+                    inputs: {
+                         clientName,
+                         selectedTactics,
+                         selectedKPIs,
+                         fileName,
+                         currentSituation,
+                         selectedModelId,
+                         outputDetail,
+                    },
+                    results: {
+                         analysisResult: sanitizedHtml, // Save sanitized HTML
+                         rawAnalysisResult: data.raw, 
+                         modelName: data.modelName,
+                         promptSent: data.prompt,
+                         // Chat history might be too large for direct saving here
+                         // Consider saving chat separately or omitting from main history entry
+                         helpConversation: [] // Placeholder or omitted
+                    }
+                };
+
+                try {
+                     console.log('Saving history entry to backend...');
+                    const historyResponse = await fetch(`${apiBaseUrl}/api/history`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`, // Use state idToken
+                        },
+                        body: JSON.stringify(historyEntryToSave), // Send the structured data
+                    });
+
+                    if (!historyResponse.ok) {
+                         let errorMsg = `Failed to save history: ${historyResponse.statusText}`;
+                         try {
+                             const errorData = await historyResponse.json();
+                             errorMsg = errorData.message || errorMsg;
+                         } catch (e) { /* Ignore */ }
+                        throw new Error(errorMsg);
+                    }
+                    
+                     const historyResult = await historyResponse.json();
+                     console.log('History entry saved successfully:', historyResult);
+
+                    // OPTIONAL: Optimistic UI update (add to local state immediately)
+                    // Or: Refetch history after successful save for guaranteed consistency
+                    // For optimistic update:
+                    // Replace temp ID with actual ID if backend returns it
+                    // const savedEntryWithActualId = { ...historyEntryToSave, id: historyResult.entryId }; 
+                    // setAnalysisHistory(prevHistory => [savedEntryWithActualId, ...prevHistory]);
+                    
+                    // For refetch strategy (simpler, guarantees consistency):
+                    fetchHistory(idToken); // Refetch the history list from backend
+                    setCurrentPage(1); // Reset to first page 
+
+                } catch (historyError: any) {
+                    console.error('Error saving history entry:', historyError);
+                    // Notify user, but don't block showing analysis results
+                    setError(`Analysis complete, but failed to save to history: ${historyError.message}`);
                 }
-            };
-            
-            // Update state and localStorage
-            setAnalysisHistory(prevHistory => {
-                const updatedHistory = [newHistoryEntry, ...prevHistory];
-                const HISTORY_LIMIT = 20; // Keep limit logic if desired
-                if (updatedHistory.length > HISTORY_LIMIT) {
-                    updatedHistory.length = HISTORY_LIMIT; // Truncate the array
-                }
-                localStorage.setItem('analysisHistory', JSON.stringify(updatedHistory));
-                setCurrentPage(1); // <<< Reset to first page on new entry
-                return updatedHistory;
-            });
-            // --- End Add to History ---
+            } else {
+                console.warn('User not logged in or token missing, history entry not saved to backend.');
+                // Optionally inform the user history isn't saved when logged out
+            }
+            // --- End Save to History ---
 
             // >>> Clear chat history when a new analysis is successful <<<
             setHelpConversation([]);
@@ -872,22 +973,99 @@ function App() {
     };
 
     // <<< ADDED: Function to clear analysis history >>>
-    const handleClearHistory = () => {
-        if (window.confirm('Are you sure you want to clear all analysis history? This cannot be undone.')) {
-            setAnalysisHistory([]);
-            localStorage.removeItem('analysisHistory'); // Keep local for now
-            setCurrentPage(1); 
-            console.log("Analysis history cleared (local).");
-            // --- Data Layer Push ---
-            window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({
-                'event': 'clear_history',
-                'event_category': 'History Interaction',
-                'event_action': 'Click Clear History Button'
-            });
+    const handleClearHistory = async () => { // Make async
+        if (!isLoggedIn || !idToken) { // Check login status and token
+             alert('You must be logged in to clear history.');
+             return;
+        }
+        
+        if (window.confirm('Are you sure you want to clear all your analysis history? This cannot be undone.')) {
+            console.log('Attempting to clear history via backend...');
+            setIsLoading(true); // Indicate loading/processing
+            setError(null);
+            
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/history`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`, // Use state idToken
+                    },
+                });
+
+                if (!response.ok) {
+                    let errorMsg = `Failed to clear history: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorMsg;
+                    } catch (e) { /* Ignore */ }
+                    throw new Error(errorMsg);
+                }
+                
+                const result = await response.json();
+                console.log("History cleared successfully:", result.message);
+                
+                // Clear local state on successful deletion from backend
+                setAnalysisHistory([]); 
+                setCurrentPage(1); // Reset pagination
+                
+                // Optionally provide user feedback beyond console log
+                // e.g., set a temporary success message state
+
+                // --- Data Layer Push (Keep if needed) ---
+                 window.dataLayer = window.dataLayer || [];
+                 window.dataLayer.push({
+                     'event': 'clear_history_success', // More specific event?
+                     'event_category': 'History Interaction',
+                     'event_action': 'Clear History Backend'
+                 });
+
+            } catch (error: any) {
+                console.error('Error clearing history:', error);
+                setError(`Failed to clear history: ${error.message}`);
+                 // --- Data Layer Push for Error ---
+                 window.dataLayer = window.dataLayer || [];
+                 window.dataLayer.push({
+                     'event': 'clear_history_error',
+                     'event_category': 'History Interaction',
+                     'event_action': 'Clear History Backend Error',
+                     'event_label': error.message
+                 });
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
     // <<< END ADDED FUNCTION >>>
+
+    // Add a login success handler if it doesn't exist or update it
+    const handleLoginSuccess = (credentialResponse: any) => {
+        console.log('Google Login Success:', credentialResponse);
+        const token = credentialResponse.credential;
+        if (token) {
+            setIdToken(token);
+            setIsLoggedIn(true);
+            localStorage.setItem('idToken', token); // Store token locally for persistence
+            fetchHistory(token); // Fetch history immediately after successful login
+            setError(null); // Clear previous errors
+        } else {
+            console.error('Login Success but no credential received.');
+            setError('Login failed: Could not get authentication credential.');
+            setIsLoggedIn(false);
+            setIdToken(null);
+            localStorage.removeItem('idToken');
+        }
+    };
+    
+    // Add a logout handler
+    const handleLogout = () => {
+         console.log('Logging out...');
+         setIsLoggedIn(false);
+         setIdToken(null);
+         setAnalysisHistory([]); // Clear history from state
+         localStorage.removeItem('idToken'); // Remove token from storage
+         setActiveView('new'); // Go back to the main form view
+         // TODO: Maybe call backend endpoint to invalidate token if applicable
+    };
 
     if (showResults) {
         return (
@@ -1459,18 +1637,7 @@ function App() {
                           <p>Please log in with Google to access your saved history.</p>
                           {/* Ensure GoogleOAuthProvider wraps this if needed, or handle Client ID elsewhere */}
                           <GoogleLogin
-                            onSuccess={(credentialResponse) => {
-                              console.log('Google Login Success:', credentialResponse);
-                              const token = credentialResponse.credential;
-                              if (token) {
-                                setIdToken(token);
-                                setIsLoggedIn(true);
-                                fetchHistory(token); // Call fetchHistory with the ID token
-                              } else {
-                                console.error('Login Success but no credential received.');
-                                setError('Login failed: Could not get authentication credential.');
-                              }
-                            }}
+                            onSuccess={handleLoginSuccess}
                             onError={() => {
                               console.error('Google Login Failed');
                               setError('Google login failed. Please try again.');
