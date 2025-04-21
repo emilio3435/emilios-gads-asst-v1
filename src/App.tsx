@@ -393,9 +393,9 @@ function App() {
 
             const data = await response.json();
             console.log("<<< Received data from /get-help:", data);
-
+            
             // 1. Get the raw response text
-            const rawResponseText = data.response || '';
+            const rawResponseText = data.response || ''; 
             
             // 2. Parse Markdown to HTML
             const parsedHtml = await marked.parse(rawResponseText);
@@ -607,7 +607,7 @@ function App() {
             // console.log("<<< Sanitized Analysis HTML (assuming backend sent HTML):", sanitizedHtml);
 
             setAnalysisResult(sanitizedHtml); // Store the sanitized HTML
-            setRawAnalysisResult(data.raw); 
+            setRawAnalysisResult(data.raw);
             setPromptSent(data.prompt);
             setModelName(data.modelName);
             // --- NEW: Store original file content ---
@@ -892,21 +892,21 @@ function App() {
                             <div className="campaign-info">
                                 {/* Row 1 */} 
                                 <div className="info-row">
-                                    <div className="info-item">
-                                        <span className="info-label">Tactic:</span>
-                                        <span className="info-value">{selectedTactics}</span>
-                                    </div>
-                                    <div className="info-item">
-                                        <span className="info-label">KPI:</span>
-                                        <span className="info-value">{selectedKPIs}</span>
-                                    </div>
-                                    {fileName && (
-                                        <div className="info-item">
-                                            <span className="info-label">File:</span>
-                                            <span className="info-value">{fileName}</span>
-                                        </div>
-                                    )}
+                                <div className="info-item">
+                                    <span className="info-label">Tactic:</span>
+                                    <span className="info-value">{selectedTactics}</span>
                                 </div>
+                                <div className="info-item">
+                                    <span className="info-label">KPI:</span>
+                                    <span className="info-value">{selectedKPIs}</span>
+                                </div>
+                                {fileName && (
+                                    <div className="info-item">
+                                        <span className="info-label">File:</span>
+                                        <span className="info-value">{fileName}</span>
+                                    </div>
+                                )}
+                            </div>
                                 {/* Row 2 */} 
                                 <div className="info-row">
                                     {/* Model Selection Display */}
@@ -969,15 +969,29 @@ function App() {
 
                         {/* Discuss this Analysis Button (Conditionally Render) */}
                         { !isViewingHistory && (
+                        <div className="main-action-buttons">
                             <button
                                 className="help-button"
                                 onClick={() => setShowHelpModal(true)}
-                                // No need for disabled prop now, as it won't render when viewing history
-                                title={"Discuss this Analysis"}
-                            >
-                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                                Discuss this Analysis
+                                    // No need for disabled prop now, as it won't render when viewing history
+                                    title={"Discuss this Analysis"}
+                                >
+                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                    Discuss this Analysis
                             </button>
+                            
+                            {/* Include the New Analysis button in-flow on mobile */}
+                            <button 
+                                className="new-inquiry-button mobile-inline" 
+                                onClick={handleNewInquiry}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                New Analysis
+                            </button>
+                        </div>
                         )}
 
                     </div>
@@ -990,14 +1004,14 @@ function App() {
                                <div className="modal-header">
                                  <h2>Prompt Sent to LLM</h2>
                                  <button onClick={() => setShowPrompt(false)} className="close-button" title="Close">&times;</button>
-                               </div>
+                                                        </div>
                                {/* Content Area */}
                                 <div className="prompt-content">
                                     {promptSent ? (
                                         <pre className="formatted-prompt" dangerouslySetInnerHTML={{ __html: formatPromptForDisplay(promptSent) }} />
-                                    ) : (
-                                        <p>Prompt not available.</p>
-                                    )}
+                                ) : (
+                                    <p>Prompt not available.</p>
+                                )}
                                 </div>
                             </div>
                         </div>
@@ -1008,7 +1022,7 @@ function App() {
                         <div className="prompt-modal-backdrop">
                             <div className="prompt-modal help-modal">
                                 <div className="modal-header">
-                                    <h2>Chat with Audacy AI</h2>
+                                <h2>Chat with Audacy AI</h2>
                                     <div className="modal-header-buttons">
                                         <button onClick={() => {/* Minimize logic placeholder */}} className="minimize-button" title="Minimize Chat">{/* Minimize Icon */}</button>
                                         <button onClick={() => setShowHelpModal(false)} className="close-button" title="Close Chat">&times;</button>
@@ -1043,13 +1057,13 @@ function App() {
                                     )}
                                     
                                     {/* Keep input hidden, label will trigger it */}
-                                    <input
-                                        type="file"
-                                        id="helpContextFile"
-                                        accept=".csv, .xlsx, .pdf"
-                                        onChange={handleHelpContextFileChange}
-                                        style={{ display: 'none' }}
-                                    />
+                                        <input
+                                            type="file"
+                                            id="helpContextFile"
+                                            accept=".csv, .xlsx, .pdf"
+                                            onChange={handleHelpContextFileChange}
+                                            style={{ display: 'none' }}
+                                        />
                                     
                                     <textarea
                                         ref={helpInputRef}
@@ -1062,14 +1076,14 @@ function App() {
                                     />
                                     
                                     <div className="help-controls-container">
-                                        <div className="help-button-container">
-                                            <button 
-                                                className="submit-help-button"
-                                                onClick={handleGetHelp}
-                                                disabled={isHelpLoading || !helpQuestion.trim()}
-                                            >
-                                                {isHelpLoading ? 'Loading...' : 'Send'}
-                                            </button>
+                                    <div className="help-button-container">
+                                        <button 
+                                            className="submit-help-button"
+                                            onClick={handleGetHelp}
+                                            disabled={isHelpLoading || !helpQuestion.trim()}
+                                        >
+                                            {isHelpLoading ? 'Loading...' : 'Send'}
+                                        </button>
                                         </div>
 
                                         {/* File upload trigger moved here */}
@@ -1080,15 +1094,15 @@ function App() {
                                             {helpContextFileName && (
                                                 <div className="uploaded-file-info">
                                                     <span className="uploaded-file-name" title={helpContextFileName}>{helpContextFileName}</span>
-                                                    <button 
+                                            <button 
                                                         className="context-file-remove icon-style"
                                                         onClick={() => { setHelpContextFile(null); setHelpContextFileName(null); }}
                                                         title="Remove uploaded file"
                                                     >
                                                         ×
-                                                    </button>
+                                            </button>
                                                 </div>
-                                            )}
+                                        )}
                                         </div>
                                     </div>
                                     
@@ -1110,7 +1124,7 @@ function App() {
                 {/* Add floating New Inquiry Button here, only when showing results */}
                 {showResults && (
                     <button 
-                        className="new-inquiry-button" 
+                        className="new-inquiry-button desktop-float" 
                         onClick={handleNewInquiry}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1174,7 +1188,7 @@ function App() {
                     <div className="card assistant-card">
                         {/* === Assistant Card Header === */}
                         <div className="app-header">
-                            <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
+            <img src={audacyLogo} alt="Audacy Logo" className="audacy-logo" />
                             <div className="header-controls-container">
                                 <div className="model-selector-simple detail-toggle">
                                     <span className="model-selector-label">Output Detail:</span>
@@ -1218,7 +1232,7 @@ function App() {
                         {/* Client Name Input - MOVED HERE */}
                         <div className="input-container full-width">
                             <label htmlFor="clientName">Client / Advertiser Name:</label>
-                            <input
+                <input
                                 type="text"
                                 id="clientName"
                                 value={clientName}
@@ -1227,60 +1241,60 @@ function App() {
                                 className="text-input"
                                 title="Enter the name of the client or advertiser for this analysis."
                             />
-                        </div>
+            </div>
 
                         {/* Form Grid (Tactics/KPIs) - MOVED HERE */}
-                        <div className="form-grid">
-                            <div className="form-column">
-                                <div className="select-container">
-                                    <label htmlFor="tactics-list">Select Tactic:</label>
-                                    <select
-                                        id="tactics-list"
-                                        className="tactics-list"
-                                        value={selectedTactics}
-                                        onChange={handleTacticChange}
-                                        required
+            <div className="form-grid">
+                <div className="form-column">
+                    <div className="select-container">
+                        <label htmlFor="tactics-list">Select Tactic:</label>
+                        <select
+                            id="tactics-list"
+                            className="tactics-list"
+                            value={selectedTactics}
+                            onChange={handleTacticChange}
+                            required
                                         title="Select the primary marketing tactic used in the campaign data."
-                                    >
-                                        <option value="" disabled>Select Tactic</option>
+                        >
+                            <option value="" disabled>Select Tactic</option>
                                         <option value="Amazon DSP">Amazon DSP</option>
                                         <option value="Display Ads">Display Ads</option>
                                         <option value="Email eDirect">Email eDirect</option>
                                         <option value="OTT">OTT</option>
                                         <option value="Podcasting">Podcasting</option>
-                                        <option value="SEM">SEM</option>
-                                        <option value="SEO">SEO</option>
+                            <option value="SEM">SEM</option>
+                            <option value="SEO">SEO</option>
                                         <option value="Social Ads">Social Ads</option>
                                         <option value="Streaming Audio">Streaming Audio</option>
-                                        <option value="Video Display Ads">Video Display Ads</option>
-                                        <option value="YouTube">YouTube</option>
-                                    </select>
-                                </div>
-                            </div>
+                            <option value="Video Display Ads">Video Display Ads</option>
+                            <option value="YouTube">YouTube</option>
+                        </select>
+                    </div>
+                </div>
 
-                            <div className="form-column">
-                                <div className="select-container">
-                                    <label htmlFor="kpi-list">Select KPI:</label>
-                                    <select
-                                        id="kpi-list"
-                                        className="kpi-list"
-                                        value={selectedKPIs}
-                                        onChange={handleKPIChange}
-                                        required
+                <div className="form-column">
+                    <div className="select-container">
+                        <label htmlFor="kpi-list">Select KPI:</label>
+                        <select
+                            id="kpi-list"
+                            className="kpi-list"
+                            value={selectedKPIs}
+                            onChange={handleKPIChange}
+                            required
                                         title="Select the main Key Performance Indicator relevant to the campaign goals."
-                                    >
-                                        <option value="" disabled>Select KPI</option>
+                        >
+                            <option value="" disabled>Select KPI</option>
                                         {/* Alphabetized List */}
                                         <option value="Clicks">Clicks</option>
                                         <option value="Conversion Rate">Conversion Rate</option>
                                         <option value="Conversions">Conversions</option>
-                                        <option value="CPA">CPA</option>
-                                        <option value="CPC">CPC</option>
+                            <option value="CPA">CPA</option>
+                            <option value="CPC">CPC</option>
                                         <option value="CTR">CTR</option>
-                                        <option value="Impressions">Impressions</option>
+                            <option value="Impressions">Impressions</option>
                                         <option value="ROAS">ROAS</option>
-                                    </select>
-                                </div>
+                        </select>
+                    </div>
                                 {/* KPI recommendation popup */}
                                 {selectedTactics && getRecommendationMessage(selectedTactics) && showKpiRecommendation && (
                                     <div className="kpi-recommendation-popup">
@@ -1293,33 +1307,33 @@ function App() {
                                                 >
                                                     ×
                                                 </button>
-                                            </div>
+                        </div>
                                             <div className="kpi-recommendation-body">
                                                 {getRecommendationMessage(selectedTactics)}
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
                         </div>
+                    )}
+                </div>
+            </div>
 
                         {/* Situation Textarea - MOVED HERE */}
-                        <div className="text-area-container">
-                            <label htmlFor="currentSituation">Current Situation & Goals:</label>
-                            <textarea
-                                id="currentSituation"
-                                className="text-area"
-                                value={currentSituation}
-                                onChange={handleSituationChange}
+            <div className="text-area-container">
+                <label htmlFor="currentSituation">Current Situation & Goals:</label>
+                <textarea
+                    id="currentSituation"
+                    className="text-area"
+                    value={currentSituation}
+                    onChange={handleSituationChange}
                                 placeholder="Describe your current marketing situation and goals... (Optional)"
-                                rows={3}
+                    rows={3}
                                 title="Briefly describe the client's current situation, challenges, or the context for this analysis."
-                            />
-                        </div>
+                />
+            </div>
 
                         {/* File Upload Section - MOVED HERE */}
                         <div className="file-upload-section">
-                            <input
+                        <input
                                 type="file"
                                 id="fileInput"
                                 accept=".csv, .xlsx, .pdf"
@@ -1332,7 +1346,7 @@ function App() {
                                 title="Upload campaign performance data (CSV, XLSX, or PDF)."
                             >
                                 Choose File
-                            </label>
+                    </label>
 
                             {/* Container for file name and remove button */}
                             {file && fileName && (
@@ -1347,14 +1361,14 @@ function App() {
                                     >
                                         ×
                                     </button>
-                                </div>
-                            )}
+                    </div>
+                )}
 
                             {/* Message shown when no file is selected */}
                             {!file && !fileName && (
                                 <p className="file-name prompt-text">Please select a CSV, XLSX, or PDF file.</p>
                             )}
-                        </div>
+            </div>
 
                         {/* Advanced Options Trigger - MOVED HERE */}
                         <div className="advanced-options-trigger-area">
@@ -1364,7 +1378,7 @@ function App() {
                                 title="Show/hide advanced options"
                             >
                                 {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
-                            </button>
+            </button>
                         </div>
 
                         {/* Advanced Options Content - MOVED HERE */}
@@ -1405,13 +1419,13 @@ function App() {
                                 Analyze
                             </button>
                         ) : (
-                            <div className="spinner-container">
-                                <div className="spinner"></div>
-                                <p>Analyzing your data, please wait...</p>
-                            </div>
-                        )}
-                        {error && <div className="error-message">{error}</div>}
-
+                <div className="spinner-container">
+                    <div className="spinner"></div>
+                    <p>Analyzing your data, please wait...</p>
+                </div>
+            )}
+            {error && <div className="error-message">{error}</div>}
+            
                     </div> /* End assistant-card for 'new' view */
                 )}
 
@@ -1458,7 +1472,7 @@ function App() {
                                                 <span className="history-timestamp">
                                                     {formatHistoryTimestamp(entry.timestamp)}
                                                 </span>
-                                            </div>
+                    </div>
                                             {/* Actions group */}
                                             <div className="history-item-actions">
                                                 <button
@@ -1468,8 +1482,8 @@ function App() {
                                                     title={(!entry.results.helpConversation || entry.results.helpConversation.length === 0) ? "No chat history available" : "View associated chat history"}
                                                 >
                                                     View Chat
-                                                </button>
-                                            </div>
+                    </button>
+                </div>
                                         </li>
                                     ))}
                                 </ul>

@@ -349,7 +349,7 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
         // Call the model
         console.log('[/analyze] Calling Gemini model...'); // LOG 8: Before Model Call
-        result = await callModelWithRetry(model, finalPrompt);
+      result = await callModelWithRetry(model, finalPrompt);
         console.log('[/analyze] Gemini model call successful.'); // LOG 9: After Model Call
     
     } catch (processingError) {
@@ -374,13 +374,13 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
 
     try {
         console.log('[/analyze] Processing model response...'); // LOG 11: Before Response Processing
-        const response = await result.response;
-        const fullResponseText = response.text();
+    const response = await result.response;
+    const fullResponseText = response.text();
         console.log('[/analyze] Raw Gemini response length:', fullResponseText.length); // Log length, not full text
 
-        // --- Parse the response based on delimiters --- 
-        let htmlAnalysis = '';
-        let rawText = ''; // For the text version of the HTML analysis
+    // --- Parse the response based on delimiters --- 
+    let htmlAnalysis = '';
+    let rawText = ''; // For the text version of the HTML analysis
 
         const htmlMatch = fullResponseText.match(/---HTML_ANALYSIS_START---([\s\S]*?)---HTML_ANALYSIS_END---/);
         if (htmlMatch && htmlMatch[1]) {
@@ -401,18 +401,18 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
             // Fallback: Assume the whole response is HTML if delimiters are missing
             htmlAnalysis = fullResponseText.trim(); 
              rawText = htmlAnalysis.replace(/<\/?[^>]+(>|$)/g, "");
-        }
-        // --------------------------------------------
+    }
+    // --------------------------------------------
 
         console.log('[/analyze] Cleaned Gemini response (HTML) length:', htmlAnalysis.length); // Log length
 
-        // Send structured response to client
+    // Send structured response to client
         if (!res.headersSent) {
             console.log('[/analyze] Sending final JSON response to client.'); // LOG 12: Before Sending Response
-            res.json({
+    res.json({
                 html: htmlAnalysis,
-                raw: rawText,       // Raw text version of the HTML analysis
-                prompt: finalPrompt,  // Send the final generated prompt
+      raw: rawText,       // Raw text version of the HTML analysis
+      prompt: finalPrompt,  // Send the final generated prompt
                 modelName: displayModelName,  // Send the display model name
                 rawFileContent: rawFileContent // <<< ADDED: Send raw file content back
             });

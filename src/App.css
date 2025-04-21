@@ -330,9 +330,9 @@ input[type='file'] {
 }
 .file-name-display span { /* The actual filename */
     font-weight: var(--font-weight-medium);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
     flex-grow: 1; /* Allow filename to take space */
 }
 /* Style the remove button using .button--small .button--tertiary in HTML */
@@ -505,14 +505,14 @@ label.button { display: inline-flex; } /* For file input label */
 
 /* Bottom Action Buttons Container (Results Page?) */
 .main-action-buttons { /* Simplified from .input-section */
-  display: flex;
-  justify-content: center;
+    display: flex;
+    justify-content: center;
   align-items: center;
   gap: var(--spacing-large); /* Increased gap */
   margin: var(--spacing-large) 0;
-  width: 100%;
+    width: 100%;
   padding: 0 var(--spacing-large);
-  box-sizing: border-box;
+    box-sizing: border-box;
   flex-wrap: wrap;
 }
 
@@ -740,7 +740,13 @@ label.button { display: inline-flex; } /* For file input label */
   .conversation-message { max-width: 95%; }
   .text-area { min-height: 80px; }
   .back-button-container { flex-direction: column; align-items: flex-start; gap: var(--spacing-medium); }
-  .main-action-buttons { gap: var(--spacing-medium); }
+  .main-action-buttons { 
+    /* Removed vertical stacking for mobile */
+    gap: var(--spacing-medium); /* Keep the gap */
+    /* Allow wrapping if needed */
+    flex-wrap: wrap;
+    /* Buttons will be centered horizontally by default justify-content: center */
+  }
   /* Ensure buttons wrap okay */
   .button { max-width: 100%; }
 }

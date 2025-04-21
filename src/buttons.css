@@ -261,6 +261,35 @@ button {
     stroke-width: 2;
 }
 
+/* On mobile, convert the floating button to a normal button in the main flow */
+@media (max-width: 768px) {
+    .new-inquiry-button {
+        position: static; /* Remove fixed positioning */
+        bottom: auto;
+        right: auto;
+        z-index: auto;
+        margin: var(--spacing-medium) 0 0 0; /* Add margin to separate from Discuss button */
+        width: auto; /* Allow button to size naturally */
+        box-shadow: var(--shadow-medium); /* Less shadow when in content flow */
+    }
+    
+    .new-inquiry-button:hover {
+        transform: translateY(-1px); /* Smaller hover effect */
+    }
+    
+    /* Hide the fixed floating button on mobile */
+    .new-inquiry-button.desktop-float {
+        display: none;
+    }
+}
+
+/* Hide the inline button on desktop */
+@media (min-width: 769px) {
+    .new-inquiry-button.mobile-inline {
+        display: none;
+    }
+}
+
 /* History Buttons */
 .clear-history-button {
     /* Style like other action buttons, but maybe secondary */
