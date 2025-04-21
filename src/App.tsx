@@ -7,6 +7,7 @@ import audacyLogoHoriz from './assets/audacy_logo_horiz_color_rgb.png';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { GoogleLogin } from '@react-oauth/google';
 
 // Add type declaration for dataLayer on window
 declare global {
@@ -112,6 +113,8 @@ function App() {
     const [currentPage, setCurrentPage] = useState<number>(1);
     const itemsPerPage = 5; // Show 5 history items per page
     const [activeView, setActiveView] = useState<'new' | 'history'>('new');
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [idToken, setIdToken] = useState<string | null>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -179,6 +182,24 @@ function App() {
             }
         }
     }, []);
+
+    // NEW: Placeholder fetchHistory function
+    const fetchHistory = useCallback(async (token: string) => {
+        if (!token) return;
+        console.log("Placeholder: Fetching history with token:", token);
+        // TODO: Implement actual backend call to fetch history
+        // Example: 
+        // try {
+        //   const response = await fetch('/api/history', { headers: { 'Authorization': `Bearer ${token}` } });
+        //   const data = await response.json();
+        //   setAnalysisHistory(data);
+        // } catch (error) {
+        //   console.error('Failed to fetch history:', error);
+        //   setError('Failed to load history.');
+        // }
+        // For now, just logs a message
+        setAnalysisHistory([]); // Clear existing history on new fetch attempt
+    }, []); // Add dependencies if needed, e.g., apiBaseUrl
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // Clear previous results when file changes
@@ -854,10 +875,9 @@ function App() {
     const handleClearHistory = () => {
         if (window.confirm('Are you sure you want to clear all analysis history? This cannot be undone.')) {
             setAnalysisHistory([]);
-            localStorage.removeItem('analysisHistory');
-            setCurrentPage(1); // Reset pagination
-            setActiveView('new'); // Switch back to the new analysis tab
-            console.log("Analysis history cleared.");
+            localStorage.removeItem('analysisHistory'); // Keep local for now
+            setCurrentPage(1); 
+            console.log("Analysis history cleared (local).");
             // --- Data Layer Push ---
             window.dataLayer = window.dataLayer || [];
             window.dataLayer.push({
@@ -1431,116 +1451,149 @@ function App() {
 
                 {/* === Render History View === */}
                 {activeView === 'history' && (
-                    <div className="card history-card">
-                        {/* --- History Card Content --- */}
-                        <div className="history-section">
-                             <h2>Analysis History</h2>
-                             {analysisHistory.length > 0 ? (
-                                <button
-                                    className="clear-history-button"
-                                    onClick={handleClearHistory}
-                                    title="Clear all analysis history"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                                    </svg>
-                                    Clear History
-                                </button>
-                             ) : (
-                                <p className="no-history-message">No analysis history available.</p>
-                             )}
-
-                             {analysisHistory.length > 0 && (
-                                 <ul className="history-list">
-                                    {paginatedHistory.map((entry) => (
-                                        <li
-                                            key={entry.id}
-                                            className={`history-item ${selectedHistoryEntryId === entry.id ? 'selected' : ''}`}
-                                            onClick={() => handleLoadHistory(entry.id)}
-                                            title="Click to load this analysis"
-                                        >
-                                            {/* Info group: Client name & Timestamp */}
-                                            <div className="history-item-info">
-                                                <span className={`history-client-name ${!entry.inputs.clientName ? 'client-na' : ''}`}>
-                                                    {/* Combined Client Name, Tactic, and KPI */}
-                                                    {entry.inputs.clientName || 'Client N/A'} - {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
-                                                </span>
-                                                {/* Timestamp remains below */}
-                                                <span className="history-timestamp">
-                                                    {formatHistoryTimestamp(entry.timestamp)}
-                                                </span>
-                    </div>
-                                            {/* Actions group */}
-                                            <div className="history-item-actions">
-                                                <button
-                                                    className="view-chat-button button-small"
-                                                    onClick={(e) => { e.stopPropagation(); handleViewChatHistory(entry.id); }}
-                                                    disabled={!entry.results.helpConversation || entry.results.helpConversation.length === 0}
-                                                    title={(!entry.results.helpConversation || entry.results.helpConversation.length === 0) ? "No chat history available" : "View associated chat history"}
-                                                >
-                                                    View Chat
-                    </button>
-                </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-
-                            {/* --- Pagination Controls --- */}
-                            {analysisHistory.length > 0 && totalPages > 1 && (
-                                <div className="pagination-controls">
-                                    <button
-                                        className="pagination-arrow"
-                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                        disabled={currentPage === 1}
-                                    >
-                                        &lt;
-                                    </button>
-                                    {[...Array(totalPages)].map((_, index) => {
-                                        const pageNum = index + 1;
-                                        // Show only a limited number of pages around the current page
-                                        const showPage =
-                                            pageNum === 1 ||
-                                            pageNum === totalPages ||
-                                            (pageNum >= currentPage - 1 && pageNum <= currentPage + 1);
-
-                                        // Show ellipsis if pages are skipped
-                                        const showEllipsisBefore = pageNum === currentPage - 2 && currentPage > 3;
-                                        const showEllipsisAfter = pageNum === currentPage + 2 && currentPage < totalPages - 2;
-
-                                        if (showEllipsisBefore || showEllipsisAfter) {
-                                            return <span key={`ellipsis-${pageNum}`} className="pagination-ellipsis">...</span>;
-                                        }
-
-                                        if (showPage) {
-                                            return (
-                                                <button
-                                                    key={pageNum}
-                                                    className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
-                                                    onClick={() => setCurrentPage(pageNum)}
-                                                >
-                                                    {pageNum}
-                                                </button>
-                                            );
-                                        }
-                                        return null;
-                                    })}
-                                    <button
-                                        className="pagination-arrow"
-                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                        disabled={currentPage === totalPages}
-                                    >
-                                        &gt;
-                                    </button>
-                                </div>
-                            )}
-                            {/* --- End Pagination Controls --- */}
+                  <div className="card history-card">
+                    {/* Remove outer history-section div, apply conditional logic directly */}
+                      <h2>Analysis History</h2>
+                      {!isLoggedIn ? (
+                        <div className="login-prompt">
+                          <p>Please log in with Google to access your saved history.</p>
+                          {/* Ensure GoogleOAuthProvider wraps this if needed, or handle Client ID elsewhere */}
+                          <GoogleLogin
+                            onSuccess={(credentialResponse) => {
+                              console.log('Google Login Success:', credentialResponse);
+                              const token = credentialResponse.credential;
+                              if (token) {
+                                setIdToken(token);
+                                setIsLoggedIn(true);
+                                fetchHistory(token); // Call fetchHistory with the ID token
+                              } else {
+                                console.error('Login Success but no credential received.');
+                                setError('Login failed: Could not get authentication credential.');
+                              }
+                            }}
+                            onError={() => {
+                              console.error('Google Login Failed');
+                              setError('Google login failed. Please try again.');
+                              setIsLoggedIn(false); // Ensure logged out state on error
+                              setIdToken(null);
+                            }}
+                            // Add other props like theme, size, shape as needed
+                          />
+                           {error && <div className="error-message login-error">{error}</div>} {/* Display login errors */}
                         </div>
-                        {/* --- End History Card Content --- */}
-                    </div> /* End history-card for 'history' view */
+                      ) : (
+                        // Use React Fragment shorthand for logged-in content
+                        <>
+                          {/* History controls (like clear button) and list appear only when logged in */} 
+                          <div className="history-controls">
+                              {analysisHistory.length > 0 ? (
+                                <button
+                                  className="clear-history-button"
+                                  onClick={handleClearHistory}
+                                  title="Clear all analysis history"
+                                >
+                                  {/* SVG Icon */}
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                  </svg>
+                                  Clear History
+                                </button>
+                              ) : (
+                                <p className="no-history-message">No analysis history available.</p>
+                              )}
+                          </div>
+
+                          {/* Existing history list and pagination */} 
+                          {analysisHistory.length > 0 && (
+                              <ul className="history-list">
+                                 {paginatedHistory.map((entry) => (
+                                     <li
+                                         key={entry.id}
+                                         className={`history-item ${selectedHistoryEntryId === entry.id ? 'selected' : ''}`}
+                                         onClick={() => handleLoadHistory(entry.id)}
+                                         title="Click to load this analysis"
+                                     >
+                                        {/* Info group: Client name & Timestamp */}
+                                        <div className="history-item-info">
+                                            <span className={`history-client-name ${!entry.inputs.clientName ? 'client-na' : ''}`}>
+                                                {/* Combined Client Name, Tactic, and KPI */}
+                                                {entry.inputs.clientName || 'Client N/A'} - {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
+                                            </span>
+                                            {/* Timestamp remains below */}
+                                            <span className="history-timestamp">
+                                                {formatHistoryTimestamp(entry.timestamp)}
+                                            </span>
+                                        </div>
+                                        {/* Actions group */}
+                                        <div className="history-item-actions">
+                                            <button
+                                                className="view-chat-button button-small"
+                                                onClick={(e) => { e.stopPropagation(); handleViewChatHistory(entry.id); }}
+                                                disabled={!entry.results.helpConversation || entry.results.helpConversation.length === 0}
+                                                title={(!entry.results.helpConversation || entry.results.helpConversation.length === 0) ? "No chat history available" : "View associated chat history"}
+                                            >
+                                                View Chat
+                                            </button>
+                                        </div>
+                                     </li>
+                                 ))}
+                             </ul>
+                          )}
+                          
+                          {/* Pagination Controls */} 
+                          {analysisHistory.length > 0 && totalPages > 1 && (
+                              <div className="pagination-controls">
+                                  <button
+                                      className="pagination-arrow"
+                                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                      disabled={currentPage === 1}
+                                  >
+                                      &lt;
+                                  </button>
+                                  {[...Array(totalPages)].map((_, index) => {
+                                      const pageNum = index + 1;
+                                      // Show only a limited number of pages around the current page
+                                      const showPage =
+                                          pageNum === 1 ||
+                                          pageNum === totalPages ||
+                                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1);
+
+                                      // Show ellipsis if pages are skipped
+                                      const showEllipsisBefore = pageNum === currentPage - 2 && currentPage > 3;
+                                      const showEllipsisAfter = pageNum === currentPage + 2 && currentPage < totalPages - 2;
+
+                                      if (showEllipsisBefore || showEllipsisAfter) {
+                                          return <span key={`ellipsis-${pageNum}`} className="pagination-ellipsis">...</span>;
+                                      }
+
+                                      if (showPage) {
+                                          return (
+                                              <button
+                                                  key={pageNum}
+                                                  className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                                                  onClick={() => setCurrentPage(pageNum)}
+                                              >
+                                                  {pageNum}
+                                              </button>
+                                          );
+                                      }
+                                      return null;
+                                  })}
+                                  <button
+                                      className="pagination-arrow"
+                                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                      disabled={currentPage === totalPages}
+                                  >
+                                      &gt;
+                                  </button>
+                              </div>
+                          )}
+                        </>
+                      )}
+                  </div>
                 )}
 
             </div> {/* End tab-content */}

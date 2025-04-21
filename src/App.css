@@ -775,3 +775,21 @@ label.button { display: inline-flex; } /* For file input label */
 
 /* Fix for potential JSX style issues */
 .jsx-style { display: none; }
+
+/* Login Prompt Styles */
+.login-prompt {
+  text-align: center;
+  padding: var(--spacing-large);
+}
+
+.login-prompt p {
+  margin-bottom: var(--spacing-medium);
+  color: var(--color-text-subtle); /* Assuming this variable exists */
+  /* If --color-text-subtle doesn't exist, use a fallback like var(--gray-dark) */
+  /* color: var(--gray-dark); */
+}
+
+.login-error {
+    margin-top: var(--spacing-medium);
+    color: var(--color-error); /* Use existing error color */
+}
