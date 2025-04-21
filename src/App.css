@@ -693,7 +693,19 @@ label.button { display: inline-flex; } /* For file input label */
 .assistant-response ul li::before { content: "•"; color: var(--color-primary); font-weight: bold; position: absolute; left: -12px; }
 
 /* Typing Indicator */
-.typing-indicator, .typing-dots, .typing-dots span, @keyframes typingDots { /* Styles seem fine, use variables */ }
+.typing-indicator, .typing-dots, .typing-dots span { /* Styles for the indicator and dots */
+    /* Add actual styles here using variables if needed */
+    /* Example: */
+    /* opacity: 1; */
+    /* transition: opacity 0.3s; */
+}
+
+@keyframes typingDots { /* Define the keyframes animation */
+    /* Add keyframe steps here */
+    /* Example: */
+    /* 0%, 100% { opacity: 0; } */
+    /* 50% { opacity: 1; } */
+}
 
 /* Chat Minimize/Maximize */
 .chat-minimized { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background-color: var(--color-primary); color: var(--color-white); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-large); cursor: pointer; z-index: 1000; transition: all 0.3s ease; border: none; }

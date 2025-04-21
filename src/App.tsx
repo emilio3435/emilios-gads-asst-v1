@@ -1294,17 +1294,18 @@ function App() {
                                             onClick={() => handleLoadHistory(entry.id)}
                                             title="Click to load this analysis"
                                         >
+                                            {/* Info group: Client name & Timestamp */}
                                             <div className="history-item-info">
                                                 <span className={`history-client-name ${!entry.inputs.clientName ? 'client-na' : ''}`}>
-                                                    {entry.inputs.clientName || 'Client N/A'}
+                                                    {/* Combined Client Name, Tactic, and KPI */}
+                                                    {entry.inputs.clientName || 'Client N/A'} - {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
                                                 </span>
-                                                <span className="history-details">
-                                                    {entry.inputs.selectedTactics} / {entry.inputs.selectedKPIs}
-                                                </span>
+                                                {/* Timestamp remains below */}
                                                 <span className="history-timestamp">
                                                     {formatHistoryTimestamp(entry.timestamp)}
                                                 </span>
                                             </div>
+                                            {/* Actions group */}
                                             <div className="history-item-actions">
                                                 <button
                                                     className="view-chat-button button-small"
