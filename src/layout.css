@@ -561,4 +561,85 @@ td {
 /* === Tab Content === */
 .tab-content {
   width: 100%; /* Ensure content takes full width */
-} 
+}
+
+/* === Media Queries === */
+
+/* Increase max-width on larger screens and adjust history/results layout */
+@media (min-width: 1024px) {
+  .App {
+    max-width: 1200px; 
+    padding: var(--spacing-extra-large); 
+  }
+  
+  /* Adjust history section/tab content padding */
+  .history-section, 
+  .tab-content {
+      width: 100%;
+      box-sizing: border-box; 
+      padding-left: 0; 
+      padding-right: 0; 
+  }
+  
+  /* Adjust history item layout */
+  .history-item {
+    padding: var(--spacing-medium) var(--spacing-large); /* Ensure good internal padding */
+    margin-bottom: var(--spacing-medium); /* Ensure spacing between items */
+    gap: var(--spacing-large); /* Add gap between info and actions */
+  }
+  
+  .history-item-info {
+    flex-direction: row; /* Arrange info horizontally */
+    align-items: baseline; /* Align text nicely */
+    gap: var(--spacing-medium); /* Space between name, details, timestamp */
+    flex-grow: 1; /* Allow info to take available space */
+    flex-wrap: wrap; /* Allow wrapping if needed on slightly smaller large screens */
+  }
+  
+  .history-client-name {
+      white-space: nowrap; /* Prevent client name from wrapping */
+  }
+
+  .history-details {
+      /* Maybe slightly lighter color for secondary info */
+      color: var(--text-color-light); 
+      white-space: nowrap; /* Prevent details from wrapping */
+  }
+
+  .history-timestamp {
+      margin-left: auto; /* Push timestamp towards the right */
+      margin-top: 0; /* Remove top margin */
+      text-align: right; /* Align text right */
+      color: var(--text-color-light); /* Lighter color */
+      white-space: nowrap; /* Prevent timestamp from wrapping */
+      align-self: baseline; /* Align with text baseline */
+  }
+
+  .history-item-actions {
+      /* Keep existing styles, ensure it doesn't shrink */
+      flex-shrink: 0;
+  }
+
+  .history-list {
+      padding-top: var(--spacing-medium); 
+  }
+
+  /* --- Increase padding for results display --- */
+  .results-display {
+      /* Increase horizontal padding further */
+      padding-left: 60px; /* Example: Use a larger fixed value */
+      padding-right: 60px; /* Example: Use a larger fixed value */
+      /* Keep existing vertical padding */
+      padding-top: var(--spacing-large);
+      padding-bottom: var(--spacing-large);
+  }
+  
+  .analysis-page-container {
+      /* Ensure container allows results-display padding to work */
+      padding-left: 0; 
+      padding-right: 0;
+  }
+}
+
+/* Mobile styles (keep existing) */
+/* ... */ 

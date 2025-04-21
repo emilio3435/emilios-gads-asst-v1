@@ -521,10 +521,13 @@ function App() {
 
             const data = await response.json();
             
+            // Log the raw HTML received BEFORE sanitization
+            console.log(">>> RAW HTML from backend:", data.html);
+
             // Directly sanitize the received HTML, assuming backend sends HTML
             const rawHtmlContent = data.html || ''; 
             const sanitizedHtml = DOMPurify.sanitize(rawHtmlContent);
-            console.log("<<< Sanitized Analysis HTML (assuming backend sent HTML):", sanitizedHtml);
+            // console.log("<<< Sanitized Analysis HTML (assuming backend sent HTML):", sanitizedHtml);
 
             setAnalysisResult(sanitizedHtml); // Store the sanitized HTML
             setRawAnalysisResult(data.raw); 
