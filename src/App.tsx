@@ -8,6 +8,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
+// Add type declaration for dataLayer on window
+declare global {
+    interface Window {
+        dataLayer: any[];
+    }
+}
+
 // Define the structure for a history entry
 interface HistoryEntry {
   id: string; // Unique ID, maybe timestamp based
@@ -185,10 +192,26 @@ function App() {
             if (selectedFile.name.endsWith('.csv') || selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.pdf')) {
                 setFileName(selectedFile.name);
                 setError(null);
+                // --- Data Layer Push ---
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({
+                    'event': 'file_upload_success',
+                    'event_category': 'Form Interaction',
+                    'event_action': 'Upload File',
+                    'event_label': selectedFile.name
+                });
             } else {
                 setFile(null);
                 setFileName(null);
                 setError('Unsupported file type. Please upload CSV, XLSX, or PDF.');
+                // --- Data Layer Push for Error ---
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({
+                    'event': 'file_upload_error',
+                    'event_category': 'Form Interaction',
+                    'event_action': 'Upload File Error',
+                    'event_label': 'Unsupported file type'
+                });
             }
             setFile(selectedFile);
         } else {
@@ -250,6 +273,14 @@ function App() {
                 setShowKpiRecommendation(false);
             }, 15000);
         }
+        // --- Data Layer Push ---
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'select_tactic',
+            'event_category': 'Form Interaction',
+            'event_action': 'Select Tactic',
+            'event_label': event.target.value
+        });
     };
 
     const handleKPIChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -258,6 +289,14 @@ function App() {
         setAnalysisResult(null);
         setRawAnalysisResult(null);
         setPromptSent(null);
+        // --- Data Layer Push ---
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'select_kpi',
+            'event_category': 'Form Interaction',
+            'event_action': 'Select KPI',
+            'event_label': event.target.value
+        });
     };
 
     const handleClientNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,21 +501,42 @@ function App() {
 
     // Simplified Model Selection Handler
     const handleModelSelection = (selection: 'quality' | 'speed') => {
-        if (selection === 'quality') {
-            setSelectedModelId('gemini-2.5-pro-preview-03-25');
-        } else {
-            setSelectedModelId('gemini-2.0-flash');
-        }
+        const model = selection === 'speed' ? 'gemini-2.0-flash' : 'gemini-2.5-pro-preview-03-25';
+        setSelectedModelId(model);
+        // --- Data Layer Push ---
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'select_model',
+            'event_category': 'Advanced Options',
+            'event_action': 'Select Model Speed',
+            'event_label': selection
+        });
     };
 
     // Handler for the new Output Detail toggle
     const handleOutputDetailChange = (detail: 'brief' | 'detailed') => {
         setOutputDetail(detail);
+        // --- Data Layer Push ---
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'select_output_detail',
+            'event_category': 'Advanced Options',
+            'event_action': 'Select Output Detail',
+            'event_label': detail
+        });
     };
 
     const handleSubmit = async () => {
         if (!file || !selectedTactics || !selectedKPIs) {
             alert('Please select a tactic, KPI, and upload a file.');
+            // --- Data Layer Push for Validation Error ---
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'form_submit_validation_error',
+                'event_category': 'Form Interaction',
+                'event_action': 'Submit Analysis Error',
+                'event_label': 'Missing required fields'
+            });
             return;
         }
 
@@ -501,6 +561,23 @@ function App() {
 
         // --- Define API Base URL ---
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; // Use import.meta.env for Vite
+
+        // --- Data Layer Push for Submit Start ---
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'form_submit_start',
+            'event_category': 'Form Interaction',
+            'event_action': 'Submit Analysis',
+            'event_label': fileName || 'N/A',
+            'form_data': { // Send relevant form data
+                'tactic': selectedTactics,
+                'kpi': selectedKPIs,
+                'model': selectedModelId,
+                'detail': outputDetail,
+                'clientNameProvided': !!clientName,
+                'situationProvided': !!currentSituation
+            }
+        });
 
         try {
             const response = await fetch(`${apiBaseUrl}/analyze`, { // Remove /api prefix
@@ -578,10 +655,28 @@ function App() {
             setShowResults(true); // Show the results page
             setShowHelpModal(false); // Ensure help modal is closed when showing new results
             setIsViewingHistory(false); // Set to false as this is a fresh analysis
+
+            // --- Data Layer Push for Submit Success ---
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'form_submit_success',
+                'event_category': 'Form Interaction',
+                'event_action': 'Submit Analysis Success',
+                'event_label': fileName || 'N/A',
+                'model_used': data.modelName || modelName || 'Unknown' // Use model from response if available
+            });
         } catch (error: any) {
             console.error('Error during analysis:', error);
             setError(error.message || 'An unexpected error occurred.');
             setShowResults(false);
+            // --- Data Layer Push for Submit Catch Error ---
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'form_submit_catch_error',
+                'event_category': 'Form Interaction',
+                'event_action': 'Submit Analysis General Error',
+                'event_label': error.message || 'Unknown error'
+            });
         } finally {
             setIsLoading(false);
         }
@@ -636,6 +731,14 @@ function App() {
         
         // Scroll to top (optional)
         window.scrollTo(0, 0);
+
+        // --- Data Layer Push ---
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'click_new_inquiry',
+            'event_category': 'Navigation',
+            'event_action': 'Click New Inquiry Button'
+        });
     };
 
     // Add this helper function near the top of your file, before the App component
@@ -686,6 +789,20 @@ function App() {
 
             // Scroll to top (optional, good UX)
             window.scrollTo(0, 0);
+
+            // --- Data Layer Push ---
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'load_history_item',
+                'event_category': 'History Interaction',
+                'event_action': 'Load History Item',
+                'event_label': entry.inputs.fileName || 'N/A',
+                'history_details': { // Include history details
+                    'tactic': entry.inputs.selectedTactics,
+                    'kpi': entry.inputs.selectedKPIs,
+                    'clientName': entry.inputs.clientName || 'N/A'
+                }
+            });
         } else {
             setError('Could not load the selected history entry.');
         }
@@ -698,6 +815,14 @@ function App() {
         if (entry && Array.isArray(entry.results.helpConversation) && entry.results.helpConversation.length > 0) {
             setViewingChatHistory(entry.results.helpConversation);
             setShowChatHistoryModal(true);
+            // --- Data Layer Push ---
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'view_chat_history',
+                'event_category': 'History Interaction',
+                'event_action': 'Click View Chat Button',
+                'event_label': entryId
+            });
         } else {
             // Provide feedback if no history is found or if it's unexpectedly not an array
             alert('No chat history found for this analysis.');
@@ -733,6 +858,13 @@ function App() {
             setCurrentPage(1); // Reset pagination
             setActiveView('new'); // Switch back to the new analysis tab
             console.log("Analysis history cleared.");
+            // --- Data Layer Push ---
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                'event': 'clear_history',
+                'event_category': 'History Interaction',
+                'event_action': 'Click Clear History Button'
+            });
         }
     };
     // <<< END ADDED FUNCTION >>>
@@ -998,13 +1130,35 @@ function App() {
             <div className="tab-navigation">
                 <button
                     className={`tab-button ${activeView === 'new' ? 'active' : ''}`}
-                    onClick={() => setActiveView('new')}
+                    onClick={() => {
+                        setActiveView('new');
+                        // --- Data Layer Push ---
+                        window.dataLayer = window.dataLayer || [];
+                        window.dataLayer.push({
+                            'event': 'select_tab',
+                            'event_category': 'Navigation',
+                            'event_action': 'Select Tab',
+                            'event_label': 'New Analysis'
+                        });
+                    }}
                 >
                     New Analysis
                 </button>
                 <button
                     className={`tab-button ${activeView === 'history' ? 'active' : ''} ${analysisHistory.length === 0 ? 'disabled' : ''}`}
-                    onClick={() => analysisHistory.length > 0 && setActiveView('history')}
+                    onClick={() => {
+                        if (analysisHistory.length > 0) {
+                            setActiveView('history');
+                            // --- Data Layer Push ---
+                            window.dataLayer = window.dataLayer || [];
+                            window.dataLayer.push({
+                                'event': 'select_tab',
+                                'event_category': 'Navigation',
+                                'event_action': 'Select Tab',
+                                'event_label': 'History'
+                            });
+                        }
+                    }}
                     disabled={analysisHistory.length === 0}
                     title={analysisHistory.length === 0 ? "No history available" : "View past analyses"}
                 >
