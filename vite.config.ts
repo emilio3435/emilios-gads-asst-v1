@@ -6,20 +6,22 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:5002',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-        configure: (proxy, _options) => {
+      // Proxy requests for /analyze and /get-help to the backend server
+      '^/(analyze|get-help)': { // Match paths starting with /analyze OR /get-help
+        target: 'http://localhost:5001', // Correct backend port
+        changeOrigin: true, // Recommended for virtual hosted sites
+        secure: false, // OK for localhost development
+        ws: true, // Enable WebSocket proxying if needed later
+        // No rewrite needed as the paths match
+        configure: (proxy, options) => {
           proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
+            console.log('PROXY ERROR:', err);
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
+            console.log(`PROXYING REQUEST: ${req.method} ${req.url} -> ${options.target}${proxyReq.path}`);
           });
           proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+            console.log(`PROXY RESPONSE: ${proxyRes.statusCode} ${req.url}`);
           });
         },
       }

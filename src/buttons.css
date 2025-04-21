@@ -108,7 +108,7 @@ button {
   font-size: 0.95em;
   text-align: center;
   margin-bottom: 0;
-  margin-right: 0; 
+  margin-right: 0;
   box-shadow: var(--shadow-small);
 }
 
@@ -324,45 +324,43 @@ button {
     transform: translateY(-1px);
 }
 
-/* Style for the new sleek back button in results header */
+/* Minimalist Back Button (e.g., for Modals) */
 .sleek-back-button {
-    background-color: var(--gray-lightest); /* Add light background */
-    border: 1px solid var(--gray-light); /* Subtle border */
-    color: var(--audacy-purple); 
-    padding: 6px 12px; /* Adjust padding for background */
-    margin-right: 0; /* Remove margin, spacing handled by parent flex */
-    cursor: pointer;
-    display: inline-flex; 
-    align-items: center;
-    font-size: 0.95em; /* Slightly smaller */
-    font-weight: 500;
-    transition: all 0.2s ease;
-    border-radius: var(--border-radius-round); /* Make it rounded */
-    box-shadow: var(--shadow-small); /* Add subtle shadow */
+  background-color: var(--audacy-purple); /* Changed from white */
+  color: var(--color-white); /* Changed from purple */
+  border: 1px solid var(--audacy-purple); /* Use purple border */
+  padding: 6px 10px; /* Adjusted padding */
+  border-radius: var(--border-radius-medium);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-x-small);
+  font-size: 0.9em;
+  line-height: 1;
+  transition: all 0.2s ease;
+  margin: 0; /* Reset margin if needed */
 }
 
 .sleek-back-button svg {
-    margin-right: 6px; /* Space between icon and text */
-    stroke: var(--audacy-purple); /* Use Audacy purple for icon */
-    stroke-width: 2.5; /* Slightly bolder icon */
+  stroke: var(--color-white); /* Changed from purple */
+  width: 16px;
+  height: 16px;
 }
 
 .sleek-back-button:hover {
-    color: var(--audacy-purple-dark);
-    background-color: var(--gray-light); /* Lighten background on hover */
-    border-color: var(--gray-medium); 
-    box-shadow: var(--shadow-medium);
-    transform: translateY(-1px);
+  background-color: var(--audacy-purple-dark); /* Darker purple on hover */
+  border-color: var(--audacy-purple-dark);
+  color: var(--color-white); /* Keep text white */
+  box-shadow: var(--shadow-small);
 }
 
 .sleek-back-button:hover svg {
-    stroke: var(--audacy-purple-dark); /* Darken icon on hover */
+  stroke: var(--color-white); /* Keep icon white */
 }
 
 .sleek-back-button:focus {
-    outline: none; /* Remove default focus outline */
-    box-shadow: 0 0 0 2px var(--audacy-focus-ring); /* Custom focus ring */
-    border-radius: 4px; /* Slight radius for focus */
+  outline: none;
+  box-shadow: 0 0 0 2px var(--audacy-purple-light); /* Focus ring */
 }
 
 /* ======================================

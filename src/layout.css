@@ -294,6 +294,10 @@
     gap: var(--spacing-extra-small); /* Reduced gap */
     flex-grow: 1;
     padding-right: var(--spacing-medium);
+    text-align: left;
+    line-height: 1.4;
+    color: var(--gray-darker);
+    font-size: 0.9em;
 }
 
 .history-client-name {
@@ -381,37 +385,49 @@
 
 /* === New Standalone Back Button === */
 .page-back-button {
-  position: absolute;
-  top: 18px; /* Align roughly with logo top */
-  left: var(--spacing-large);
-  background: none;
-  border: none;
-  padding: 5px;
-  cursor: pointer;
-  color: var(--audacy-purple);
-  z-index: 10; /* Same level as logo */
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-small);
-  font-size: 1em;
-  font-weight: 500;
-  transition: color 0.2s ease;
+    position: absolute;
+    top: 15px; /* Align vertically with logo */
+    left: var(--spacing-large); /* Position on the left */
+    z-index: 20; /* Ensure it's above logo if overlap occurs */
+    
+    /* Make it purple with white text/icon */
+    background-color: var(--audacy-purple);
+    color: var(--color-white);
+    border: 1px solid var(--audacy-purple);
+    
+    padding: 8px 14px; /* Adjust padding slightly */
+    border-radius: var(--border-radius-medium);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-x-small);
+    font-size: 0.95em; 
+    font-weight: 500;
+    transition: all 0.2s ease;
+    line-height: 1;
 }
 
 .page-back-button svg {
-  stroke: var(--audacy-purple);
-  width: 18px; /* Adjust size */
-  height: 18px;
-  transition: stroke 0.2s ease;
+    /* White icon */
+    stroke: var(--color-white);
+    width: 18px; /* Adjust size if needed */
+    height: 18px;
+    stroke-width: 2;
 }
 
 .page-back-button:hover {
-  color: var(--audacy-purple-dark);
+    /* Darker purple on hover */
+    background-color: var(--audacy-purple-dark);
+    border-color: var(--audacy-purple-dark);
+    color: var(--color-white); /* Keep text white */
+    box-shadow: var(--shadow-small);
 }
 
 .page-back-button:hover svg {
-  stroke: var(--audacy-purple-dark);
+    /* Keep icon white on hover */
+    stroke: var(--color-white);
 }
+
 /* === End New Back Button === */
 
 .results-display {
