@@ -612,9 +612,21 @@ CURRENT QUESTION: ${req.body.question}
 
 // Start server with simplified port logic
 const PORT = process.env.PORT || DEFAULT_PORT;
-app.listen(PORT, '0.0.0.0', () => { // Use 0.0.0.0 to accept connections from any IP
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+console.log(`Attempting to start server on port ${PORT}...`);
+
+const server = app.listen(PORT, '0.0.0.0', () => { // Use 0.0.0.0 to accept connections from any IP
+  console.log(`✅ Server successfully started and listening on http://0.0.0.0:${PORT}`);
 });
+
+server.on('error', (error) => {
+  console.error('⚠️ Server failed to start:', error.message);
+  process.exit(1);
+});
+
+// Add a keep-alive mechanism to prevent immediate exit
+setInterval(() => {
+  console.log('Server heartbeat check - still running');
+}, 30000); // Log every 30 seconds
 
 // Global error handlers
 process.on('uncaughtException', (error) => {
