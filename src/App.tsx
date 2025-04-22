@@ -327,7 +327,7 @@ function App() {
              setUserInfo(null);
              setAnalysisHistory([]);
         }
-    }, [fetchHistory, isTokenExpired]); // Include fetchHistory and isTokenExpired
+    }, [fetchHistory]); // ONLY depend on fetchHistory
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // Clear previous results when file changes
