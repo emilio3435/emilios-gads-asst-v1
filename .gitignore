@@ -33,6 +33,7 @@ yarn-error.log*
 
 # Firebase Service Account Key
 server/firebase-service-account-key.json
+firebase-service-account-key.json
 
 # Node / Server
 server/node_modules
