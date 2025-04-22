@@ -167,6 +167,21 @@ function App() {
                    const errorData = await response.json();
                    errorMsg = errorData.message || errorMsg;
                } catch (e) { /* Ignore */ }
+               
+               // Handle authentication errors by logging out
+               if (response.status === 401 || response.status === 403) {
+                   console.log('Authentication error. Logging out:', errorMsg);
+                   // Clear stored credentials
+                   localStorage.removeItem('idToken');
+                   localStorage.removeItem('userInfo');
+                   setIsLoggedIn(false);
+                   setIdToken(null);
+                   setUserInfo(null);
+                   setAnalysisHistory([]);
+                   setError('Your session has expired. Please log in again.');
+                   return;
+               }
+               
                throw new Error(errorMsg);
           }
           
@@ -243,6 +258,20 @@ function App() {
         }
     }, [helpConversation]);
 
+    // Add this function to check token expiration
+    const isTokenExpired = (token: string): boolean => {
+        try {
+            const decoded: any = jwtDecode(token);
+            const currentTime = Date.now() / 1000;
+            
+            // Add a 5-minute buffer to ensure we refresh before expiration
+            return decoded.exp < currentTime + 300;
+        } catch (error) {
+            console.error('Error checking token expiration:', error);
+            return true; // If we can't decode the token, consider it expired
+        }
+    };
+
     // Load login state and initial history on mount
     useEffect(() => {
         const storedToken = localStorage.getItem('idToken');
@@ -250,8 +279,20 @@ function App() {
         
         if (storedToken && storedUserInfo) {
             try {
+                // Check if token is expired
+                if (isTokenExpired(storedToken)) {
+                    console.log('Stored token is expired. Logging out...');
+                    localStorage.removeItem('idToken');
+                    localStorage.removeItem('userInfo');
+                    setIsLoggedIn(false);
+                    setIdToken(null);
+                    setUserInfo(null);
+                    setAnalysisHistory([]);
+                    return;
+                }
+                
                 const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
-                console.log('Found token and user info, setting login state.');
+                console.log('Found valid token and user info, setting login state.');
                 setIdToken(storedToken);
                 setUserInfo(parsedUserInfo); // Set user info state
                 setIsLoggedIn(true);
@@ -273,7 +314,7 @@ function App() {
              setUserInfo(null);
              setAnalysisHistory([]);
         }
-    }, [fetchHistory]); // fetchHistory dependency is correct
+    }, [fetchHistory, isTokenExpired]); // fetchHistory dependency is correct
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // Clear previous results when file changes
@@ -752,6 +793,21 @@ function App() {
                              const errorData = await historyResponse.json();
                              errorMsg = errorData.message || errorMsg;
                          } catch (e) { /* Ignore */ }
+                         
+                         // Handle authentication errors by logging out
+                         if (historyResponse.status === 401 || historyResponse.status === 403) {
+                             console.log('Authentication error during save history. Logging out:', errorMsg);
+                             // Clear stored credentials
+                             localStorage.removeItem('idToken');
+                             localStorage.removeItem('userInfo');
+                             setIsLoggedIn(false);
+                             setIdToken(null);
+                             setUserInfo(null);
+                             setAnalysisHistory([]);
+                             setError('Your session has expired. Please log in again, but your analysis results are still available.');
+                             return;
+                         }
+                         
                         throw new Error(errorMsg);
                     }
                     
@@ -1008,6 +1064,21 @@ function App() {
                         const errorData = await response.json();
                         errorMsg = errorData.message || errorMsg;
                     } catch (e) { /* Ignore */ }
+                    
+                    // Handle authentication errors by logging out
+                    if (response.status === 401 || response.status === 403) {
+                        console.log('Authentication error during clear history. Logging out:', errorMsg);
+                        // Clear stored credentials
+                        localStorage.removeItem('idToken');
+                        localStorage.removeItem('userInfo');
+                        setIsLoggedIn(false);
+                        setIdToken(null);
+                        setUserInfo(null);
+                        setAnalysisHistory([]);
+                        setError('Your session has expired. Please log in again.');
+                        return;
+                    }
+                    
                     throw new Error(errorMsg);
                 }
                 
@@ -1134,6 +1205,21 @@ function App() {
                     const errorData = await response.json();
                     errorMsg = errorData.message || errorMsg;
                 } catch (e) { /* Ignore JSON parsing error */ }
+                
+                // Handle authentication errors by logging out
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Authentication error during delete entry. Logging out:', errorMsg);
+                    // Clear stored credentials
+                    localStorage.removeItem('idToken');
+                    localStorage.removeItem('userInfo');
+                    setIsLoggedIn(false);
+                    setIdToken(null);
+                    setUserInfo(null);
+                    setAnalysisHistory([]);
+                    setError('Your session has expired. Please log in again.');
+                    return;
+                }
+                
                 throw new Error(errorMsg);
             }
 
