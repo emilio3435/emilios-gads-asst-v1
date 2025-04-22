@@ -174,9 +174,18 @@ function App() {
           
           if (result && Array.isArray(result.data)) {
                console.log('History fetched successfully:', result.data);
-               const formattedHistory = result.data.map((entry: any) => ({
-                   ...entry,
-               }));
+               // Correctly convert Firestore Timestamp object to milliseconds
+               const formattedHistory = result.data.map((entry: any) => {
+                   // Check if timestamp exists and has the expected structure
+                   const timestampInMillis = entry.timestamp && typeof entry.timestamp === 'object' && entry.timestamp._seconds
+                       ? entry.timestamp._seconds * 1000 + Math.floor((entry.timestamp._nanoseconds || 0) / 1000000)
+                       : entry.timestamp; // Fallback if it's already a number or invalid
+                   
+                   return {
+                       ...entry,
+                       timestamp: timestampInMillis, // Replace the object with the millisecond number
+                   };
+               });
                setAnalysisHistory(formattedHistory); 
            } else {
                console.warn('Received unexpected data format when fetching history:', result);
