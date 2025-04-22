@@ -741,14 +741,37 @@ label.button { display: inline-flex; } /* For file input label */
   .text-area { min-height: 80px; }
   .back-button-container { flex-direction: column; align-items: flex-start; gap: var(--spacing-medium); }
   .main-action-buttons { 
-    /* Removed vertical stacking for mobile */
-    gap: var(--spacing-medium); /* Keep the gap */
-    /* Allow wrapping if needed */
+    gap: var(--spacing-medium); 
     flex-wrap: wrap;
-    /* Buttons will be centered horizontally by default justify-content: center */
   }
-  /* Ensure buttons wrap okay */
   .button { max-width: 100%; }
+
+  /* --- Mobile Login Status Bar --- */
+  .login-status-container {
+    position: fixed; /* Anchor to viewport */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--color-white); /* Give it a background */
+    padding: var(--spacing-small) var(--spacing-medium); /* Add padding */
+    border-top: var(--border-width) solid var(--border-color-light); /* Top border */
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
+    z-index: 1000; /* Ensure it's above other content */
+    margin-left: 0; /* Override the desktop margin */
+    justify-content: space-between; /* Space out user info and logout */
+  }
+
+  /* Adjust padding on the main App container to prevent overlap */
+  /* Add enough padding to accommodate the height of the fixed bar */
+  .App {
+    padding-bottom: 70px; /* Adjust this value based on the final height of the bar */
+  }
+
+  /* Hide the logged-out prompt text in the header on mobile (button is shown instead) */
+  .login-prompt-nav {
+      display: none; 
+  }
+  /* --- End Mobile Login Status Bar --- */
 }
 
 
