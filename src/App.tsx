@@ -241,7 +241,7 @@ function App() {
         } finally {
            setIsLoading(false);
         }
-    }, [apiBaseUrl, isTokenExpired]); // Dependency
+    }, [apiBaseUrl]); // Remove isTokenExpired dependency
 
     // --- useEffect hooks ---
     // Focus on help input
