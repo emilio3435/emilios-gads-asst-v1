@@ -139,12 +139,39 @@ function App() {
     const paginatedHistory = analysisHistory.slice(startIndex, endIndex);
     // --- End Pagination Calculations ---
 
+    // Add this function to check token expiration - memoized with useCallback
+    const isTokenExpired = useCallback((token: string): boolean => {
+        try {
+            const decoded: any = jwtDecode(token);
+            const currentTime = Date.now() / 1000;
+            
+            // Add a 5-minute buffer to ensure we refresh before expiration
+            return decoded.exp < currentTime + 300;
+        } catch (error) {
+            console.error('Error checking token expiration:', error);
+            return true; // If we can't decode the token, consider it expired
+        }
+    }, []); // Empty dependency array to prevent recreating this function
+
     // --- Define fetchHistory function HERE (before useEffect that uses it) ---
     const fetchHistory = useCallback(async (token: string | null) => {
         if (!token) {
              console.warn('fetchHistory called without a token.');
              setError('Cannot fetch history: Not logged in.');
              setAnalysisHistory([]); 
+            return;
+        }
+        
+        // Check if token is expired before making the API call
+        if (isTokenExpired(token)) {
+            console.log('Token expired before fetching history. Logging out...');
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('userInfo');
+            setIsLoggedIn(false);
+            setIdToken(null);
+            setUserInfo(null);
+            setAnalysisHistory([]);
+            setError('Your session has expired. Please log in again.');
             return;
         }
         
@@ -214,7 +241,7 @@ function App() {
         } finally {
            setIsLoading(false);
         }
-    }, [apiBaseUrl]); // Dependency
+    }, [apiBaseUrl, isTokenExpired]); // Dependency
 
     // --- useEffect hooks ---
     // Focus on help input
@@ -258,20 +285,6 @@ function App() {
         }
     }, [helpConversation]);
 
-    // Add this function to check token expiration
-    const isTokenExpired = (token: string): boolean => {
-        try {
-            const decoded: any = jwtDecode(token);
-            const currentTime = Date.now() / 1000;
-            
-            // Add a 5-minute buffer to ensure we refresh before expiration
-            return decoded.exp < currentTime + 300;
-        } catch (error) {
-            console.error('Error checking token expiration:', error);
-            return true; // If we can't decode the token, consider it expired
-        }
-    };
-
     // Load login state and initial history on mount
     useEffect(() => {
         const storedToken = localStorage.getItem('idToken');
@@ -314,7 +327,7 @@ function App() {
              setUserInfo(null);
              setAnalysisHistory([]);
         }
-    }, [fetchHistory, isTokenExpired]); // fetchHistory dependency is correct
+    }, [fetchHistory, isTokenExpired]); // Include fetchHistory and isTokenExpired
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         // Clear previous results when file changes
