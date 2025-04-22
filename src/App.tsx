@@ -89,6 +89,7 @@ const formatPromptForDisplay = (prompt: string | null): string => {
 
 // --- Define API Base URL ---
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+const analysisApiUrl = import.meta.env.VITE_ANALYSIS_API_URL || apiBaseUrl;
 
 function App() {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
@@ -243,7 +244,7 @@ function App() {
                 const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
                 console.log('Found token and user info, setting login state.');
                 setIdToken(storedToken);
-                setUserInfo(parsedUserInfo);
+                setUserInfo(parsedUserInfo); // Set user info state
                 setIsLoggedIn(true);
                 // Fetch history for the loaded user
                 fetchHistory(storedToken); // Now fetchHistory is defined
@@ -460,7 +461,7 @@ function App() {
             }
 
             // Send the help request to the server
-            const response = await fetch(`${apiBaseUrl}/get-help`, { // CORRECTED ENDPOINT
+            const response = await fetch(`${analysisApiUrl}/get-help`, { // Use analysisApiUrl for help endpoint
                 method: 'POST',
                 body: formData,
             });
@@ -665,7 +666,7 @@ function App() {
         });
 
         try {
-            const response = await fetch(`${apiBaseUrl}/analyze`, { // Remove /api prefix
+            const response = await fetch(`${analysisApiUrl}/analyze`, { // Use analysisApiUrl for the analyze endpoint
                 method: 'POST',
                 body: formData,
             });
