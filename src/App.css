@@ -797,74 +797,71 @@ label.button { display: inline-flex; } /* For file input label */
 /* Login Status in Navigation */
 .tab-navigation {
   display: flex;
-  justify-content: flex-start; /* Align tabs to left */
-  align-items: center; /* Vertically center items */
-  padding: var(--spacing-small) var(--spacing-large);
-  border-bottom: 1px solid var(--color-border-medium);
+  align-items: center; /* Vertically center all items */
   background-color: var(--color-white);
-  position: relative; /* Needed for absolute positioning of login status */
-  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  border-bottom: var(--border-width) solid var(--border-color-light);
+  padding: 0 var(--spacing-medium); /* Add some horizontal padding */
+  margin-bottom: var(--spacing-large);
+  box-shadow: var(--shadow-small);
+  width: 100%; /* Ensure it spans width */
 }
 
-/* Keep existing tab button styles */
-.tab-button { /* ... */ }
+/* Style for individual tab buttons */
+.tab-button {
+  /* ... existing styles ... */
+}
 
+.tab-button.active {
+  /* ... existing styles ... */
+}
+
+/* Container for login status and logout button */
 .login-status-container {
-    margin-left: auto; /* Pushes this container to the right */
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-medium);
-    padding: 0 var(--spacing-small); /* Add some padding */
+  margin-left: auto; /* Pushes this container to the far right */
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-medium); /* Space between user info and logout button */
 }
 
+/* Style for the 'Logged in as...' text */
 .user-info {
-    font-size: var(--font-size-small);
-    color: var(--color-text-light);
+  display: flex; /* Align icon and text */
+  align-items: center;
+  gap: var(--spacing-small); /* Space between icon and text */
+  font-size: var(--font-size-small);
+  color: var(--color-text-light);
 }
 
-.user-info[title] { /* Add underline on hover if title (email) exists */
-    cursor: help;
-    text-decoration: underline dashed var(--color-text-subtle) 1px;
+/* Style for the new user icon */
+.user-icon {
+  stroke: currentColor; /* Use the text color */
+  flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
+/* Style for the logout button */
 .logout-button {
-    /* Style like a small tertiary button */
-    background-color: var(--gray-lighter);
-    color: var(--color-primary);
-    border: 1px solid var(--border-color);
-    padding: var(--spacing-extra-small) var(--spacing-small);
-    border-radius: var(--border-radius-medium);
-    font-size: 0.85em;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: none;
-    margin: 0; /* Reset margin */
+  background: none;
+  border: none;
+  color: var(--color-link);
+  cursor: pointer;
+  font-size: var(--font-size-small);
+  padding: var(--spacing-small);
+  border-radius: var(--border-radius-small);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .logout-button:hover {
-    background-color: var(--gray-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary-dark);
-    box-shadow: var(--shadow-small);
+  background-color: var(--gray-lightest);
+  color: var(--color-link-hover);
+  text-decoration: none;
 }
 
+/* Style for the prompt text when logged out */
 .login-prompt-nav {
-    font-size: var(--font-size-small);
-    color: var(--color-text-subtle);
-    font-style: italic;
+  font-size: var(--font-size-small);
+  color: var(--color-text-subtle);
+  padding: var(--spacing-small) 0; /* Match button padding roughly */
+  margin-left: auto; /* Push to right */
 }
 
-/* Responsive adjustment for login status */
-@media (max-width: 600px) {
-    .login-status-container {
-        width: 100%; /* Take full width */
-        justify-content: flex-end; /* Align to right */
-        margin-left: 0;
-        margin-top: var(--spacing-small); /* Add space above */
-        padding: 0; /* Reset padding */
-    }
-    .tab-navigation {
-        justify-content: center; /* Center tabs */
-    }
-}
+/* === Card Styles === */

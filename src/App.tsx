@@ -1412,7 +1412,14 @@ function App() {
                 <div className="login-status-container">
                 {isLoggedIn && userInfo ? (
                     <>
-                       <span className="user-info" title={userInfo.email}>Logged in as {userInfo.name || userInfo.email}</span>
+                       {/* Add user icon before the text */}
+                       <span className="user-info" title={userInfo.email}>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="user-icon">
+                               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                               <circle cx="12" cy="7" r="4"></circle>
+                           </svg>
+                           Logged in as {userInfo.name || userInfo.email}
+                       </span>
                        <button onClick={handleLogout} className="logout-button" title="Logout">
                            Logout
                        </button>
