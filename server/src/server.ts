@@ -3,6 +3,7 @@ dotenv.config(); // Load environment variables from .env file
 
 // Initialize Firebase Admin SDK first
 import { db } from './firebase'; // Import the initialized Firestore instance
+import * as admin from 'firebase-admin'; // Import Firebase Admin types
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
@@ -51,7 +52,8 @@ app.get('/api/history', authenticateToken, async (req: Request, res: Response) =
       return res.status(200).json({ message: 'No history found for user.', data: [] });
     }
 
-    const userHistory = snapshot.docs.map(doc => ({
+    // Explicitly type 'doc' using Firestore types
+    const userHistory = snapshot.docs.map((doc: admin.firestore.QueryDocumentSnapshot) => ({
       id: doc.id, // Include the Firestore document ID
       ...doc.data(), // Spread the rest of the document data
     }));
@@ -125,7 +127,8 @@ app.delete('/api/history', authenticateToken, async (req: Request, res: Response
 
     // Use a batched write to delete all documents efficiently
     const batch = db.batch();
-    snapshot.docs.forEach(doc => {
+    // Explicitly type 'doc' using Firestore types
+    snapshot.docs.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
       batch.delete(doc.ref);
     });
 
