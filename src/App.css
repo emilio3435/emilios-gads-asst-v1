@@ -888,3 +888,77 @@ label.button { display: inline-flex; } /* For file input label */
 }
 
 /* === Card Styles === */
+
+/* Login Status - Applied Globally */
+.login-status-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--color-white);
+  padding: var(--spacing-small) var(--spacing-medium);
+  border-top: var(--border-width) solid var(--border-color-light);
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-medium); 
+}
+
+/* Adjust App padding globally */
+.App {
+  padding-bottom: 70px; /* Space for the fixed bottom bar */
+}
+
+/* History Controls - Reposition Clear Button */
+.history-controls {
+  display: flex;
+  justify-content: flex-end; /* Align items (button/text) to the right */
+  padding-bottom: var(--spacing-medium); /* Space below the controls */
+  /* Remove any height/min-height if previously set */
+}
+
+/* Clear History Button Styling */
+.clear-history-button {
+  /* Existing styles are likely okay, but ensure it looks good here */
+  /* Example using tertiary style */
+  background-color: var(--gray-lighter);
+  color: var(--color-error); /* Use error color for delete */
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-extra-small) var(--spacing-small);
+  border-radius: var(--border-radius-medium);
+  font-size: 0.85em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: none;
+  margin: 0; /* Reset default button margin */
+  display: inline-flex; 
+  align-items: center;
+  gap: var(--spacing-extra-small);
+}
+
+.clear-history-button:hover {
+  background-color: var(--color-error-bg); 
+  border-color: var(--color-error);
+  color: var(--color-error-text); 
+}
+
+.clear-history-button svg {
+  stroke: currentColor;
+}
+
+/* Hide the old mobile-specific rules */
+@media (max-width: 768px) {
+  /* ... other mobile rules ... */
+
+  /* --- Styles for login-status-container are now GLOBAL, remove/comment out --- */
+  /* .login-status-container { ... } */
+  
+  /* Padding for .App is now GLOBAL, remove/comment out */
+  /* .App { padding-bottom: 70px; } */
+
+  /* Hiding prompt text is handled by JSX/global styles, remove/comment out */
+  /* .login-prompt-nav { display: none; } */
+}
