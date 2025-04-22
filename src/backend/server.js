@@ -123,7 +123,8 @@ const MAX_PORT_ATTEMPTS = 10;
 
 // Middleware setup
 app.use(cors()); // Allow cross-origin requests
-app.use(express.json()); // Parse JSON bodies
+app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Also increase for URL-encoded (optional but good practice)
 
 // Configure Multer for file uploads
 const storage = multer.memoryStorage();
