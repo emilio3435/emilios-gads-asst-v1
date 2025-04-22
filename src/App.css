@@ -741,37 +741,14 @@ label.button { display: inline-flex; } /* For file input label */
   .text-area { min-height: 80px; }
   .back-button-container { flex-direction: column; align-items: flex-start; gap: var(--spacing-medium); }
   .main-action-buttons { 
-    gap: var(--spacing-medium); 
+    /* Removed vertical stacking for mobile */
+    gap: var(--spacing-medium); /* Keep the gap */
+    /* Allow wrapping if needed */
     flex-wrap: wrap;
+    /* Buttons will be centered horizontally by default justify-content: center */
   }
+  /* Ensure buttons wrap okay */
   .button { max-width: 100%; }
-
-  /* --- Mobile Login Status Bar --- */
-  .login-status-container {
-    position: fixed; /* Anchor to viewport */
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: var(--color-white); /* Give it a background */
-    padding: var(--spacing-small) var(--spacing-medium); /* Add padding */
-    border-top: var(--border-width) solid var(--border-color-light); /* Top border */
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* Subtle shadow */
-    z-index: 1000; /* Ensure it's above other content */
-    margin-left: 0; /* Override the desktop margin */
-    justify-content: space-between; /* Space out user info and logout */
-  }
-
-  /* Adjust padding on the main App container to prevent overlap */
-  /* Add enough padding to accommodate the height of the fixed bar */
-  .App {
-    padding-bottom: 70px; /* Adjust this value based on the final height of the bar */
-  }
-
-  /* Hide the logged-out prompt text in the header on mobile (button is shown instead) */
-  .login-prompt-nav {
-      display: none; 
-  }
-  /* --- End Mobile Login Status Bar --- */
 }
 
 
@@ -820,145 +797,304 @@ label.button { display: inline-flex; } /* For file input label */
 /* Login Status in Navigation */
 .tab-navigation {
   display: flex;
-  align-items: center; /* Vertically center all items */
+  justify-content: flex-start; /* Align tabs to left */
+  align-items: center; /* Vertically center items */
+  padding: var(--spacing-small) var(--spacing-large);
+  border-bottom: 1px solid var(--color-border-medium);
   background-color: var(--color-white);
-  border-bottom: var(--border-width) solid var(--border-color-light);
-  padding: 0 var(--spacing-medium); /* Add some horizontal padding */
-  margin-bottom: var(--spacing-large);
-  box-shadow: var(--shadow-small);
-  width: 100%; /* Ensure it spans width */
+  position: relative; /* Needed for absolute positioning of login status */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
 }
 
-/* Style for individual tab buttons */
-.tab-button {
-  /* ... existing styles ... */
-}
+/* Keep existing tab button styles */
+.tab-button { /* ... */ }
 
-.tab-button.active {
-  /* ... existing styles ... */
-}
-
-/* Container for login status and logout button */
 .login-status-container {
-  margin-left: auto; /* Pushes this container to the far right */
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-medium); /* Space between user info and logout button */
+    margin-left: auto; /* Pushes this container to the right */
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-medium);
+    padding: 0 var(--spacing-small); /* Add some padding */
 }
 
-/* Style for the 'Logged in as...' text */
 .user-info {
-  display: flex; /* Align icon and text */
-  align-items: center;
-  gap: var(--spacing-small); /* Space between icon and text */
-  font-size: var(--font-size-small);
-  color: var(--color-text-light);
+    font-size: var(--font-size-small);
+    color: var(--color-text-light);
 }
 
-/* Style for the new user icon */
-.user-icon {
-  stroke: currentColor; /* Use the text color */
-  flex-shrink: 0; /* Prevent icon from shrinking */
+.user-info[title] { /* Add underline on hover if title (email) exists */
+    cursor: help;
+    text-decoration: underline dashed var(--color-text-subtle) 1px;
 }
 
-/* Style for the logout button */
 .logout-button {
-  background: none;
-  border: none;
-  color: var(--color-link);
-  cursor: pointer;
-  font-size: var(--font-size-small);
-  padding: var(--spacing-small);
-  border-radius: var(--border-radius-small);
-  transition: background-color 0.2s ease, color 0.2s ease;
+    /* Style like a small tertiary button */
+    background-color: var(--gray-lighter);
+    color: var(--color-primary);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-extra-small) var(--spacing-small);
+    border-radius: var(--border-radius-medium);
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: none;
+    margin: 0; /* Reset margin */
 }
 
 .logout-button:hover {
-  background-color: var(--gray-lightest);
-  color: var(--color-link-hover);
-  text-decoration: none;
+    background-color: var(--gray-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
+    box-shadow: var(--shadow-small);
 }
 
-/* Style for the prompt text when logged out */
 .login-prompt-nav {
-  font-size: var(--font-size-small);
-  color: var(--color-text-subtle);
-  padding: var(--spacing-small) 0; /* Match button padding roughly */
-  margin-left: auto; /* Push to right */
+    font-size: var(--font-size-small);
+    color: var(--color-text-subtle);
+    font-style: italic;
 }
 
-/* === Card Styles === */
+/* Responsive adjustment for login status */
+@media (max-width: 600px) {
+    .login-status-container {
+        width: 100%; /* Take full width */
+        justify-content: flex-end; /* Align to right */
+        margin-left: 0;
+        margin-top: var(--spacing-small); /* Add space above */
+        padding: 0; /* Reset padding */
+    }
+    .tab-navigation {
+        justify-content: center; /* Center tabs */
+    }
+}
 
-/* Login Status - Applied Globally */
-.login-status-container {
+/* Chat History Modal */
+.chat-history-modal-backdrop {
   position: fixed;
-  bottom: 0;
+  top: 0;
   left: 0;
-  width: 100%;
-  background-color: var(--color-white);
-  padding: var(--spacing-small) var(--spacing-medium);
-  border-top: var(--border-width) solid var(--border-color-light);
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-  z-index: 1000;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-medium); 
+  z-index: 1000;
 }
 
-/* Adjust App padding globally */
-.App {
-  padding-bottom: 70px; /* Space for the fixed bottom bar */
-}
-
-/* History Controls - Reposition Clear Button */
-.history-controls {
+.chat-history-modal {
+  background-color: white;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 700px;
+  max-height: 80vh;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   display: flex;
-  justify-content: flex-end; /* Align items (button/text) to the right */
-  padding-bottom: var(--spacing-medium); /* Space below the controls */
-  /* Remove any height/min-height if previously set */
+  flex-direction: column;
 }
 
-/* Clear History Button Styling */
-.clear-history-button {
-  /* Existing styles are likely okay, but ensure it looks good here */
-  /* Example using tertiary style */
-  background-color: var(--gray-lighter);
-  color: var(--color-error); /* Use error color for delete */
-  border: 1px solid var(--border-color);
-  padding: var(--spacing-extra-small) var(--spacing-small);
-  border-radius: var(--border-radius-medium);
+.chat-history-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.chat-history-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.chat-history-container {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.chat-message {
+  padding: 12px 15px;
+  border-radius: 8px;
+  max-width: 85%;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  background-color: #e1f5fe;
+}
+
+.chat-message.assistant {
+  align-self: flex-start;
+  background-color: #f5f5f5;
+}
+
+.message-content {
+  margin-bottom: 5px;
+}
+
+.message-timestamp {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: right;
+}
+
+.no-history {
+  text-align: center;
+  color: #888;
+  padding: 40px 0;
+}
+
+/* History List */
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.history-item {
+  margin-bottom: 15px;
+  border: 1px solid var(--gray-medium-light);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-small);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.history-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.history-entry {
+  padding: 15px;
+}
+
+.history-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.history-entry-info {
+  flex: 1;
+}
+
+.history-entry-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: var(--color-primary);
+  font-weight: 600;
+  border: none;
+  padding: 0;
+}
+
+.history-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 0.85em;
+  color: var(--gray-dark);
+  margin-bottom: 8px;
+}
+
+.history-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.history-tactic, .history-kpi {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: var(--gray-lightest);
   font-weight: 500;
+}
+
+.history-file-name {
+  font-size: 0.85em;
+  color: var(--gray-dark);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.history-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.view-history-button, .delete-history-button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9em;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: none;
-  margin: 0; /* Reset default button margin */
-  display: inline-flex; 
+  border: 1px solid;
+}
+
+.view-history-button {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.view-history-button:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.delete-history-button {
+  background-color: white;
+  color: var(--gray-dark);
+  border-color: var(--gray-medium);
+}
+
+.delete-history-button:hover {
+  background-color: #fff0f0;
+  color: #d9534f;
+  border-color: #d9534f;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+  display: flex;
   align-items: center;
-  gap: var(--spacing-extra-small);
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0;
 }
 
-.clear-history-button:hover {
-  background-color: var(--color-error-bg); 
-  border-color: var(--color-error);
-  color: var(--color-error-text); 
+.pagination-button {
+  padding: 5px 10px;
+  border-radius: 4px;
+  background-color: var(--gray-lighter);
+  border: 1px solid var(--gray-medium);
+  color: var(--gray-dark);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.clear-history-button svg {
-  stroke: currentColor;
+.pagination-button:not(:disabled):hover {
+  background-color: var(--gray-light);
+  color: var(--color-text);
 }
 
-/* Hide the old mobile-specific rules */
-@media (max-width: 768px) {
-  /* ... other mobile rules ... */
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  /* --- Styles for login-status-container are now GLOBAL, remove/comment out --- */
-  /* .login-status-container { ... } */
-  
-  /* Padding for .App is now GLOBAL, remove/comment out */
-  /* .App { padding-bottom: 70px; } */
-
-  /* Hiding prompt text is handled by JSX/global styles, remove/comment out */
-  /* .login-prompt-nav { display: none; } */
+.pagination-info {
+  padding: 0 10px;
+  color: var(--gray-dark);
+  font-size: 0.9em;
 }

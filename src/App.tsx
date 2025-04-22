@@ -1104,6 +1104,71 @@ function App() {
          // Optional: Use googleLogout() from @react-oauth/google if needed for cleanup
     };
 
+    // <<< NEW: Function to delete a specific history entry >>>
+    const handleDeleteHistoryEntry = async (entryId: string) => {
+        if (!isLoggedIn || !idToken) {
+            alert('You must be logged in to delete history entries.');
+            return;
+        }
+
+        // Confirmation dialog
+        if (!window.confirm(`Are you sure you want to delete this history entry? This action cannot be undone.`)) {
+            return; // User cancelled
+        }
+
+        console.log(`Attempting to delete history entry ${entryId} via backend...`);
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/history/${entryId}`, { // Assuming an endpoint like /api/history/:id
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                },
+            });
+
+            if (!response.ok) {
+                let errorMsg = `Failed to delete history entry: ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorMsg;
+                } catch (e) { /* Ignore JSON parsing error */ }
+                throw new Error(errorMsg);
+            }
+
+            const result = await response.json();
+            console.log("History entry deleted successfully:", result.message);
+
+            // Update local state to remove the deleted entry
+            setAnalysisHistory(prevHistory => prevHistory.filter(entry => entry.id !== entryId));
+
+            // If the deleted entry was the one being viewed, reset the view
+            if (selectedHistoryEntryId === entryId) {
+                 handleNewInquiry(); // Or reset to a neutral state
+                 setActiveView('history'); // Stay on history tab
+            }
+
+            // Adjust pagination if necessary (e.g., if the last item on a page was deleted)
+            if (paginatedHistory.length === 1 && currentPage > 1) {
+                setCurrentPage(currentPage - 1);
+            } else if (analysisHistory.length % itemsPerPage === 0 && currentPage > totalPages) {
+                 // Edge case if deletion makes the last page empty
+                 setCurrentPage(Math.max(1, totalPages -1));
+            }
+
+            // Optional: User feedback (e.g., temporary success message)
+
+        } catch (error: any) {
+            console.error(`Error deleting history entry ${entryId}:`, error);
+            setError(`Failed to delete history entry: ${error.message}`);
+            // Optional: User feedback for error
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    // <<< END NEW DELETE FUNCTION >>>
+
     if (showResults) {
         return (
             <div className="App">
@@ -1687,14 +1752,88 @@ function App() {
                           
                           {analysisHistory.length > 0 && (
                               <ul className="history-list">
-                                 {/* ... list items ... */}
+                                 {paginatedHistory.map(entry => (
+                                    <li key={entry.id} className="history-item">
+                                        <div className="history-entry">
+                                            <div className="history-entry-header">
+                                                <div className="history-entry-info">
+                                                    <h3 className="history-entry-title">
+                                                        {entry.inputs.clientName || 'Unnamed Analysis'}
+                                                    </h3>
+                                                    <div className="history-entry-meta">
+                                                        <span className="history-date">
+                                                            {formatHistoryTimestamp(entry.timestamp)}
+                                                        </span>
+                                                        <span className="history-tactic">
+                                                            {entry.inputs.selectedTactics}
+                                                        </span>
+                                                        <span className="history-kpi">
+                                                            {entry.inputs.selectedKPIs}
+                                                        </span>
+                                                    </div>
+                                                    {entry.inputs.fileName && (
+                                                        <div className="history-file-name">
+                                                            {entry.inputs.fileName}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="history-actions">
+                                                    <button 
+                                                        className="view-history-button"
+                                                        onClick={() => handleLoadHistory(entry.id)}
+                                                        title="View this analysis"
+                                                    >
+                                                        View
+                                                    </button>
+                                                    <button 
+                                                        className="delete-history-button"
+                                                        onClick={() => handleDeleteHistoryEntry(entry.id)}
+                                                        title="Delete this analysis"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                ))}
                              </ul>
                           )}
                           
                           {/* Pagination Controls */} 
                           {analysisHistory.length > 0 && totalPages > 1 && (
                               <div className="pagination-controls">
-                                  {/* ... pagination buttons ... */} 
+                                  <button 
+                                      className="pagination-button"
+                                      onClick={() => setCurrentPage(1)}
+                                      disabled={currentPage === 1}
+                                  >
+                                      &laquo; First
+                                  </button>
+                                  <button 
+                                      className="pagination-button"
+                                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                      disabled={currentPage === 1}
+                                  >
+                                      &lsaquo; Prev
+                                  </button>
+                                  <span className="pagination-info">
+                                      Page {currentPage} of {totalPages}
+                                  </span>
+                                  <button 
+                                      className="pagination-button"
+                                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                      disabled={currentPage === totalPages}
+                                  >
+                                      Next &rsaquo;
+                                  </button>
+                                  <button 
+                                      className="pagination-button"
+                                      onClick={() => setCurrentPage(totalPages)}
+                                      disabled={currentPage === totalPages}
+                                  >
+                                      Last &raquo;
+                                  </button>
                               </div>
                           )}
                         </>
@@ -1728,11 +1867,32 @@ function App() {
                     />
               )}
             </div>
-            {/* === End Moved Login Status Container === */} 
+            {/* === End Moved Login Status Container === */}
 
             {/* Chat History Modal */} 
             {showChatHistoryModal && (
-                // ... modal JSX ...
+                <div className="chat-history-modal-backdrop" onClick={() => setShowChatHistoryModal(false)}>
+                    <div className="chat-history-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="chat-history-modal-header">
+                            <h2>Chat History</h2>
+                            <button className="close-button" onClick={() => setShowChatHistoryModal(false)}>×</button>
+                        </div>
+                        <div className="chat-history-container">
+                            {viewingChatHistory && viewingChatHistory.length > 0 ? (
+                                <div className="chat-messages">
+                                    {viewingChatHistory.map((message, index) => (
+                                        <div key={index} className={`chat-message ${message.type}`}>
+                                            <div className="message-content">{message.content}</div>
+                                            <div className="message-timestamp">{new Date(message.timestamp).toLocaleString()}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="no-history">No chat history available</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
