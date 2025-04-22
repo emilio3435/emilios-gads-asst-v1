@@ -1425,7 +1425,19 @@ function App() {
                        </button>
                     </>
                 ) : (
-                     <span className="login-prompt-nav">Login via History tab</span>
+                     /* Replace the text prompt with the Google Login button */
+                     <GoogleLogin
+                        onSuccess={handleLoginSuccess} 
+                        onError={() => {
+                          console.error('Google Login Failed');
+                          setError('Google login failed. Please try again.');
+                          setIsLoggedIn(false); // Ensure logged out state on error
+                          setIdToken(null);
+                        }}
+                        // Optional: Add theme/size/shape props if desired
+                        // theme="outline" 
+                        // size="medium"
+                      />
                 )}
                 </div>
                 {/* --- END NEW --- */}
