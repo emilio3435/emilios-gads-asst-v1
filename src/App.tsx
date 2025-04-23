@@ -131,6 +131,7 @@ function App() {
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const [showKpiMismatchWarning, setShowKpiMismatchWarning] = useState<boolean>(false);
 
     // --- Pagination Calculations ---
     const totalPages = Math.ceil(analysisHistory.length / itemsPerPage);
@@ -408,19 +409,23 @@ function App() {
     };
 
     const handleTacticChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedTactics(event.target.value);
+        const newTactic = event.target.value;
+        setSelectedTactics(newTactic);
         // Clear previous results when tactic changes
         setAnalysisResult(null);
         setRawAnalysisResult(null);
         setPromptSent(null);
-        
+        setShowKpiMismatchWarning(false); // Hide warning when tactic changes
+
         // Show KPI recommendation popup if we have recommendations for this tactic
-        if (event.target.value && recommendations[event.target.value]) {
+        if (newTactic && recommendations[newTactic]) {
             setShowKpiRecommendation(true);
             // Auto-hide the recommendation after 15 seconds
             setTimeout(() => {
                 setShowKpiRecommendation(false);
             }, 15000);
+        } else {
+            setShowKpiRecommendation(false); // Hide if no recommendations
         }
         // --- Data Layer Push ---
         window.dataLayer = window.dataLayer || [];
@@ -428,23 +433,37 @@ function App() {
             'event': 'select_tactic',
             'event_category': 'Form Interaction',
             'event_action': 'Select Tactic',
-            'event_label': event.target.value
+            'event_label': newTactic // Use newTactic here
         });
     };
 
     const handleKPIChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedKPIs(event.target.value);
+        const newKpi = event.target.value;
+        setSelectedKPIs(newKpi);
         // Clear previous results when KPI changes
         setAnalysisResult(null);
         setRawAnalysisResult(null);
         setPromptSent(null);
+
+        // Check for mismatch
+        if (selectedTactics && newKpi) {
+            const recommended = recommendations[selectedTactics];
+            if (recommended && !recommended.includes(newKpi)) {
+                setShowKpiMismatchWarning(true); // Show warning
+            } else {
+                setShowKpiMismatchWarning(false); // Hide warning if recommended or no recommendations exist
+            }
+        } else {
+            setShowKpiMismatchWarning(false); // Hide if no tactic selected
+        }
+
         // --- Data Layer Push ---
         window.dataLayer = window.dataLayer || [];
         window.dataLayer.push({
             'event': 'select_kpi',
             'event_category': 'Form Interaction',
             'event_action': 'Select KPI',
-            'event_label': event.target.value
+            'event_label': newKpi // Use newKpi here
         });
     };
 
@@ -1706,6 +1725,23 @@ function App() {
                 </div>
             </div>
 
+            {/* ADD KPI MISMATCH WARNING HERE */}
+            {showKpiMismatchWarning && (
+                <div className="kpi-mismatch-warning">
+                    <span className="warning-icon">⚠️</span>
+                    <span>
+                        Heads up: <strong>{selectedKPIs}</strong> isn't a commonly recommended KPI for the <strong>{selectedTactics}</strong> tactic. Consider using one of these: {getRecommendationMessage(selectedTactics) || 'N/A'}.
+                    </span>
+                    <button
+                        className="close-warning-button"
+                        onClick={() => setShowKpiMismatchWarning(false)}
+                        title="Dismiss warning"
+                    >
+                        &times;
+                    </button>
+                </div>
+            )}
+
                         {/* Situation Textarea - MOVED HERE */}
             <div className="text-area-container">
                 <label htmlFor="currentSituation">Current Situation & Goals:</label>
@@ -1877,19 +1913,13 @@ function App() {
                                                     )}
                                                 </div>
                                                 <div className="history-actions">
-                                                    <button 
-                                                        className="view-history-button"
+                                                    {/* DELETE BUTTON REMOVED FROM HERE */}
+                                                    <button
+                                                        className="view-analysis-button"
                                                         onClick={() => handleLoadHistory(entry.id)}
                                                         title="View this analysis"
                                                     >
                                                         View
-                                                    </button>
-                                                    <button 
-                                                        className="delete-history-button"
-                                                        onClick={() => handleDeleteHistoryEntry(entry.id)}
-                                                        title="Delete this analysis"
-                                                    >
-                                                        Delete
                                                     </button>
                                                 </div>
                                             </div>

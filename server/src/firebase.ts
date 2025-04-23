@@ -2,11 +2,12 @@ import * as admin from 'firebase-admin';
 import path from 'path';
 
 // Determine the correct path to the service account key file
-// __dirname refers to the directory of the current module (dist/ when compiled)
-// The service root on Render is 'server', and the secret file is placed there.
-// When running 'node dist/server.js' from 'server', __dirname is 'server/dist'.
-// So, the key file is one level up from __dirname.
-const serviceAccountPath = path.resolve(__dirname, '../firebase-service-account-key.json');
+
+// Old path
+// const serviceAccountPath = path.resolve(__dirname, '../firebase-service-account-key.json');
+
+// New path (relative to current working directory, expected to be 'server')
+const serviceAccountPath = path.resolve(process.cwd(), 'firebase-service-account-key.json');
 
 try {
   // Initialize Firebase Admin SDK

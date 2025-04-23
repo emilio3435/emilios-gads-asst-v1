@@ -77,3 +77,36 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.kpi-mismatch-warning {
+  background-color: #fff3cd; /* Light yellow */
+  border: 1px solid #ffeeba; /* Yellow border */
+  color: #856404; /* Dark yellow/brown text */
+  padding: 10px 15px;
+  margin: 15px 0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9em;
+}
+
+.kpi-mismatch-warning .warning-icon {
+  margin-right: 10px;
+  font-size: 1.2em;
+}
+
+.kpi-mismatch-warning .close-warning-button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.4em;
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.kpi-mismatch-warning .close-warning-button:hover {
+  opacity: 1;
+}
