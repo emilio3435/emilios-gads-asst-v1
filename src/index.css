@@ -260,3 +260,30 @@ button:focus-visible {
 .logout-button {
   /* Example: font-size: 0.9em; padding: 4px 8px; */
 }
+
+/* --- Error Alert Box Styling --- */
+.error-alert {
+  background-color: #f8d7da; /* Light pink/red background */
+  border: 1px solid #f5c6cb; /* Red border */
+  color: #721c24; /* Dark red text */
+  padding: 10px 15px;
+  margin-top: 1rem; /* Space above the alert */
+  border-radius: 4px;
+  display: flex;
+  align-items: center; /* Align icon and text vertically */
+  gap: 10px; /* Space between icon and text */
+}
+
+.error-icon {
+  font-weight: bold;
+  font-size: 1.1em;
+  /* Optional: Circle background for icon */
+  /* display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #dc3545; 
+  color: white; */
+}

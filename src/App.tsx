@@ -154,6 +154,36 @@ function App() {
         }
     }, []); // Empty dependency array to prevent recreating this function
 
+    // --- Helper function to translate technical errors ---
+    const translateErrorMessage = (rawError: string): string => {
+        console.log("Translating error:", rawError);
+        // Check for specific technical substrings and map them
+        if (rawError.includes('token count exceeded') || rawError.includes('input data is too large')) {
+            return "Analysis Failed: Input data is too large. Try shortening the 'Situation & Goals' description or use a smaller data file.";
+        }
+        if (rawError.includes('HTTP error! status: 413') || rawError.includes('Payload Too Large')) {
+            return "Analysis Failed: The uploaded file is too large. Please use a smaller file.";
+        }
+        if (rawError.includes('Unsupported file type') || rawError.includes('Invalid file format')) {
+            return "Analysis Failed: Unsupported file type. Please upload a CSV, XLSX, or PDF file.";
+        }
+        if (rawError.includes('HTTP error! status: 5')) { // Catch 5xx server errors
+            return "Analysis Failed: An unexpected problem occurred on the server. Please try again later.";
+        }
+        if (rawError.includes('HTTP error! status: 400') || rawError.includes('Bad Request')) {
+            return "Analysis Failed: There was an issue with the data sent. Please check your selections and file.";
+        }
+        if (rawError.includes('Failed to fetch')) { // Generic network error
+             return "Analysis Failed: Could not connect to the analysis service. Please check your internet connection and try again.";
+        }
+        
+        // Add more specific mappings as needed
+        
+        // Fallback for unknown errors
+        console.warn("Unknown error type received:", rawError); 
+        return `Analysis Failed: An unexpected error occurred. (${rawError})`; // Include raw error for debugging
+    };
+
     // --- Define fetchHistory function HERE (before useEffect that uses it) ---
     const fetchHistory = useCallback(async (token: string | null) => {
         if (!token) {
@@ -902,7 +932,9 @@ function App() {
             });
         } catch (error: any) {
             console.error('Error during analysis:', error);
-            setError(error.message || 'An unexpected error occurred.');
+            // Translate the error message before setting state
+            const userFriendlyError = translateErrorMessage(error.message || 'An unexpected error occurred.');
+            setError(userFriendlyError);
             setShowResults(false);
             // --- Data Layer Push for Submit Catch Error ---
             window.dataLayer = window.dataLayer || [];
@@ -1883,7 +1915,13 @@ function App() {
                     <p>Analyzing your data, please wait...</p>
                 </div>
             )}
-            {error && <div className="error-message">{error}</div>}
+            {/* Replace simple error display with alert box */}
+            {error && (
+                <div className="error-alert" role="alert">
+                    <span className="error-icon" aria-hidden="true">!</span> {/* Simple '!' icon */}
+                    {error}
+                </div>
+            )}
             
                     </div> /* End assistant-card for 'new' view */
                 )}
