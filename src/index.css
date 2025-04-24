@@ -110,3 +110,78 @@ button:focus-visible {
 .kpi-mismatch-warning .close-warning-button:hover {
   opacity: 1;
 }
+
+/* --- History Tab UX Improvements --- */
+.history-item {
+  margin-bottom: 1rem; /* Add space below each item */
+  padding-bottom: 0.5rem; /* Add a little padding if needed */
+  border-bottom: 1px solid #eee; /* Add subtle border instead of just margin */
+}
+
+.history-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Align tops */
+  gap: 1rem; /* Space between info and button if needed */
+}
+
+.history-entry-header {
+  /* display: flex; */ /* REMOVED - Parent .history-entry handles flex now */
+  /* justify-content: space-between; */ /* REMOVED */
+  /* align-items: flex-start; */ /* REMOVED */
+  /* gap: 1rem; */ /* REMOVED */
+  flex-grow: 1; /* Allow header (and info within it) to take available space */
+}
+
+.history-entry-info {
+  /* No specific flex properties needed here now */
+}
+
+.history-actions {
+  flex-shrink: 0; /* Prevent actions container from shrinking */
+  /* Add slight margin if needed to prevent touching edge */
+  /* margin-left: 0.5rem; */
+}
+
+/* Resetting button margin just in case */
+.view-analysis-button {
+  margin: 0;
+}
+
+/* --- History Header Area Styling --- */
+.history-header-area {
+  display: flex;
+  align-items: center; /* Vertically align title and button */
+  justify-content: space-between; /* Push title left, button right */
+  margin-bottom: 1rem; /* Space below the header area */
+  padding-bottom: 0.5rem; /* Optional: space above the border/line */
+  border-bottom: 1px solid #eee; /* Add the separating line here */
+}
+
+.history-header-area h2 {
+  margin: 0; /* Remove default h2 margin */
+}
+
+/* Adjust existing history-controls if needed (maybe remove margins?) */
+.history-controls {
+  /* margin-bottom: 1rem; */ /* Remove if margin is now on parent */
+}
+
+/* Styles for Tactic/KPI Badges in History */
+.history-tactic,
+.history-kpi {
+  display: inline-block; /* Needed for padding and shape */
+  padding: 0.2em 0.6em; /* Vertical and horizontal padding */
+  font-size: 0.8em;    /* Slightly smaller font */
+  font-weight: 500;   /* Slightly bolder */
+  line-height: 1.2;   /* Adjust line height */
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.75rem; /* Rounded pill shape */
+  background-color: #e9ecef; /* Light grey background */
+  color: #495057;      /* Darker grey text */
+  margin-right: 0.5rem; /* Space after the badge */
+  margin-top: 0.25rem; /* Small top margin for alignment */
+  margin-bottom: 0.25rem; /* Small bottom margin */
+}
