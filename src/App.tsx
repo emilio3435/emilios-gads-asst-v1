@@ -132,6 +132,18 @@ function App() {
     const helpInputRef = useRef<HTMLTextAreaElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const [showKpiMismatchWarning, setShowKpiMismatchWarning] = useState<boolean>(false);
+    const [userProfile, setUserProfile] = useState({
+        name: '',
+        email: '',
+        picture: ''
+    });
+    
+    // --- State for input field errors ---
+    const [tacticError, setTacticError] = useState<boolean>(false);
+    const [kpiError, setKpiError] = useState<boolean>(false);
+    const [fileError, setFileError] = useState<boolean>(false);
+    // Add more if needed (e.g., clientNameError)
+    const [clientNameError, setClientNameError] = useState<boolean>(false);
 
     // --- Pagination Calculations ---
     const totalPages = Math.ceil(analysisHistory.length / itemsPerPage);
@@ -158,6 +170,22 @@ function App() {
     const translateErrorMessage = (rawError: string): string => {
         console.log("Translating error:", rawError);
         // Check for specific technical substrings and map them
+
+        // --- Client-side validation errors ---
+        if (rawError === "Missing Tactic Selection") {
+            return "Please select a Tactic before analyzing.";
+        }
+        if (rawError === "Missing KPI Selection") {
+            return "Please select a KPI before analyzing.";
+        }
+        if (rawError === "Missing File Upload") {
+            return "Please upload a data file before analyzing.";
+        }
+        if (rawError === "Missing Client Name") {
+            return "Please enter a client or advertiser name.";
+        }
+        // --- End Client-side ---
+
         if (rawError.includes('token count exceeded') || rawError.includes('input data is too large')) {
             return "Analysis Failed: Input data is too large. Try shortening the 'Situation & Goals' description or use a smaller data file.";
         }
@@ -373,6 +401,7 @@ function App() {
         setRawAnalysisResult(null);
         setPromptSent(null);
         setError(null);
+        setFileError(false); // Clear specific file error on change
         
         if (event.target.files && event.target.files.length > 0) {
             const selectedFile = event.target.files[0];
@@ -453,6 +482,8 @@ function App() {
         setRawAnalysisResult(null);
         setPromptSent(null);
         setShowKpiMismatchWarning(false); // Hide warning when tactic changes
+        setError(null); // Clear general error
+        setTacticError(false); // Clear specific tactic error on change
 
         // Show KPI recommendation popup if we have recommendations for this tactic
         if (newTactic && recommendations[newTactic]) {
@@ -481,6 +512,8 @@ function App() {
         setAnalysisResult(null);
         setRawAnalysisResult(null);
         setPromptSent(null);
+        setError(null); // Clear general error
+        setKpiError(false); // Clear specific KPI error on change
 
         // Check for mismatch
         if (selectedTactics && newKpi) {
@@ -506,6 +539,8 @@ function App() {
 
     const handleClientNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setClientName(event.target.value);
+        setError(null); // Clear general error
+        setClientNameError(false); // Clear specific client name error on change
     };
 
     const handleSituationChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -732,18 +767,44 @@ function App() {
     };
 
     const handleSubmit = async () => {
-        if (!file || !selectedTactics || !selectedKPIs) {
-            alert('Please select a tactic, KPI, and upload a file.');
-            // --- Data Layer Push for Validation Error ---
-            window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({
-                'event': 'form_submit_validation_error',
-                'event_category': 'Form Interaction',
-                'event_action': 'Submit Analysis Error',
-                'event_label': 'Missing required fields'
-            });
+        // --- Client-side Validation First ---
+        // Reset all field errors before validating again
+        setTacticError(false);
+        setKpiError(false);
+        setFileError(false);
+        setClientNameError(false); // Reset client name error too
+        let validationFailed = false; // Flag to prevent multiple errors
+
+        // --- New Client Name Check ---
+        if (!clientName.trim()) { // Check if clientName is empty or just whitespace
+            setError(translateErrorMessage("Missing Client Name"));
+            setClientNameError(true);
+            validationFailed = true;
+        }
+
+        if (!selectedTactics) {
+            // Only set general error if no previous validation failed
+            if (!validationFailed) setError(translateErrorMessage("Missing Tactic Selection"));
+            setTacticError(true); // Set specific error
+            validationFailed = true;
+        }
+        if (!selectedKPIs) {
+            // Only set general error if no previous validation failed
+            if (!validationFailed) setError(translateErrorMessage("Missing KPI Selection"));
+            setKpiError(true); // Set specific error
+            validationFailed = true;
+        }
+        if (!file) {
+            if (!validationFailed) setError(translateErrorMessage("Missing File Upload"));
+            setFileError(true); // Set specific error
+            validationFailed = true;
+        }
+
+        // If any validation failed, stop here
+        if (validationFailed) {
             return;
         }
+        // --- End Client-side Validation ---
 
         setIsLoading(true);
         setError(null);
@@ -756,7 +817,16 @@ function App() {
         setSelectedHistoryEntryId(null); // Reset selected history entry
 
         const formData = new FormData();
-        formData.append('file', file);
+        // Type check for file before appending
+        if (file) {
+            formData.append('file', file);
+        } else {
+            // This case shouldn't be reached due to validation, but handle defensively
+            console.error("handleSubmit called with null file after validation checks.");
+            setError("An internal error occurred: File is missing.");
+            setIsLoading(false);
+            return;
+        }
         formData.append('tactics', JSON.stringify(selectedTactics));
         formData.append('kpis', JSON.stringify(selectedKPIs));
         formData.append('currentSituation', currentSituation);
@@ -932,10 +1002,20 @@ function App() {
             });
         } catch (error: any) {
             console.error('Error during analysis:', error);
+            const rawErrorMessage = error.message || 'An unexpected error occurred.';
             // Translate the error message before setting state
-            const userFriendlyError = translateErrorMessage(error.message || 'An unexpected error occurred.');
+            const userFriendlyError = translateErrorMessage(rawErrorMessage);
             setError(userFriendlyError);
             setShowResults(false);
+
+            // --- Highlight fields based on translated error ---
+            // This is basic matching; could be refined
+            if (userFriendlyError.includes("file")) {
+                setFileError(true);
+            }
+            // Add more conditions if backend errors can be mapped to specific fields
+            // e.g., if (userFriendlyError.includes("tactic")) { setTacticError(true); }
+
             // --- Data Layer Push for Submit Catch Error ---
             window.dataLayer = window.dataLayer || [];
             window.dataLayer.push({
@@ -952,7 +1032,7 @@ function App() {
     const handleBackToForm = () => {
         setShowResults(false);
         setIsViewingHistory(false); // Ensure this flag is reset
-        setSelectedHistoryEntryId(null); // Reset selected history entry ID
+        setSelectedHistoryEntryId(null); // Reset selected history entry
         // Do NOT clear the form fields here if we want them retained
     };
 
@@ -1712,7 +1792,8 @@ function App() {
                                 value={clientName}
                                 onChange={handleClientNameChange} // Ensure handler is connected
                                 placeholder="Enter client or advertiser name"
-                                className="text-input"
+                                // Add conditional error class
+                                className={`text-input ${clientNameError ? 'input-error' : ''}`}
                                 title="Enter the name of the client or advertiser for this analysis."
                             />
             </div>
@@ -1724,7 +1805,8 @@ function App() {
                         <label htmlFor="tactics-list">Select Tactic:</label>
                         <select
                             id="tactics-list"
-                            className="tactics-list"
+                            // Add conditional error class
+                            className={`tactics-list ${tacticError ? 'input-error' : ''}`}
                             value={selectedTactics}
                             onChange={handleTacticChange}
                             required
@@ -1751,7 +1833,8 @@ function App() {
                         <label htmlFor="kpi-list">Select KPI:</label>
                         <select
                             id="kpi-list"
-                            className="kpi-list"
+                            // Add conditional error class
+                            className={`kpi-list ${kpiError ? 'input-error' : ''}`}
                             value={selectedKPIs}
                             onChange={handleKPIChange}
                             required
@@ -1833,7 +1916,8 @@ function App() {
                             />
                             <label
                                 htmlFor="fileInput"
-                                className="choose-file-button"
+                                // Add conditional error class
+                                className={`choose-file-button ${fileError ? 'input-error' : ''}`}
                                 title="Upload campaign performance data (CSV, XLSX, or PDF)."
                             >
                                 Choose File
@@ -1918,8 +2002,22 @@ function App() {
             {/* Replace simple error display with alert box */}
             {error && (
                 <div className="error-alert" role="alert">
-                    <span className="error-icon" aria-hidden="true">!</span> {/* Simple '!' icon */}
-                    {error}
+                    <div className="error-alert-content"> 
+                        {/* <span className="error-icon" aria-hidden="true">!</span> */}{/* Icon Removed */}
+                        {/* Separate title and message */} 
+                        <div className="error-text-content">
+                            <strong className="error-title">Analysis Failed:</strong> 
+                            {/* Extract message after the title prefix if possible */}
+                            <span>{error.replace(/^Analysis Failed: /i, '')}</span>
+                        </div>
+                    </div>
+                    <button 
+                        className="error-alert-close" 
+                        onClick={() => setError(null)} // Add onClick to clear error
+                        aria-label="Close error message"
+                    >
+                        &times; {/* Use HTML entity for 'x' */}
+                    </button>
                 </div>
             )}
             
@@ -2110,7 +2208,7 @@ function App() {
             </div>
             {/* === End Moved Login Status Container === */}
 
-            {/* Chat History Modal */} 
+            {/* Chat History Modal */}
             {showChatHistoryModal && (
                 <div className="chat-history-modal-backdrop" onClick={() => setShowChatHistoryModal(false)}>
                     <div className="chat-history-modal" onClick={(e) => e.stopPropagation()}>

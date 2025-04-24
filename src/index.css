@@ -261,29 +261,86 @@ button:focus-visible {
   /* Example: font-size: 0.9em; padding: 4px 8px; */
 }
 
-/* --- Error Alert Box Styling --- */
+/* --- Error Alert Box Styling (Matching KPI Popup) --- */
 .error-alert {
-  background-color: #f8d7da; /* Light pink/red background */
-  border: 1px solid #f5c6cb; /* Red border */
-  color: #721c24; /* Dark red text */
-  padding: 10px 15px;
-  margin-top: 1rem; /* Space above the alert */
-  border-radius: 4px;
+  /* Adopt container styles */
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--shadow-large);
+  padding: 12px 15px;
   display: flex;
-  align-items: center; /* Align icon and text vertically */
-  gap: 10px; /* Space between icon and text */
+  align-items: center; /* Center items vertically */
+  justify-content: space-between;
+  gap: 5px;
+
+  /* Positioning Styles */
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  max-width: 350px;
+  width: calc(100% - 40px);
 }
 
+.error-alert-content {
+  /* No longer needs flex as it just holds text block */
+  /* display: flex; */ 
+  /* align-items: center; */ 
+  /* gap: 8px; */ 
+  flex-grow: 1;
+}
+
+/* New styles for text structure */
+.error-text-content {
+  display: flex;
+  flex-direction: column; /* Stack title and message */
+}
+
+.error-title {
+  font-weight: 600; /* Make title slightly bolder */
+  margin-right: 5px; /* Space after title if on same line */
+}
+
+/*
 .error-icon {
   font-weight: bold;
   font-size: 1.1em;
-  /* Optional: Circle background for icon */
-  /* display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: #dc3545; 
-  color: white; */
+  flex-shrink: 0;
+} 
+*/
+
+/* Style for the close button */
+.error-alert-close {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 22px;
+  font-weight: 300;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: opacity 0.2s ease;
+  margin-left: 10px;
+  flex-shrink: 0;
+  align-self: flex-start; /* Align close button to the top of the flex container */
+}
+
+.error-alert-close:hover {
+  opacity: 0.9;
+}
+
+/* --- Input Field Error Highlighting --- */
+.input-error {
+  border-color: #dc3545 !important; /* Use strong red border */
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25) !important; /* Add red focus-like shadow */
+}
+
+/* Specific override for file button label if needed */
+.choose-file-button.input-error {
+  /* Styles might need to be different for a button/label */
+  border-color: #dc3545 !important; 
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25) !important;
 }
