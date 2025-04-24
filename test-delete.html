@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Entry Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #5029a7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test DELETE API Endpoint</h1>
+    
+    <div>
+        <label for="idToken">ID Token (copy from localStorage):</label><br>
+        <textarea id="idToken" rows="3" cols="80"></textarea>
+    </div>
+    
+    <div>
+        <label for="entryId">Entry ID:</label><br>
+        <input type="text" id="entryId" size="40">
+    </div>
+    
+    <button id="testButton">Test DELETE</button>
+    
+    <button id="getHistoryButton">Get History (shows IDs)</button>
+    
+    <h3>Create Manual Test ID</h3>
+    <input type="text" id="testEntryId" placeholder="Enter a Firestore ID to test" size="40">
+    
+    <div id="result">Results will appear here...</div>
+    
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const idToken = document.getElementById('idToken').value;
+            const entryId = document.getElementById('testEntryId').value || document.getElementById('entryId').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!idToken || !entryId) {
+                resultDiv.innerHTML = 'Please provide both ID token and entry ID';
+                return;
+            }
+            
+            resultDiv.innerHTML = 'Sending request...';
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/history/${entryId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`,
+                    },
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <p>Status: ${response.status} ${response.statusText}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                console.log('Response:', data);
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('getHistoryButton').addEventListener('click', async () => {
+            const idToken = document.getElementById('idToken').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!idToken) {
+                resultDiv.innerHTML = 'Please provide ID token';
+                return;
+            }
+            
+            resultDiv.innerHTML = 'Fetching history...';
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/history', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`,
+                    },
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>History entries (${data.data ? data.data.length : 0})</h3>
+                    <p>Status: ${response.status} ${response.statusText}</p>
+                `;
+                
+                if (data.data && data.data.length > 0) {
+                    let historyHtml = '<ul>';
+                    data.data.forEach(entry => {
+                        historyHtml += `<li>
+                            <strong>ID:</strong> ${entry.id}<br>
+                            <strong>Timestamp:</strong> ${new Date(entry.timestamp).toLocaleString()}<br>
+                            <strong>Client:</strong> ${entry.inputs.clientName || 'N/A'}<br>
+                            <strong>Tactic:</strong> ${entry.inputs.selectedTactics || 'N/A'}<br>
+                            <button class="delete-entry" data-id="${entry.id}">Delete this entry</button>
+                        </li>`;
+                    });
+                    historyHtml += '</ul>';
+                    resultDiv.innerHTML += historyHtml;
+                    
+                    // Add event listeners to delete buttons
+                    document.querySelectorAll('.delete-entry').forEach(button => {
+                        button.addEventListener('click', async (e) => {
+                            const entryId = e.target.getAttribute('data-id');
+                            if (confirm(`Delete entry ${entryId}?`)) {
+                                try {
+                                    const deleteResponse = await fetch(`http://localhost:3001/api/history/${entryId}`, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'Authorization': `Bearer ${idToken}`,
+                                        },
+                                    });
+                                    
+                                    const deleteData = await deleteResponse.json();
+                                    alert(deleteData.message || 'Operation completed');
+                                    // Refresh the list
+                                    document.getElementById('getHistoryButton').click();
+                                } catch (error) {
+                                    alert(`Error: ${error.message}`);
+                                }
+                            }
+                        });
+                    });
+                } else {
+                    resultDiv.innerHTML += '<p>No history entries found</p>';
+                }
+                
+                console.log('Response:', data);
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

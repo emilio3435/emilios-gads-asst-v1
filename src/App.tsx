@@ -88,7 +88,7 @@ const formatPromptForDisplay = (prompt: string | null): string => {
 };
 
 // --- Define API Base URL ---
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 const analysisApiUrl = import.meta.env.VITE_ANALYSIS_API_URL || apiBaseUrl;
 
 function App() {
@@ -217,6 +217,10 @@ function App() {
           
           if (result && Array.isArray(result.data)) {
                console.log('History fetched successfully:', result.data);
+               
+               // Log the actual Firestore IDs for debugging
+               console.log('Firestore document IDs:', result.data.map((entry: any) => entry.id));
+               
                // Correctly convert Firestore Timestamp object to milliseconds
                const formattedHistory = result.data.map((entry: any) => {
                    // Check if timestamp exists and has the expected structure
@@ -224,12 +228,15 @@ function App() {
                        ? entry.timestamp._seconds * 1000 + Math.floor((entry.timestamp._nanoseconds || 0) / 1000000)
                        : entry.timestamp; // Fallback if it's already a number or invalid
                    
+                   // Log individual entry ID for debugging
+                   console.log(`Entry ID from Firestore: ${entry.id}`);
+                   
                    return {
                        ...entry,
                        timestamp: timestampInMillis, // Replace the object with the millisecond number
                    };
                });
-               setAnalysisHistory(formattedHistory); 
+               setAnalysisHistory(formattedHistory);
            } else {
                console.warn('Received unexpected data format when fetching history:', result);
                setAnalysisHistory([]);
@@ -810,13 +817,19 @@ function App() {
 
                 try {
                      console.log('Saving history entry to backend...');
+                     
+                     // Create a version without the ID field to send to the server
+                     // This is important - let Firestore generate the ID
+                     const { id, ...historyDataWithoutId } = historyEntryToSave;
+                     console.log('Sending history data WITHOUT temporary ID:', historyDataWithoutId);
+                     
                     const historyResponse = await fetch(`${apiBaseUrl}/api/history`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${idToken}`, // Use state idToken
                         },
-                        body: JSON.stringify(historyEntryToSave), // Send the structured data
+                        body: JSON.stringify(historyDataWithoutId), // Send data WITHOUT ID field
                     });
 
                     if (!historyResponse.ok) {
@@ -846,16 +859,18 @@ function App() {
                      const historyResult = await historyResponse.json();
                      console.log('History entry saved successfully:', historyResult);
 
-                    // OPTIONAL: Optimistic UI update (add to local state immediately)
-                    // Or: Refetch history after successful save for guaranteed consistency
-                    // For optimistic update:
-                    // Replace temp ID with actual ID if backend returns it
-                    // const savedEntryWithActualId = { ...historyEntryToSave, id: historyResult.entryId }; 
-                    // setAnalysisHistory(prevHistory => [savedEntryWithActualId, ...prevHistory]);
-                    
-                    // For refetch strategy (simpler, guarantees consistency):
+                    // Log the Firestore-generated ID
+                    if (historyResult.entryId) {
+                        console.log('Server generated document ID:', historyResult.entryId);
+                    } else {
+                        console.warn('No document ID returned from server');
+                    }
+
+                    // IMPORTANT: Always refetch to get the server's real data with proper IDs
+                    // This ensures we're using the actual Firestore document IDs 
+                    // rather than temporary client-side IDs
                     fetchHistory(idToken); // Refetch the history list from backend
-                    setCurrentPage(1); // Reset to first page 
+                    setCurrentPage(1); // Reset to first page
 
                 } catch (historyError: any) {
                     console.error('Error saving history entry:', historyError);
@@ -1223,8 +1238,25 @@ function App() {
         setIsLoading(true);
         setError(null);
 
+        // Check if this is a temporary ID (starts with 'temp-')
+        // If so, we can't delete it on the server because it doesn't exist there
+        if (entryId.startsWith('temp-')) {
+            console.warn(`Skipping server delete for temporary ID: ${entryId}`);
+            // Just remove it from local state
+            setAnalysisHistory(prevHistory => prevHistory.filter(entry => entry.id !== entryId));
+            setIsLoading(false);
+            // Reset view if needed
+            if (selectedHistoryEntryId === entryId) {
+                handleNewInquiry();
+                setActiveView('history');
+            }
+            return;
+        }
+
         try {
-            const response = await fetch(`${apiBaseUrl}/api/history/${entryId}`, { // Assuming an endpoint like /api/history/:id
+            // Make absolute URL to be safe
+            const serverUrl = 'http://localhost:3001';
+            const response = await fetch(`${serverUrl}/api/history/${entryId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${idToken}`,
@@ -1854,118 +1886,151 @@ function App() {
                     </div> /* End assistant-card for 'new' view */
                 )}
 
-                {/* === Render History View (Clear History button remains in history-controls) === */}
+                {/* === Render History View === */}
                 {activeView === 'history' && (
                   <div className="card history-card">
-                      <h2>Analysis History</h2>
-                      {!isLoggedIn ? (
-                        <div className="login-prompt">
-                           {/* ... Login prompt content ... */}
-                        </div>
-                      ) : (
-                        <>
-                          <div className="history-controls"> 
-                              {analysisHistory.length > 0 ? (
-                                <button
-                                  className="clear-history-button"
-                                  onClick={handleClearHistory}
-                                  title="Clear all analysis history"
-                                >
-                                  {/* SVG Icon */}
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                                  </svg>
-                                  Clear History
-                                </button>
-                              ) : (
-                                <p className="no-history-message">No analysis history available.</p>
-                              )}
-                          </div>
-                          
-                          {analysisHistory.length > 0 && (
-                              <ul className="history-list">
-                                 {paginatedHistory.map(entry => (
-                                    <li key={entry.id} className="history-item">
-                                        <div className="history-entry">
-                                            <div className="history-entry-header">
-                                                <div className="history-entry-info">
-                                                    <h3 className="history-entry-title">
-                                                        {entry.inputs.clientName || 'Unnamed Analysis'}
-                                                    </h3>
-                                                    <div className="history-entry-meta">
-                                                        <span className="history-date">
-                                                            {formatHistoryTimestamp(entry.timestamp)}
-                                                        </span>
-                                                        <span className="history-tactic">
-                                                            {entry.inputs.selectedTactics}
-                                                        </span>
-                                                        <span className="history-kpi">
-                                                            {entry.inputs.selectedKPIs}
-                                                        </span>
-                                                    </div>
-                                                    {entry.inputs.fileName && (
-                                                        <div className="history-file-name">
-                                                            {entry.inputs.fileName}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="history-actions">
-                                                    {/* DELETE BUTTON REMOVED FROM HERE */}
-                                                    <button
-                                                        className="view-analysis-button"
-                                                        onClick={() => handleLoadHistory(entry.id)}
-                                                        title="View this analysis"
-                                                    >
-                                                        View
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                             </ul>
-                          )}
-                          
-                          {/* Pagination Controls */} 
-                          {analysisHistory.length > 0 && totalPages > 1 && (
-                              <div className="pagination-controls">
-                                  <button 
-                                      className="pagination-button"
-                                      onClick={() => setCurrentPage(1)}
-                                      disabled={currentPage === 1}
-                                  >
-                                      &laquo; First
-                                  </button>
-                                  <button 
-                                      className="pagination-button"
-                                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                      disabled={currentPage === 1}
-                                  >
-                                      &lsaquo; Prev
-                                  </button>
-                                  <span className="pagination-info">
-                                      Page {currentPage} of {totalPages}
-                                  </span>
-                                  <button 
-                                      className="pagination-button"
-                                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                      disabled={currentPage === totalPages}
-                                  >
-                                      Next &rsaquo;
-                                  </button>
-                                  <button 
-                                      className="pagination-button"
-                                      onClick={() => setCurrentPage(totalPages)}
-                                      disabled={currentPage === totalPages}
-                                  >
-                                      Last &raquo;
-                                  </button>
+                      {/* NEW WRAPPER DIV */}
+                      <div className="history-header-area">
+                          <h2>Analysis History</h2>
+                          {!isLoggedIn ? (
+                            null // Don't show controls if not logged in
+                          ) : (
+                              <div className="history-controls">
+                                  {analysisHistory.length > 0 ? (
+                                    <button
+                                      className="clear-history-button"
+                                      onClick={handleClearHistory}
+                                      title="Clear all analysis history"
+                                    >
+                                      {/* SVG Icon */}
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                      </svg>
+                                      Clear History
+                                    </button>
+                                  ) : (
+                                     null // Don't show the 'no history' message here
+                                  )}
                               </div>
                           )}
-                        </>
+                      </div> {/* END of history-header-area */}
+
+                      {/* Render Login Prompt or History List */}
+                      {!isLoggedIn ? (
+                          <div className="login-prompt">
+                              {/* ... Login prompt content ... Keep original */}
+                               <p>Please log in with Google to access your saved history.</p>
+                              <GoogleLogin
+                                onSuccess={handleLoginSuccess}
+                                onError={() => {
+                                  console.error('Google Login Failed');
+                                  setError('Google login failed. Please try again.');
+                                  setIsLoggedIn(false); // Ensure logged out state on error
+                                  setIdToken(null);
+                                  setUserInfo(null);
+                                }}
+                                // Add other props like theme, size, shape as needed
+                              />
+                              {error && <div className="error-message login-error">{error}</div>} {/* Display login errors */}
+                          </div>
+                      ) : (
+                          <>
+                              {/* Render 'No history' message here if needed and controls didn't render button */} 
+                              {analysisHistory.length === 0 && (
+                                  <p className="no-history-message">No analysis history available.</p>
+                              )}
+
+                              {/* History list ul */}
+                              {analysisHistory.length > 0 && (
+                                  <ul className="history-list">
+                                      {paginatedHistory.map(entry => (
+                                          <li key={entry.id} className="history-item">
+                                              <div className="history-entry">
+                                                  <div className="history-entry-header">
+                                                      <div className="history-entry-info">
+                                                          <h3 className="history-entry-title">
+                                                              {entry.inputs.clientName || 'Unnamed Analysis'}
+                                                          </h3>
+                                                          <div className="history-entry-meta">
+                                                              <span className="history-date">
+                                                                  {formatHistoryTimestamp(entry.timestamp)}
+                                                              </span>
+                                                              <span className="history-tactic">
+                                                                  {entry.inputs.selectedTactics}
+                                                              </span>
+                                                              <span className="history-kpi">
+                                                                  {entry.inputs.selectedKPIs}
+                                                              </span>
+                                                          </div>
+                                                          {entry.inputs.fileName && (
+                                                              <div className="history-file-name">
+                                                                  {entry.inputs.fileName}
+                                                              </div>
+                                                          )}
+                                                      </div>
+                                                      <div className="history-actions">
+                                                          <button
+                                                              className="delete-history-button"
+                                                              onClick={() => handleDeleteHistoryEntry(entry.id)}
+                                                              title="Delete this analysis"
+                                                          >
+                                                              Delete
+                                                          </button>
+                                                          <button
+                                                              className="view-analysis-button"
+                                                              onClick={() => handleLoadHistory(entry.id)}
+                                                              title="View this analysis"
+                                                          >
+                                                              View
+                                                          </button>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          </li>
+                                      ))}
+                                  </ul>
+                              )}
+
+                              {/* Pagination Controls */} 
+                              {analysisHistory.length > 0 && totalPages > 1 && (
+                                  <div className="pagination-controls">
+                                      <button 
+                                          className="pagination-button"
+                                          onClick={() => setCurrentPage(1)}
+                                          disabled={currentPage === 1}
+                                      >
+                                          &laquo; First
+                                      </button>
+                                      <button 
+                                          className="pagination-button"
+                                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                          disabled={currentPage === 1}
+                                      >
+                                          &lsaquo; Prev
+                                      </button>
+                                      <span className="pagination-info">
+                                          Page {currentPage} of {totalPages}
+                                      </span>
+                                      <button 
+                                          className="pagination-button"
+                                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                          disabled={currentPage === totalPages}
+                                      >
+                                          Next &rsaquo;
+                                      </button>
+                                      <button 
+                                          className="pagination-button"
+                                          onClick={() => setCurrentPage(totalPages)}
+                                          disabled={currentPage === totalPages}
+                                      >
+                                          Last &raquo;
+                                      </button>
+                                  </div>
+                              )}
+                          </>
                       )}
                   </div>
                 )}

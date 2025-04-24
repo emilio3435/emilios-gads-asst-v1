@@ -144,6 +144,55 @@ app.delete('/api/history', authenticateToken, async (req: Request, res: Response
   }
 });
 
+// DELETE /api/history/:id - Delete a specific history entry
+app.delete('/api/history/:id', authenticateToken, async (req: Request, res: Response) => {
+  console.log(`Received DELETE /api/history/:id request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+  const entryId = req.params.id;
+
+  if (!userId) {
+    console.log('DELETE ERROR: User ID not found after authentication');
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  if (!entryId) {
+    console.log('DELETE ERROR: History entry ID is required');
+    return res.status(400).json({ message: 'History entry ID is required.' });
+  }
+
+  try {
+    console.log(`Looking up document with ID: ${entryId} in collection 'userHistory'`);
+    // Get the document to verify ownership
+    const docRef = db.collection('userHistory').doc(entryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      console.log(`DELETE ERROR: History entry ${entryId} not found. Doc doesn't exist.`);
+      return res.status(404).json({ message: 'History entry not found.' });
+    }
+
+    const data = doc.data();
+    console.log(`Found entry with ID ${entryId}, data:`, data);
+    
+    // Verify the entry belongs to the authenticated user
+    if (data?.userId !== userId) {
+      console.log(`DELETE ERROR: Unauthorized attempt to delete history entry ${entryId} by user ${userId}.`);
+      console.log(`Entry belongs to user ${data?.userId}`);
+      return res.status(403).json({ message: 'Unauthorized. You can only delete your own history entries.' });
+    }
+
+    // Delete the document
+    await docRef.delete();
+    
+    console.log(`Successfully deleted history entry ${entryId} for user ${userId}.`);
+    res.status(200).json({ message: 'History entry deleted successfully.' });
+
+  } catch (error) {
+    console.error(`DELETE ERROR: Error deleting history entry ${entryId} for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to delete history entry due to a server error.' });
+  }
+});
+
 // --- End History API Routes ---
 
 // Global Error Handler (Example)
