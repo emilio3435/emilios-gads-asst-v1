@@ -1255,8 +1255,7 @@ function App() {
 
         try {
             // Make absolute URL to be safe
-            const serverUrl = 'http://localhost:3001';
-            const response = await fetch(`${serverUrl}/api/history/${entryId}`, {
+            const response = await fetch(`${apiBaseUrl}/api/history/${entryId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${idToken}`,

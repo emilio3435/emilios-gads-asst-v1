@@ -91,6 +91,8 @@ app.post('/api/history', authenticateToken, async (req: Request, res: Response) 
       timestamp: historyEntryData.timestamp ? new Date(historyEntryData.timestamp) : new Date(), 
     };
 
+    console.log(`Data being saved to Firestore for user ${userId}:`, dataToSave);
+
     const docRef = await db.collection('userHistory').add(dataToSave);
     
     console.log(`History entry saved successfully for user ${userId} with ID: ${docRef.id}`);
