@@ -2052,12 +2052,15 @@ function App() {
                      </button>
                   </>
               ) : (
-                   <GoogleLogin
-                      onSuccess={handleLoginSuccess} 
-                      onError={() => {
-                        // ... error handling ...
-                      }}
-                    />
+                   // --- REMOVE THIS REDUNDANT LOGIN BUTTON ---
+                   // <GoogleLogin
+                   //    onSuccess={handleLoginSuccess}
+                   //    onError={() => {
+                   //      // ... error handling ...
+                   //    }}
+                   //  />
+                   // --- Display nothing here if not logged in, the button inside the History tab card handles it ---
+                   null
               )}
             </div>
             {/* === End Moved Login Status Container === */}
