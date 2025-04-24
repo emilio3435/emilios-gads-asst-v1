@@ -185,3 +185,78 @@ button:focus-visible {
   margin-top: 0.25rem; /* Small top margin for alignment */
   margin-bottom: 0.25rem; /* Small bottom margin */
 }
+
+/* Clear History Button Styling (as Link) */
+.clear-history-link-button {
+  background: none;
+  border: none;
+  color: #dc3545; /* Subtle red for destructive action */
+  padding: 0; /* Remove default padding */
+  font-size: 0.9em; /* Slightly smaller */
+  cursor: pointer;
+  display: inline-flex; /* Align icon and text */
+  align-items: center;
+  gap: 4px; /* Space between icon and text */
+  text-decoration: none; /* Remove underline */
+  transition: color 0.2s ease;
+  white-space: nowrap; /* Add this to prevent text wrapping */
+}
+
+.clear-history-link-button:hover,
+.clear-history-link-button:focus {
+  color: #a71d2a; /* Darker red on hover/focus */
+  text-decoration: underline;
+}
+
+/* Style the SVG icon within the button */
+.clear-history-link-button svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor; /* Use button text color */
+}
+
+/* --- Login Status Container Styling --- */
+.login-status-container {
+  display: flex;
+  /* justify-content: center; */ /* Removed */
+  align-items: center; /* Center items vertically */
+  padding: 10px 15px; /* Added horizontal padding */
+  margin: 1rem auto; /* Center the container block itself */
+  border-top: 1px solid #eee; /* Optional separator line */
+  gap: 10px; /* Add space between elements */
+  width: fit-content; /* Size container to its content */
+  /* width: 100%; */ /* Removed */
+}
+
+.user-profile-picture {
+  width: 28px; /* Adjust size as needed */
+  height: 28px;
+  border-radius: 50%; /* Make it circular */
+  object-fit: cover; /* Ensure image covers the area nicely */
+  margin-right: 5px; /* Space between picture and name */
+}
+
+/* Simple style for Google Logo Placeholder */
+/* .google-logo-placeholder {
+  display: inline-flex; 
+  align-items: center;
+  justify-content: center;
+  width: 24px; 
+  height: 24px;
+  border-radius: 50%;
+  background-color: #f1f1f1; 
+  color: #4285F4; 
+  font-weight: bold;
+  margin-right: 5px; 
+} */
+
+/* Adjust existing .user-info if needed (e.g., remove icon margin) */
+.user-info {
+  /* Remove icon styles if they existed */
+  /* Example: margin-left: 0; */
+}
+
+/* Adjust logout button style if needed */
+.logout-button {
+  /* Example: font-size: 0.9em; padding: 4px 8px; */
+}

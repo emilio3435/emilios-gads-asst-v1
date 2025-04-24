@@ -1318,6 +1318,9 @@ function App() {
     };
     // <<< END NEW DELETE FUNCTION >>>
 
+    // --- Add console log here for debugging --- 
+    // console.log('User Info State:', userInfo); // Removed for cleanup
+
     if (showResults) {
         return (
             <div className="App">
@@ -1897,7 +1900,7 @@ function App() {
                               <div className="history-controls">
                                   {analysisHistory.length > 0 ? (
                                     <button
-                                      className="clear-history-button"
+                                      className="clear-history-link-button" // Renamed class
                                       onClick={handleClearHistory}
                                       title="Clear all analysis history"
                                     >
@@ -1908,7 +1911,7 @@ function App() {
                                         <line x1="10" y1="11" x2="10" y2="17"></line>
                                         <line x1="14" y1="11" x2="14" y2="17"></line>
                                       </svg>
-                                      Clear History
+                                      Clear History {/* Put text on one line after SVG */}
                                     </button>
                                   ) : (
                                      null // Don't show the 'no history' message here
@@ -2038,28 +2041,32 @@ function App() {
             {/* === Login Status Container Moved Here === */}
             <div className="login-status-container">
               {isLoggedIn && userInfo ? (
+                  // Use a fragment to group elements
                   <>
+                     {/* User profile picture */}
+                     {userInfo.picture && (
+                        <img 
+                            src={userInfo.picture} 
+                            alt={userInfo.name || userInfo.email || 'User profile picture'} 
+                            className="user-profile-picture"
+                        />
+                     )}
+                     {/* Placeholder for Google Logo - Will refine styling */}
+                     {/* We could use an actual SVG or font icon here if available */}
+                     {/* <span className="google-logo-placeholder">G</span> */} {/* Removed again */}
+                     
+                     {/* User name/email */}
                      <span className="user-info" title={userInfo.email}>
-                          {/* ... user icon and text ... */}
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="user-icon">
-                               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                               <circle cx="12" cy="7" r="4"></circle>
-                           </svg>
-                           Logged in as {userInfo.name || userInfo.email}
+                          Logged in as {userInfo.name || userInfo.email}
                      </span>
+                     
+                     {/* Logout button */}
                      <button onClick={handleLogout} className="logout-button" title="Logout">
                          Logout
                      </button>
                   </>
               ) : (
-                   // --- REMOVE THIS REDUNDANT LOGIN BUTTON ---
-                   // <GoogleLogin
-                   //    onSuccess={handleLoginSuccess}
-                   //    onError={() => {
-                   //      // ... error handling ...
-                   //    }}
-                   //  />
-                   // --- Display nothing here if not logged in, the button inside the History tab card handles it ---
+                   // Display nothing here if not logged in, the button inside the History tab card handles it
                    null
               )}
             </div>
