@@ -1314,6 +1314,10 @@ label.button { display: inline-flex; } /* For file input label */
     min-width: 100%;
     border: none;
     border-top: 1px solid var(--border-color);
+    z-index: 1001; /* Higher than overlay */
+    background-color: var(--color-white);
+    max-height: 70vh;
+    overflow-y: auto;
   }
   
   .action-menu-dropdown.visible {
@@ -1329,6 +1333,7 @@ label.button { display: inline-flex; } /* For file input label */
     position: sticky;
     top: 0;
     background-color: var(--color-white);
+    z-index: 1;
   }
   
   .action-menu-item {
@@ -1336,15 +1341,39 @@ label.button { display: inline-flex; } /* For file input label */
     justify-content: center;
     font-size: 16px;
     min-height: 54px;
+    background-color: var(--color-white);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
   }
   
   /* Add a bit of extra spacing at the bottom for iOS */
   .action-menu-item:last-child {
     margin-bottom: env(safe-area-inset-bottom, 16px);
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 16px));
+  }
+  
+  /* Add larger touch target for better mobile interaction */
+  .action-menu-item:active {
+    background-color: var(--gray-lighter);
   }
   
   /* Add dividers between items */
   .action-menu-item + .action-menu-item {
     border-top: 1px solid var(--border-color-light);
+  }
+  
+  /* Make menu button more obvious */
+  .action-menu-button {
+    background-color: var(--gray-lighter);
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+  
+  .action-menu-button.active {
+    background-color: var(--gray-medium);
+    color: var(--color-text);
   }
 }
