@@ -150,9 +150,17 @@ try {
   if (!admin.apps.length) {
     // For production, use environment variables or a service account file
     // In development, you can use a service account JSON directly
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-    });
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      console.log(`Using GOOGLE_APPLICATION_CREDENTIALS from environment: ${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+      });
+    } else {
+      // Use default credentials or inline credentials if needed
+      // This is a fallback for development environments
+      console.log('No GOOGLE_APPLICATION_CREDENTIALS found, using default initialization');
+      admin.initializeApp();
+    }
     
     console.log('Firebase Admin SDK initialized successfully');
   }
@@ -163,6 +171,7 @@ try {
 
 // Get a Firestore database reference
 const db = admin.firestore();
+console.log('Firestore database reference created');
 
 // Authentication middleware to verify JWT token
 const authenticateToken = async (req, res, next) => {
@@ -655,6 +664,68 @@ CURRENT QUESTION: ${req.body.question}
   }
 });
 
+// POST /api/history - Save a new history entry
+app.post('/api/history', authenticateToken, async (req, res) => {
+  console.log(`Received POST /api/history request for user: ${req.user?.email}`);
+  
+  const userId = req.user?.sub;
+  const historyEntryData = req.body; // Get data from frontend
+
+  if (!userId) {
+    console.error('Error in POST /api/history: User ID missing after authentication.');
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  if (!historyEntryData || typeof historyEntryData !== 'object' || Object.keys(historyEntryData).length === 0) {
+    console.error('Error in POST /api/history: Invalid or empty request body.');
+    return res.status(400).json({ message: 'Invalid or missing history entry data in request body.' });
+  }
+
+  try {
+    // Ensure the proper structure exists for helpConversation
+    if (!historyEntryData.results) {
+      historyEntryData.results = {};
+    }
+    
+    // Initialize helpConversation as an empty array if not provided
+    if (!historyEntryData.results.helpConversation) {
+      historyEntryData.results.helpConversation = [];
+    }
+
+    // Make sure helpConversation is an array
+    if (!Array.isArray(historyEntryData.results.helpConversation)) {
+      console.warn('helpConversation is not an array, converting to empty array');
+      historyEntryData.results.helpConversation = [];
+    }
+    
+    const dataToSave = {
+      ...historyEntryData,
+      userId: userId, 
+      timestamp: historyEntryData.timestamp ? new Date(historyEntryData.timestamp) : new Date(), 
+    };
+
+    console.log(`Data being saved to Firestore for user ${userId}:`, {
+      ...dataToSave,
+      hasHelpConversation: Array.isArray(dataToSave.results?.helpConversation),
+      helpConversationLength: Array.isArray(dataToSave.results?.helpConversation) ? 
+                            dataToSave.results.helpConversation.length : 'N/A'
+    });
+
+    const docRef = await db.collection('userHistory').add(dataToSave);
+    
+    console.log(`History entry saved successfully for user ${userId} with ID: ${docRef.id}`);
+
+    res.status(201).json({ 
+        message: `History entry saved successfully for user ${userId}`,
+        entryId: docRef.id,
+    });
+
+  } catch (error) {
+    console.error(`Error saving history entry for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to save history entry due to a server error.' });
+  }
+});
+
 // DELETE /api/history/:id - Delete a specific history entry
 app.delete('/api/history/:id', authenticateToken, async (req, res) => {
   // ... existing code ...
@@ -703,10 +774,26 @@ app.put('/api/history/:id/chat', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized. You can only update your own history entries.' });
     }
 
-    // Update the document with the new chat history
-    await docRef.update({
-      'results.helpConversation': helpConversation
+    // Log the entry data for debugging
+    console.log('Entry data before update:', {
+      hasResults: !!data.results,
+      resultsKeys: data.results ? Object.keys(data.results) : [],
+      currentHelpConversation: data.results?.helpConversation || 'undefined'
     });
+
+    // Prepare the update data
+    const updateData = {
+      'results.helpConversation': helpConversation
+    };
+    
+    console.log('Updating with help conversation:', {
+      conversationLength: helpConversation.length,
+      firstMessageType: helpConversation.length > 0 ? helpConversation[0].type : 'none',
+      lastMessageType: helpConversation.length > 0 ? helpConversation[helpConversation.length-1].type : 'none'
+    });
+
+    // Update the document with the new chat history
+    await docRef.update(updateData);
     
     console.log(`Successfully updated chat history for entry ${entryId}`);
     res.status(200).json({ 

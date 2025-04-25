@@ -680,6 +680,12 @@ function App() {
             if (isLoggedIn && idToken && selectedHistoryEntryId) {
                 try {
                     console.log('Updating history entry with new chat message...');
+                    console.log('Chat conversation to save:', {
+                        entryId: selectedHistoryEntryId,
+                        messageCount: updatedConversationWithResponse.length,
+                        messageTypes: updatedConversationWithResponse.map(msg => msg.type)
+                    });
+                    
                     const response = await fetch(`${apiBaseUrl}/api/history/${selectedHistoryEntryId}/chat`, {
                         method: 'PUT',
                         headers: {
@@ -692,15 +698,28 @@ function App() {
                     });
                     
                     if (!response.ok) {
-                        console.error('Failed to update chat history in Firestore:', response.statusText);
+                        const responseText = await response.text();
+                        console.error('Failed to update chat history in Firestore:', response.status, response.statusText);
+                        console.error('Response body:', responseText);
+                        
+                        // If it's an auth error, handle token refresh
+                        if (response.status === 401 || response.status === 403) {
+                            console.warn('Authentication error while saving chat history. You may need to re-login.');
+                        }
                     } else {
-                        console.log('Chat history successfully updated in Firestore');
+                        const result = await response.json();
+                        console.log('Chat history successfully updated in Firestore:', result);
                         // Refetch history to update UI
                         fetchHistory(idToken);
                     }
                 } catch (error) {
                     console.error('Error updating chat history in Firestore:', error);
                 }
+            } else {
+                console.log('Not saving chat history - Either not logged in or no selected history entry.');
+                if (!isLoggedIn) console.log('  - Not logged in');
+                if (!idToken) console.log('  - No ID token');
+                if (!selectedHistoryEntryId) console.log('  - No selected history entry ID');
             }
         } catch (error: any) {
             console.error('Error getting help:', error);
