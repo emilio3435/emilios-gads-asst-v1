@@ -239,89 +239,113 @@ function App() {
         setError(null);
         
         try {
-          const response = await fetch(`${apiBaseUrl}/api/history`, {
-               method: 'GET',
-               headers: { 
-                   'Authorization': `Bearer ${token}`,
-                   'Accept': 'application/json'
-               } 
-           });
-           
-          if (!response.ok) {
-               let errorMsg = `Failed to fetch history: ${response.statusText}`;
-               try {
-                   const errorData = await response.json();
-                   errorMsg = errorData.message || errorMsg;
-               } catch (e) { /* Ignore */ }
-               
-               // Handle authentication errors by logging out
-               if (response.status === 401 || response.status === 403) {
-                   console.log('Authentication error. Logging out:', errorMsg);
-                   // Clear stored credentials
-                   localStorage.removeItem('idToken');
-                   localStorage.removeItem('userInfo');
-                   setIsLoggedIn(false);
-                   setIdToken(null);
-                   setUserInfo(null);
-                   setAnalysisHistory([]);
-                   setError('Your session has expired. Please log in again.');
-                   return;
-               }
-               
-               throw new Error(errorMsg);
-          }
-          
-          const result = await response.json();
-          
-          if (result && Array.isArray(result.data)) {
-               console.log('History fetched successfully:', result.data);
-               
-               // Log the actual Firestore IDs for debugging
-               console.log('Firestore document IDs:', result.data.map((entry: any) => entry.id));
-               
-               // Add debug logs for helpConversation
-               console.log('Checking helpConversation in entries:', 
-                 result.data.map((entry: any) => ({
-                   id: entry.id,
-                   hasHelpConversation: entry.results && 
+            // Add timeout to prevent hanging requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            const response = await fetch(`${apiBaseUrl}/api/history`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId); // Clear timeout on successful response
+            
+            if (!response.ok) {
+                let errorMsg = `Failed to fetch history: ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorMsg;
+                } catch (e) { /* Ignore */ }
+                
+                // Handle authentication errors by logging out
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Authentication error. Logging out:', errorMsg);
+                    // Clear stored credentials
+                    localStorage.removeItem('idToken');
+                    localStorage.removeItem('userInfo');
+                    setIsLoggedIn(false);
+                    setIdToken(null);
+                    setUserInfo(null);
+                    setAnalysisHistory([]);
+                    setError('Your session has expired. Please log in again.');
+                    return;
+                }
+                
+                throw new Error(errorMsg);
+            }
+            
+            const result = await response.json();
+            
+            if (result && Array.isArray(result.data)) {
+                console.log('History fetched successfully:', result.data);
+                
+                // Log the actual Firestore IDs for debugging
+                console.log('Firestore document IDs:', result.data.map((entry: any) => entry.id));
+                
+                // Add debug logs for helpConversation
+                console.log('Checking helpConversation in entries:', 
+                    result.data.map((entry: any) => ({
+                    id: entry.id,
+                    hasHelpConversation: entry.results && 
                                         entry.results.helpConversation && 
                                         Array.isArray(entry.results.helpConversation),
-                   helpConversationLength: entry.results && 
+                    helpConversationLength: entry.results && 
                                         entry.results.helpConversation && 
                                         Array.isArray(entry.results.helpConversation) ? 
                                         entry.results.helpConversation.length : 0
-                 }))
-               );
-               
-               // Correctly convert Firestore Timestamp object to milliseconds
-               const formattedHistory = result.data.map((entry: any) => {
-                   // Check if timestamp exists and has the expected structure
-                   const timestampInMillis = entry.timestamp && typeof entry.timestamp === 'object' && entry.timestamp._seconds
-                       ? entry.timestamp._seconds * 1000 + Math.floor((entry.timestamp._nanoseconds || 0) / 1000000)
-                       : entry.timestamp; // Fallback if it's already a number or invalid
-                   
-                   // Log individual entry ID for debugging
-                   console.log(`Entry ID from Firestore: ${entry.id}`);
-                   
-                   return {
-                       ...entry,
-                       timestamp: timestampInMillis, // Replace the object with the millisecond number
-                   };
-               });
-               setAnalysisHistory(formattedHistory);
-           } else {
-               console.warn('Received unexpected data format when fetching history:', result);
-               setAnalysisHistory([]);
-           }
-           
+                    }))
+                );
+                
+                // Correctly convert Firestore Timestamp object to milliseconds
+                const formattedHistory = result.data.map((entry: any) => {
+                    // Ensure entry.results exists and has helpConversation
+                    if (!entry.results) {
+                        entry.results = {};
+                    }
+                    
+                    if (!entry.results.helpConversation) {
+                        entry.results.helpConversation = [];
+                    }
+                    
+                    // Check if timestamp exists and has the expected structure
+                    const timestampInMillis = entry.timestamp && typeof entry.timestamp === 'object' && entry.timestamp._seconds
+                        ? entry.timestamp._seconds * 1000 + Math.floor((entry.timestamp._nanoseconds || 0) / 1000000)
+                        : entry.timestamp; // Fallback if it's already a number or invalid
+                    
+                    // Log individual entry ID for debugging
+                    console.log(`Entry ID from Firestore: ${entry.id}`);
+                    
+                    return {
+                        ...entry,
+                        timestamp: timestampInMillis, // Replace the object with the millisecond number
+                    };
+                });
+                setAnalysisHistory(formattedHistory);
+            } else {
+                console.warn('Received unexpected data format when fetching history:', result);
+                setAnalysisHistory([]);
+            }
+            
         } catch (error: any) {
-          console.error('Failed to fetch history:', error);
-          setError(error.message || 'Failed to load history.');
-          setAnalysisHistory([]);
+            console.error('Failed to fetch history:', error);
+            
+            if (error.name === 'AbortError') {
+                setError('Failed to load history: Request timed out. Please try again.');
+            } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                setError('Failed to load history: Network error. Check your connection and try again.');
+            } else {
+                setError(error.message || 'Failed to load history.');
+            }
+            
+            setAnalysisHistory([]);
         } finally {
-           setIsLoading(false);
+            setIsLoading(false);
         }
-    }, [apiBaseUrl]); // Remove isTokenExpired dependency
+    }, [apiBaseUrl, isTokenExpired]); // Include all dependencies
 
     // --- useEffect hooks ---
     // Focus on help input
@@ -710,10 +734,15 @@ function App() {
                         const result = await response.json();
                         console.log('Chat history successfully updated in Firestore:', result);
                         // Refetch history to update UI
-                        fetchHistory(idToken);
+                        try {
+                            await fetchHistory(idToken);
+                        } catch (fetchError) {
+                            console.warn('Failed to refresh history after chat update:', fetchError);
+                        }
                     }
                 } catch (error) {
                     console.error('Error updating chat history in Firestore:', error);
+                    console.log('Continuing with local chat history only');
                 }
             } else {
                 console.log('Not saving chat history - Either not logged in or no selected history entry.');
@@ -970,19 +999,18 @@ function App() {
                          rawAnalysisResult: data.raw, 
                          modelName: data.modelName,
                          promptSent: data.prompt,
-                         // Chat history might be too large for direct saving here
-                         // Consider saving chat separately or omitting from main history entry
-                         helpConversation: [] // Placeholder or omitted
+                         // Initialize with an empty array to allow for future messages
+                         helpConversation: []
                     }
                 };
 
                 try {
-                     console.log('Saving history entry to backend...');
+                    console.log('Saving history entry to backend...');
                      
-                     // Create a version without the ID field to send to the server
-                     // This is important - let Firestore generate the ID
-                     const { id, ...historyDataWithoutId } = historyEntryToSave;
-                     console.log('Sending history data WITHOUT temporary ID:', historyDataWithoutId);
+                    // Create a version without the ID field to send to the server
+                    // This is important - let Firestore generate the ID
+                    const { id, ...historyDataWithoutId } = historyEntryToSave;
+                    console.log('Sending history data WITHOUT temporary ID:', historyDataWithoutId);
                      
                     const historyResponse = await fetch(`${apiBaseUrl}/api/history`, {
                         method: 'POST',
@@ -994,51 +1022,57 @@ function App() {
                     });
 
                     if (!historyResponse.ok) {
-                         let errorMsg = `Failed to save history: ${historyResponse.statusText}`;
-                         try {
-                             const errorData = await historyResponse.json();
-                             errorMsg = errorData.message || errorMsg;
-                         } catch (e) { /* Ignore */ }
+                        let errorMsg = `Failed to save history: ${historyResponse.statusText}`;
+                        try {
+                            const errorData = await historyResponse.json();
+                            errorMsg = errorData.message || errorMsg;
+                        } catch (e) { /* Ignore */ }
                          
-                         // Handle authentication errors by logging out
-                         if (historyResponse.status === 401 || historyResponse.status === 403) {
-                             console.log('Authentication error during save history. Logging out:', errorMsg);
-                             // Clear stored credentials
-                             localStorage.removeItem('idToken');
-                             localStorage.removeItem('userInfo');
-                             setIsLoggedIn(false);
-                             setIdToken(null);
-                             setUserInfo(null);
-                             setAnalysisHistory([]);
-                             setError('Your session has expired. Please log in again, but your analysis results are still available.');
-                             return;
-                         }
+                        // Handle authentication errors by logging out
+                        if (historyResponse.status === 401 || historyResponse.status === 403) {
+                            console.log('Authentication error during save history. Logging out:', errorMsg);
+                            // Clear stored credentials
+                            localStorage.removeItem('idToken');
+                            localStorage.removeItem('userInfo');
+                            setIsLoggedIn(false);
+                            setIdToken(null);
+                            setUserInfo(null);
+                            setAnalysisHistory([]);
+                            setError('Your session has expired. Please log in again, but your analysis results are still available.');
+                            return;
+                        }
                          
-                        throw new Error(errorMsg);
-                    }
-                    
-                     const historyResult = await historyResponse.json();
-                     console.log('History entry saved successfully:', historyResult);
-
-                    // Log the Firestore-generated ID
-                    if (historyResult.entryId) {
-                        console.log('Server generated document ID:', historyResult.entryId);
-                        // Set the selected history entry ID after saving
-                        setSelectedHistoryEntryId(historyResult.entryId);
+                        // For other errors, just log and continue showing results
+                        console.warn(errorMsg);
+                        console.log('Continuing with analysis results without saving to history');
                     } else {
-                        console.warn('No document ID returned from server');
+                        const historyResult = await historyResponse.json();
+                        console.log('History entry saved successfully:', historyResult);
+
+                        // Log the Firestore-generated ID
+                        if (historyResult.entryId) {
+                            console.log('Server generated document ID:', historyResult.entryId);
+                            // Set the selected history entry ID after saving
+                            setSelectedHistoryEntryId(historyResult.entryId);
+                        } else {
+                            console.warn('No document ID returned from server');
+                        }
+
+                        // Try to refetch history but don't let failures block showing results
+                        try {
+                            // IMPORTANT: Always refetch to get the server's real data with proper IDs
+                            // This ensures we're using the actual Firestore document IDs 
+                            // rather than temporary client-side IDs
+                            await fetchHistory(idToken); // Refetch the history list from backend
+                            setCurrentPage(1); // Reset to first page
+                        } catch (fetchError) {
+                            console.warn('Failed to fetch updated history after save:', fetchError);
+                        }
                     }
-
-                    // IMPORTANT: Always refetch to get the server's real data with proper IDs
-                    // This ensures we're using the actual Firestore document IDs 
-                    // rather than temporary client-side IDs
-                    fetchHistory(idToken); // Refetch the history list from backend
-                    setCurrentPage(1); // Reset to first page
-
                 } catch (historyError: any) {
                     console.error('Error saving history entry:', historyError);
                     // Notify user, but don't block showing analysis results
-                    setError(`Analysis complete, but failed to save to history: ${historyError.message}`);
+                    console.log('Continuing with analysis results without saving to history');
                 }
             } else {
                 console.warn('User not logged in or token missing, history entry not saved to backend.');

@@ -54,6 +54,58 @@ try {
   console.log('Continuing without Firestore - data persistence features will be disabled');
 }
 
+// Flag to track if Firebase is properly initialized
+let isFirebaseInitialized = false;
+
+try {
+  // Check if Firebase Admin is available and initialized
+  if (admin.apps.length > 0 && db) {
+    isFirebaseInitialized = true;
+    console.log('Firebase is properly initialized and ready to use');
+  } else {
+    console.warn('Firebase is not properly initialized - history features will be limited');
+  }
+} catch (error) {
+  console.error('Error checking Firebase initialization:', error);
+  console.warn('Continuing with limited functionality - history features will not work properly');
+}
+
+// Simplified fallback history middleware when Firebase isn't available
+const handleFirebaseUnavailable = (req, res) => {
+  console.log('Firebase unavailable - returning mock response');
+  
+  // Different responses based on the HTTP method
+  if (req.method === 'GET') {
+    // For GET requests (fetching history)
+    return res.status(200).json({
+      message: 'History service is currently unavailable - Firebase not configured',
+      data: []
+    });
+  } else if (req.method === 'POST') {
+    // For POST requests (saving history)
+    return res.status(200).json({
+      message: 'History was not saved - Firebase not configured',
+      entryId: 'mock-id-' + Date.now()
+    });
+  } else if (req.method === 'PUT') {
+    // For PUT requests (updating history)
+    return res.status(200).json({
+      message: 'History was not updated - Firebase not configured',
+      entryId: req.params.id || 'unknown'
+    });
+  } else if (req.method === 'DELETE') {
+    // For DELETE requests
+    return res.status(200).json({
+      message: 'Nothing was deleted - Firebase not configured'
+    });
+  } else {
+    // For any other request methods
+    return res.status(200).json({
+      message: 'Operation not performed - Firebase not configured'
+    });
+  }
+};
+
 // Define industry-specific context data for Audacy
 const audacyIndustryContext = {
   retail: {
@@ -673,6 +725,11 @@ CURRENT QUESTION: ${req.body.question}
 
 // GET /api/history - Fetch history for the user
 app.get('/api/history', authenticateToken, async (req, res) => {
+  // If Firebase isn't initialized, return mock data
+  if (!isFirebaseInitialized) {
+    return handleFirebaseUnavailable(req, res);
+  }
+  
   console.log(`Received GET /api/history request for user: ${req.user?.email}`);
   const userId = req.user?.sub; // Google User ID (subject)
 
@@ -716,6 +773,11 @@ app.get('/api/history', authenticateToken, async (req, res) => {
 
 // POST /api/history - Save a new history entry
 app.post('/api/history', authenticateToken, async (req, res) => {
+  // If Firebase isn't initialized, return mock response
+  if (!isFirebaseInitialized) {
+    return handleFirebaseUnavailable(req, res);
+  }
+  
   console.log(`Received POST /api/history request for user: ${req.user?.email}`);
   
   const userId = req.user?.sub;
@@ -784,6 +846,11 @@ app.post('/api/history', authenticateToken, async (req, res) => {
 
 // DELETE /api/history - Clear history for the user
 app.delete('/api/history', authenticateToken, async (req, res) => {
+  // If Firebase isn't initialized, return mock response
+  if (!isFirebaseInitialized) {
+    return handleFirebaseUnavailable(req, res);
+  }
+  
   console.log(`Received DELETE /api/history request for user: ${req.user?.email}`);
   const userId = req.user?.sub;
 
@@ -828,6 +895,11 @@ app.delete('/api/history', authenticateToken, async (req, res) => {
 
 // DELETE /api/history/:id - Delete a specific history entry
 app.delete('/api/history/:id', authenticateToken, async (req, res) => {
+  // If Firebase isn't initialized, return mock response
+  if (!isFirebaseInitialized) {
+    return handleFirebaseUnavailable(req, res);
+  }
+  
   console.log(`Received DELETE /api/history/:id request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
   const userId = req.user?.sub;
   const entryId = req.params.id;
@@ -883,6 +955,11 @@ app.delete('/api/history/:id', authenticateToken, async (req, res) => {
 
 // PUT /api/history/:id/chat - Update chat history for a specific entry
 app.put('/api/history/:id/chat', authenticateToken, async (req, res) => {
+  // If Firebase isn't initialized, return mock response
+  if (!isFirebaseInitialized) {
+    return handleFirebaseUnavailable(req, res);
+  }
+  
   console.log(`Received PUT /api/history/:id/chat request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
   const userId = req.user?.sub;
   const entryId = req.params.id;
