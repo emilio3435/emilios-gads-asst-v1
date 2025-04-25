@@ -18,6 +18,42 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') }); // Load .env file relative to this file
 
+// Initialize Firebase Admin with credentials from environment
+try {
+  // Check if the app is already initialized
+  if (!admin.apps.length) {
+    // For production, use environment variables or a service account file
+    // In development, you can use a service account JSON directly
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      console.log(`Using GOOGLE_APPLICATION_CREDENTIALS from environment: ${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+      });
+    } else {
+      // Use default credentials or inline credentials if needed
+      // This is a fallback for development environments
+      console.log('No GOOGLE_APPLICATION_CREDENTIALS found, using default initialization');
+      admin.initializeApp();
+    }
+    
+    console.log('Firebase Admin SDK initialized successfully');
+  }
+} catch (error) {
+  console.error('Error initializing Firebase Admin SDK:', error);
+  // Don't exit - allow the server to still run even without Firebase
+  console.log('Continuing without Firebase - authentication features will be disabled');
+}
+
+// Get a Firestore database reference if Firebase is initialized
+let db;
+try {
+  db = admin.firestore();
+  console.log('Firestore database reference created');
+} catch (error) {
+  console.error('Failed to create Firestore reference:', error);
+  console.log('Continuing without Firestore - data persistence features will be disabled');
+}
+
 // Define industry-specific context data for Audacy
 const audacyIndustryContext = {
   retail: {
@@ -143,35 +179,6 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
-
-// Add Firebase admin for authentication and database
-try {
-  // Check if the app is already initialized
-  if (!admin.apps.length) {
-    // For production, use environment variables or a service account file
-    // In development, you can use a service account JSON directly
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      console.log(`Using GOOGLE_APPLICATION_CREDENTIALS from environment: ${process.env.GOOGLE_APPLICATION_CREDENTIALS}`);
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-      });
-    } else {
-      // Use default credentials or inline credentials if needed
-      // This is a fallback for development environments
-      console.log('No GOOGLE_APPLICATION_CREDENTIALS found, using default initialization');
-      admin.initializeApp();
-    }
-    
-    console.log('Firebase Admin SDK initialized successfully');
-  }
-} catch (error) {
-  console.error('Error initializing Firebase Admin SDK:', error);
-  process.exit(1);
-}
-
-// Get a Firestore database reference
-const db = admin.firestore();
-console.log('Firestore database reference created');
 
 // Authentication middleware to verify JWT token
 const authenticateToken = async (req, res, next) => {
@@ -664,6 +671,49 @@ CURRENT QUESTION: ${req.body.question}
   }
 });
 
+// GET /api/history - Fetch history for the user
+app.get('/api/history', authenticateToken, async (req, res) => {
+  console.log(`Received GET /api/history request for user: ${req.user?.email}`);
+  const userId = req.user?.sub; // Google User ID (subject)
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  try {
+    console.log(`Fetching history for user ${userId}...`);
+    // Make sure db is defined
+    if (!db) {
+      console.error('Firestore database not initialized');
+      return res.status(500).json({ message: 'Database not initialized. Firebase may be misconfigured.' });
+    }
+    
+    const historyQuery = db.collection('userHistory')
+                         .where('userId', '==', userId) // Filter by the logged-in user
+                         .orderBy('timestamp', 'desc'); // Order by timestamp, newest first
+
+    const snapshot = await historyQuery.get();
+
+    if (snapshot.empty) {
+      console.log(`No history found for user ${userId}.`);
+      return res.status(200).json({ message: 'No history found for user.', data: [] });
+    }
+
+    // Explicitly type 'doc' using Firestore types
+    const userHistory = snapshot.docs.map((doc) => ({
+      id: doc.id, // Include the Firestore document ID
+      ...doc.data(), // Spread the rest of the document data
+    }));
+
+    console.log(`Successfully fetched ${userHistory.length} history entries for user ${userId}.`);
+    res.status(200).json({ message: 'History fetched successfully.', data: userHistory });
+
+  } catch (error) {
+    console.error(`Error fetching history for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to fetch history due to a server error.' });
+  }
+});
+
 // POST /api/history - Save a new history entry
 app.post('/api/history', authenticateToken, async (req, res) => {
   console.log(`Received POST /api/history request for user: ${req.user?.email}`);
@@ -682,6 +732,12 @@ app.post('/api/history', authenticateToken, async (req, res) => {
   }
 
   try {
+    // Make sure db is defined
+    if (!db) {
+      console.error('Firestore database not initialized');
+      return res.status(500).json({ message: 'Database not initialized. Firebase may be misconfigured.' });
+    }
+    
     // Ensure the proper structure exists for helpConversation
     if (!historyEntryData.results) {
       historyEntryData.results = {};
@@ -726,9 +782,103 @@ app.post('/api/history', authenticateToken, async (req, res) => {
   }
 });
 
+// DELETE /api/history - Clear history for the user
+app.delete('/api/history', authenticateToken, async (req, res) => {
+  console.log(`Received DELETE /api/history request for user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  try {
+    // Make sure db is defined
+    if (!db) {
+      console.error('Firestore database not initialized');
+      return res.status(500).json({ message: 'Database not initialized. Firebase may be misconfigured.' });
+    }
+    
+    console.log(`Attempting to delete history for user ${userId}...`);
+    const query = db.collection('userHistory').where('userId', '==', userId);
+    const snapshot = await query.get();
+
+    if (snapshot.empty) {
+      console.log(`No history found to delete for user ${userId}.`);
+      return res.status(200).json({ message: 'No history found to delete.' });
+    }
+
+    // Use a batched write to delete all documents efficiently
+    const batch = db.batch();
+    // Explicitly type 'doc' using Firestore types
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+
+    const deleteCount = snapshot.size;
+    console.log(`Successfully deleted ${deleteCount} history entries for user ${userId}.`);
+    res.status(200).json({ message: `Successfully deleted ${deleteCount} history entries.` });
+
+  } catch (error) {
+    console.error(`Error deleting history for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to delete history due to a server error.' });
+  }
+});
+
 // DELETE /api/history/:id - Delete a specific history entry
 app.delete('/api/history/:id', authenticateToken, async (req, res) => {
-  // ... existing code ...
+  console.log(`Received DELETE /api/history/:id request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+  const entryId = req.params.id;
+
+  if (!userId) {
+    console.log('DELETE ERROR: User ID not found after authentication');
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  if (!entryId) {
+    console.log('DELETE ERROR: History entry ID is required');
+    return res.status(400).json({ message: 'History entry ID is required.' });
+  }
+
+  try {
+    // Make sure db is defined
+    if (!db) {
+      console.error('Firestore database not initialized');
+      return res.status(500).json({ message: 'Database not initialized. Firebase may be misconfigured.' });
+    }
+    
+    console.log(`Looking up document with ID: ${entryId} in collection 'userHistory'`);
+    // Get the document to verify ownership
+    const docRef = db.collection('userHistory').doc(entryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      console.log(`DELETE ERROR: History entry ${entryId} not found. Doc doesn't exist.`);
+      return res.status(404).json({ message: 'History entry not found.' });
+    }
+
+    const data = doc.data();
+    console.log(`Found entry with ID ${entryId}, data:`, data);
+    
+    // Verify the entry belongs to the authenticated user
+    if (data?.userId !== userId) {
+      console.log(`DELETE ERROR: Unauthorized attempt to delete history entry ${entryId} by user ${userId}.`);
+      console.log(`Entry belongs to user ${data?.userId}`);
+      return res.status(403).json({ message: 'Unauthorized. You can only delete your own history entries.' });
+    }
+
+    // Delete the document
+    await docRef.delete();
+    
+    console.log(`Successfully deleted history entry ${entryId} for user ${userId}.`);
+    res.status(200).json({ message: 'History entry deleted successfully.' });
+
+  } catch (error) {
+    console.error(`DELETE ERROR: Error deleting history entry ${entryId} for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to delete history entry due to a server error.' });
+  }
 });
 
 // PUT /api/history/:id/chat - Update chat history for a specific entry
@@ -754,6 +904,12 @@ app.put('/api/history/:id/chat', authenticateToken, async (req, res) => {
   }
 
   try {
+    // Make sure db is defined
+    if (!db) {
+      console.error('Firestore database not initialized');
+      return res.status(500).json({ message: 'Database not initialized. Firebase may be misconfigured.' });
+    }
+    
     console.log(`Looking up document with ID: ${entryId} in collection 'userHistory'`);
     // Get the document to verify ownership
     const docRef = db.collection('userHistory').doc(entryId);
@@ -810,8 +966,8 @@ app.put('/api/history/:id/chat', authenticateToken, async (req, res) => {
 // Start server with better port handling
 const PORT = process.env.PORT || DEFAULT_PORT;
 let currentPort = PORT;
-let maxAttempts = 10;
 let attempts = 0;
+let maxAttempts = 10;
 
 function tryStartServer(port) {
   console.log(`Attempting to start server on port ${port}...`);
