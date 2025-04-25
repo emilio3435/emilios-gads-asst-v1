@@ -10,6 +10,7 @@ import * as dotenv from 'dotenv';
 import fs from 'fs'; // Import file system module
 import path from 'path'; // Import path module
 import { fileURLToPath } from 'url'; // To handle ES module paths
+import admin from 'firebase-admin';
 
 // Define __dirname for ES module scope
 const __filename = fileURLToPath(import.meta.url);
@@ -142,6 +143,49 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
+
+// Add Firebase admin for authentication and database
+try {
+  // Check if the app is already initialized
+  if (!admin.apps.length) {
+    // For production, use environment variables or a service account file
+    // In development, you can use a service account JSON directly
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+    
+    console.log('Firebase Admin SDK initialized successfully');
+  }
+} catch (error) {
+  console.error('Error initializing Firebase Admin SDK:', error);
+  process.exit(1);
+}
+
+// Get a Firestore database reference
+const db = admin.firestore();
+
+// Authentication middleware to verify JWT token
+const authenticateToken = async (req, res, next) => {
+  console.log('Verifying token...');
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Extract the token from "Bearer TOKEN"
+  
+  if (!token) {
+    console.log('No token provided');
+    return res.status(401).json({ message: 'Authentication required. No token provided.' });
+  }
+  
+  try {
+    // Verify the ID token with Firebase Admin SDK
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    req.user = decodedToken; // Set the user on request object for later use
+    console.log(`Token verified successfully for user: ${req.user.email}`);
+    next(); // Proceed to the actual endpoint handler
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    return res.status(403).json({ message: 'Invalid or expired token.' });
+  }
+};
 
 // Helper function to call models with retry logic
 async function callModelWithRetry(model, prompt, maxRetries = 5) {
@@ -611,23 +655,111 @@ CURRENT QUESTION: ${req.body.question}
   }
 });
 
-// Start server with simplified port logic
+// DELETE /api/history/:id - Delete a specific history entry
+app.delete('/api/history/:id', authenticateToken, async (req, res) => {
+  // ... existing code ...
+});
+
+// PUT /api/history/:id/chat - Update chat history for a specific entry
+app.put('/api/history/:id/chat', authenticateToken, async (req, res) => {
+  console.log(`Received PUT /api/history/:id/chat request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+  const entryId = req.params.id;
+  const { helpConversation } = req.body;
+
+  if (!userId) {
+    console.log('PUT ERROR: User ID not found after authentication');
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  if (!entryId) {
+    console.log('PUT ERROR: History entry ID is required');
+    return res.status(400).json({ message: 'History entry ID is required.' });
+  }
+
+  if (!helpConversation || !Array.isArray(helpConversation)) {
+    console.log('PUT ERROR: Valid helpConversation array is required');
+    return res.status(400).json({ message: 'Valid helpConversation array is required.' });
+  }
+
+  try {
+    console.log(`Looking up document with ID: ${entryId} in collection 'userHistory'`);
+    // Get the document to verify ownership
+    const docRef = db.collection('userHistory').doc(entryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      console.log(`PUT ERROR: History entry ${entryId} not found. Doc doesn't exist.`);
+      return res.status(404).json({ message: 'History entry not found.' });
+    }
+
+    const data = doc.data();
+    console.log(`Found entry with ID ${entryId}, updating chat history`);
+    
+    // Verify the entry belongs to the authenticated user
+    if (data?.userId !== userId) {
+      console.log(`PUT ERROR: Unauthorized attempt to update history entry ${entryId} by user ${userId}.`);
+      console.log(`Entry belongs to user ${data?.userId}`);
+      return res.status(403).json({ message: 'Unauthorized. You can only update your own history entries.' });
+    }
+
+    // Update the document with the new chat history
+    await docRef.update({
+      'results.helpConversation': helpConversation
+    });
+    
+    console.log(`Successfully updated chat history for entry ${entryId}`);
+    res.status(200).json({ 
+      message: 'Chat history updated successfully.',
+      entryId: entryId
+    });
+
+  } catch (error) {
+    console.error(`PUT ERROR: Error updating chat history for entry ${entryId}:`, error);
+    res.status(500).json({ message: 'Failed to update chat history due to a server error.' });
+  }
+});
+
+// Start server with better port handling
 const PORT = process.env.PORT || DEFAULT_PORT;
-console.log(`Attempting to start server on port ${PORT}...`);
+let currentPort = PORT;
+let maxAttempts = 10;
+let attempts = 0;
 
-const server = app.listen(PORT, '0.0.0.0', () => { // Use 0.0.0.0 to accept connections from any IP
-  console.log(`✅ Server successfully started and listening on http://0.0.0.0:${PORT}`);
-});
+function tryStartServer(port) {
+  console.log(`Attempting to start server on port ${port}...`);
+  
+  const server = app.listen(port, '0.0.0.0', () => { 
+    console.log(`✅ Server successfully started and listening on http://0.0.0.0:${port}`);
+  });
 
-server.on('error', (error) => {
-  console.error('⚠️ Server failed to start:', error.message);
-  process.exit(1);
-});
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.log(`⚠️ Port ${port} is already in use`);
+      attempts++;
+      
+      if (attempts < maxAttempts) {
+        const nextPort = port + 1;
+        console.log(`Trying port ${nextPort}...`);
+        tryStartServer(nextPort);
+      } else {
+        console.error(`❌ Failed to find an available port after ${maxAttempts} attempts`);
+        process.exit(1);
+      }
+    } else {
+      console.error('⚠️ Server failed to start:', error.message);
+      process.exit(1);
+    }
+  });
 
-// Add a keep-alive mechanism to prevent immediate exit
-setInterval(() => {
-  console.log('Server heartbeat check - still running');
-}, 30000); // Log every 30 seconds
+  // Add a keep-alive mechanism to prevent immediate exit
+  setInterval(() => {
+    console.log('Server heartbeat check - still running');
+  }, 30000); // Log every 30 seconds
+}
+
+// Start the server with the port-finding logic
+tryStartServer(currentPort);
 
 // Global error handlers
 process.on('uncaughtException', (error) => {

@@ -658,8 +658,36 @@ function App() {
             console.log("<<< New AI message object:", newAiMessage);
             
             // Update conversation with the AI response
-            setHelpConversation([...updatedConversation, newAiMessage]);
+            const updatedConversationWithResponse = [...updatedConversation, newAiMessage];
+            setHelpConversation(updatedConversationWithResponse);
             console.log("<<< Updated helpConversation state:", [...updatedConversation, newAiMessage]);
+            
+            // NEW CODE: Update the current history entry with the latest chat conversation
+            if (isLoggedIn && idToken && selectedHistoryEntryId) {
+                try {
+                    console.log('Updating history entry with new chat message...');
+                    const response = await fetch(`${apiBaseUrl}/api/history/${selectedHistoryEntryId}/chat`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`,
+                        },
+                        body: JSON.stringify({ 
+                            helpConversation: updatedConversationWithResponse 
+                        }),
+                    });
+                    
+                    if (!response.ok) {
+                        console.error('Failed to update chat history in Firestore:', response.statusText);
+                    } else {
+                        console.log('Chat history successfully updated in Firestore');
+                        // Refetch history to update UI
+                        fetchHistory(idToken);
+                    }
+                } catch (error) {
+                    console.error('Error updating chat history in Firestore:', error);
+                }
+            }
         } catch (error: any) {
             console.error('Error getting help:', error);
             const errorMessage = `<p class="error-message">Error: ${error.message || 'An unexpected error occurred.'}</p>`;
@@ -962,6 +990,8 @@ function App() {
                     // Log the Firestore-generated ID
                     if (historyResult.entryId) {
                         console.log('Server generated document ID:', historyResult.entryId);
+                        // Set the selected history entry ID after saving
+                        setSelectedHistoryEntryId(historyResult.entryId);
                     } else {
                         console.warn('No document ID returned from server');
                     }
@@ -1433,6 +1463,11 @@ function App() {
     // --- Add console log here for debugging --- 
     // console.log('User Info State:', userInfo); // Removed for cleanup
 
+    // Add this function near other handler functions
+    const handleCloseChatHistoryModal = () => {
+      setShowChatHistoryModal(false);
+    };
+
     if (showResults) {
         return (
             <div className="App">
@@ -1587,10 +1622,9 @@ function App() {
                             <div className="prompt-modal help-modal">
                                 <div className="modal-header">
                                 <h2>Chat with Audacy AI</h2>
-                                    <div className="modal-header-buttons">
-                                        <button onClick={() => {/* Minimize logic placeholder */}} className="minimize-button" title="Minimize Chat">{/* Minimize Icon */}</button>
-                                        <button onClick={() => setShowHelpModal(false)} className="close-button" title="Close Chat">&times;</button>
-                                    </div>
+                                <div className="modal-header-buttons">
+                                    <button onClick={() => setShowHelpModal(false)} className="close-button" title="Close Chat">&times;</button>
+                                </div>
                                 </div>
                                 
                                 {/* Conversation History */}
@@ -2117,6 +2151,20 @@ function App() {
                                                           >
                                                               Delete
                                                           </button>
+                                                          {/* Add View Chat History button if chat history exists */}
+                                                          {Array.isArray(entry.results.helpConversation) && 
+                                                           entry.results.helpConversation.length > 0 && (
+                                                            <button
+                                                                className="view-chat-button"
+                                                                onClick={() => handleViewChatHistory(entry.id)}
+                                                                title="View chat history for this analysis"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                                                </svg>
+                                                                View Chat
+                                                            </button>
+                                                          )}
                                                           <button
                                                               className="view-analysis-button"
                                                               onClick={() => handleLoadHistory(entry.id)}
@@ -2209,29 +2257,46 @@ function App() {
             {/* === End Moved Login Status Container === */}
 
             {/* Chat History Modal */}
-            {showChatHistoryModal && (
-                <div className="chat-history-modal-backdrop" onClick={() => setShowChatHistoryModal(false)}>
-                    <div className="chat-history-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="chat-history-modal-header">
-                            <h2>Chat History</h2>
-                            <button className="close-button" onClick={() => setShowChatHistoryModal(false)}>×</button>
-                        </div>
-                        <div className="chat-history-container">
-                            {viewingChatHistory && viewingChatHistory.length > 0 ? (
-                                <div className="chat-messages">
-                                    {viewingChatHistory.map((message, index) => (
-                                        <div key={index} className={`chat-message ${message.type}`}>
-                                            <div className="message-content">{message.content}</div>
-                                            <div className="message-timestamp">{new Date(message.timestamp).toLocaleString()}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="no-history">No chat history available</div>
-                            )}
-                        </div>
-                    </div>
+            {showChatHistoryModal && viewingChatHistory && (
+              <div className="chat-history-modal-backdrop" onClick={handleCloseChatHistoryModal}>
+                <div className="chat-history-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="chat-history-modal-header">
+                    <h2>Chat History</h2>
+                    <button className="close-button" onClick={handleCloseChatHistoryModal}>×</button>
+                  </div>
+                  <div className="chat-history-container">
+                    {viewingChatHistory.length > 0 ? (
+                      <div className="chat-messages">
+                        {viewingChatHistory.map((message, index) => (
+                          <div key={index} className={`chat-message ${message.type === 'user' ? 'user' : 'assistant'}`}>
+                            <div className="message-content">
+                              {message.type === 'user' ? (
+                                message.content
+                              ) : (
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  rehypePlugins={[rehypeRaw]}
+                                >
+                                  {message.content}
+                                </ReactMarkdown>
+                              )}
+                            </div>
+                            <div className="message-timestamp">
+                              {formatHistoryTimestamp(
+                                typeof message.timestamp === 'number' 
+                                  ? message.timestamp 
+                                  : new Date(message.timestamp).getTime()
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="no-history">No chat history available</div>
+                    )}
+                  </div>
                 </div>
+              </div>
             )}
         </div>
     );
