@@ -280,15 +280,29 @@
 .chat-history-modal .close-button {
   background: none;
   border: none;
-  color: var(--audacy-orange);
-  font-size: 22px;
-  font-weight: 300;
+  color: var(--gray-dark);
   cursor: pointer;
   transition: all 0.2s;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 50%;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.chat-history-modal .close-button .material-icons {
+  font-size: 20px;
 }
 
 .chat-history-modal .close-button:hover {
-  color: var(--audacy-orange-dark);
+  color: var(--audacy-purple);
+  background-color: var(--gray-lighter);
 }
 
 .chat-history-container {
