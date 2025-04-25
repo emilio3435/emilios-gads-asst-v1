@@ -91,6 +91,66 @@ const formatPromptForDisplay = (prompt: string | null): string => {
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 const analysisApiUrl = import.meta.env.VITE_ANALYSIS_API_URL || apiBaseUrl;
 
+const HistoryActionMenu = ({ 
+  isOpen, 
+  onClose, 
+  onView, 
+  onChat, 
+  onDelete,
+  isMobile
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onView: () => void;
+  onChat: () => void;
+  onDelete: () => void;
+  isMobile: boolean;
+}) => {
+  if (isMobile) {
+    return (
+      <>
+        <div 
+          className={`action-menu-overlay ${isOpen ? 'visible' : ''}`}
+          onClick={onClose}
+        />
+        <div className={`action-menu-dropdown ${isOpen ? 'visible' : ''}`}>
+          <div className="action-menu-header">Actions</div>
+          <button className="action-menu-item" onClick={onView}>
+            <span className="material-icons">visibility</span>
+            View
+          </button>
+          <button className="action-menu-item" onClick={onChat}>
+            <span className="material-icons">chat</span>
+            Chat
+          </button>
+          <button className="action-menu-item delete" onClick={onDelete}>
+            <span className="material-icons">delete</span>
+            Delete
+          </button>
+        </div>
+      </>
+    );
+  }
+  
+  // Desktop dropdown (unchanged)
+  return (
+    <div className={`action-menu ${isOpen ? 'open' : ''}`}>
+      <button onClick={onView} className="action-item">
+        <span className="material-icons">visibility</span>
+        View
+      </button>
+      <button onClick={onChat} className="action-item">
+        <span className="material-icons">chat</span>
+        Chat
+      </button>
+      <button onClick={onDelete} className="action-item delete">
+        <span className="material-icons">delete</span>
+        Delete
+      </button>
+    </div>
+  );
+};
+
 function App() {
     const [selectedTactics, setSelectedTactics] = useState<string>('');
     const [selectedKPIs, setSelectedKPIs] = useState<string>('');
@@ -1798,24 +1858,87 @@ function App() {
 
     // Add to imports
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
 
-    // Add this effect to handle clicking outside the menu
+    // Update this effect to handle clicking outside the menu more precisely
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (activeMenuId && !(event.target as Element).closest('.action-menu-dropdown, .action-menu-button')) {
+            // Only close if clicking outside both the menu, its items, and its toggle button
+            if (
+                activeMenuId && 
+                !(event.target as Element).closest('.action-menu-dropdown') &&
+                !(event.target as Element).closest('.action-menu-item') &&
+                !(event.target as Element).closest('.action-menu-button')
+            ) {
                 setActiveMenuId(null);
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
+        // Add capture phase to ensure we handle this before other event handlers
+        document.addEventListener('mousedown', handleClickOutside, true);
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('mousedown', handleClickOutside, true);
         };
     }, [activeMenuId]);
 
-    // Add this function to toggle the menu
-    const toggleActionMenu = (entryId: string) => {
-        setActiveMenuId(activeMenuId === entryId ? null : entryId);
+    // Update this function to toggle the menu with better focus handling
+    const toggleActionMenu = (entryId: string, event?: React.MouseEvent) => {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
+        // If we're clicking on the same menu, toggle it closed
+        if (activeMenuId === entryId) {
+            setActiveMenuId(null);
+        } else {
+            // Otherwise, open the new menu and close any other
+            setActiveMenuId(entryId);
+        }
+    };
+
+    // Add a function to stop propagation for menu items
+    const handleMenuItemClick = (callback: () => void, event: React.MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        setActiveMenuId(null); // Close menu first
+        setTimeout(callback, 10); // Then execute the callback with a slight delay
+    };
+
+    // Add specialized handlers for specific menu item actions
+    const handleViewClick = (entryId: string, event: React.MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        setActiveMenuId(null);
+        setTimeout(() => {
+            handleLoadHistory(entryId);
+        }, 10);
+    };
+
+    const handleChatClick = (entry: HistoryEntry, event: React.MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        // Ensure helpConversation exists
+        if (!entry.results.helpConversation || !Array.isArray(entry.results.helpConversation)) {
+            console.log('Creating empty helpConversation array for chat');
+            entry.results.helpConversation = [];
+        }
+        setActiveMenuId(null);
+        setTimeout(() => {
+            handleViewChatHistory(entry.id);
+        }, 10);
+    };
+
+    const handleDeleteClick = (entryId: string, event: React.MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        setActiveMenuId(null);
+        setTimeout(() => {
+            if (window.confirm('Are you sure you want to delete this analysis? This action cannot be undone.')) {
+                handleDeleteHistoryEntry(entryId);
+            }
+        }, 10);
     };
 
     if (showResults) {
@@ -2469,7 +2592,7 @@ function App() {
                               {analysisHistory.length > 0 && (
                                   <ul className="history-list">
                                       {paginatedHistory.map(entry => (
-                                          <li key={entry.id} className="history-item">
+                                          <li key={entry.id} className={`history-item ${activeMenuId === entry.id ? 'has-active-menu' : ''}`}>
                                               <div className="history-entry">
                                                   <div className="history-entry-header">
                                                       <div className="history-entry-info">
@@ -2494,8 +2617,9 @@ function App() {
                                                           )}
                                                       </div>
                                                       
-                                                      {/* Replace action buttons with menu button */}
+                                                      {/* Button now uses a function to ensure it correctly gets/loses focus */}
                                                       <button 
+                                                          ref={activeMenuId === entry.id ? buttonRef : null}
                                                           className={`action-menu-button ${activeMenuId === entry.id ? 'active' : ''}`}
                                                           aria-label="Show actions menu"
                                                           onClick={(e) => {
@@ -2506,22 +2630,63 @@ function App() {
                                                           &hellip;
                                                       </button>
                                                       
-                                                      {/* Mobile overlay and action menu */}
+                                                      {/* Separate handling for desktop and mobile menus */}
+                                                      {/* Desktop dropdown - always in DOM, visibility controlled by CSS */}
+                                                      <div 
+                                                          ref={activeMenuId === entry.id ? menuRef : null}
+                                                          className={`action-menu-dropdown desktop-menu ${activeMenuId === entry.id ? 'visible' : ''}`}
+                                                          onClick={(e) => e.stopPropagation()}
+                                                      >
+                                                          <button 
+                                                              className="action-menu-item"
+                                                              onClick={(e) => handleViewClick(entry.id, e)}
+                                                          >
+                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                                  <circle cx="12" cy="12" r="3"></circle>
+                                                              </svg>
+                                                              View
+                                                          </button>
+                                                          <button 
+                                                              className="action-menu-item"
+                                                              onClick={(e) => handleChatClick(entry, e)}>
+                                                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                                                  </svg>
+                                                                  Chat
+                                                              </button>
+                                                          <button 
+                                                              className="action-menu-item delete"
+                                                              onClick={(e) => handleDeleteClick(entry.id, e)}
+                                                          >
+                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                                                              </svg>
+                                                              Delete
+                                                          </button>
+                                                      </div>
+                                                      
+                                                      {/* Mobile overlay and action menu - conditionally rendered */}
                                                       {activeMenuId === entry.id && (
-                                                          <>
+                                                          <div className="mobile-menu-container">
                                                               <div 
                                                                   className="action-menu-overlay visible" 
-                                                                  onClick={() => setActiveMenuId(null)}
+                                                                  onClick={(e) => {
+                                                                      e.stopPropagation();
+                                                                      setActiveMenuId(null);
+                                                                  }}
                                                               ></div>
-                                                              <div className="action-menu-dropdown visible">
+                                                              <div 
+                                                                  className="action-menu-dropdown mobile-menu visible"
+                                                                  onClick={(e) => e.stopPropagation()}
+                                                              >
                                                                   <div className="action-menu-header">Actions</div>
                                                                   <button 
                                                                       className="action-menu-item"
-                                                                      onClick={(e) => {
-                                                                          e.stopPropagation();
-                                                                          handleLoadHistory(entry.id);
-                                                                          setActiveMenuId(null);
-                                                                      }}
+                                                                      onClick={(e) => handleViewClick(entry.id, e)}
                                                                   >
                                                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -2531,16 +2696,7 @@ function App() {
                                                                   </button>
                                                                   <button 
                                                                       className="action-menu-item"
-                                                                      onClick={(e) => {
-                                                                          e.stopPropagation();
-                                                                          if (!entry.results.helpConversation || !Array.isArray(entry.results.helpConversation)) {
-                                                                              console.log('Creating empty helpConversation array for chat');
-                                                                              entry.results.helpConversation = [];
-                                                                          }
-                                                                          handleViewChatHistory(entry.id);
-                                                                          setActiveMenuId(null);
-                                                                      }}
-                                                                  >
+                                                                      onClick={(e) => handleChatClick(entry, e)}>
                                                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                                                       </svg>
@@ -2548,13 +2704,7 @@ function App() {
                                                                   </button>
                                                                   <button 
                                                                       className="action-menu-item delete"
-                                                                      onClick={(e) => {
-                                                                          e.stopPropagation();
-                                                                          if (window.confirm('Are you sure you want to delete this analysis? This action cannot be undone.')) {
-                                                                              handleDeleteHistoryEntry(entry.id);
-                                                                          }
-                                                                          setActiveMenuId(null);
-                                                                      }}
+                                                                      onClick={(e) => handleDeleteHistoryEntry(entry.id)}
                                                                   >
                                                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                           <polyline points="3 6 5 6 21 6"></polyline>
@@ -2565,7 +2715,7 @@ function App() {
                                                                       Delete
                                                                   </button>
                                                               </div>
-                                                          </>
+                                                          </div>
                                                       )}
                                                   </div>
                                               </div>
@@ -2650,92 +2800,50 @@ function App() {
             </div>
             {/* === End Moved Login Status Container === */}
 
-            {/* Chat History Modal */}
+            {/* This is the chat history modal */}
             {showChatHistoryModal && viewingChatHistory && (
-              <div className="prompt-modal-backdrop">
-                <div className="prompt-modal chat-history-modal">
-                  <div className="modal-header">
+              <div className="chat-history-modal-backdrop">
+                <div className="chat-history-modal">
+                  <div className="chat-history-modal-header">
                     <h2>Chat History</h2>
-                    <button onClick={handleCloseChatHistoryModal} className="close-button" title="Close">&times;</button>
+                    <button 
+                      className="modal-close-button" 
+                      onClick={handleCloseChatHistoryModal}
+                      title="Close chat history"
+                    >
+                      <span className="material-icons">close</span>
+                    </button>
                   </div>
-                  
-                  {/* Chat History Content */}
-                  <div className="chat-history-content">
+                  <div className="chat-history-container">
                     {viewingChatHistory.length > 0 ? (
                       <div className="chat-messages">
                         {viewingChatHistory.map((message, index) => (
-                          <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
-                            <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
-                              {message.type === 'user' ? (
-                                message.content
-                              ) : 'isTyping' in message ? (
-                                <div className="typing-indicator">Audacy AI is thinking...</div>
-                              ) : (
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  rehypePlugins={[rehypeRaw]}
-                                >
-                                  {message.content}
-                                </ReactMarkdown>
-                              )}
-                            </div>
-                            <div className="message-time">
-                              {formatHistoryTimestamp(
-                                message.timestamp instanceof Date 
-                                  ? message.timestamp.getTime() 
-                                  : typeof message.timestamp === 'object' && message.timestamp !== null && message.timestamp !== undefined && 'seconds' in (message.timestamp as any)
-                                    ? (message.timestamp as any).seconds * 1000  // Handle Firestore timestamp format
-                                    : typeof message.timestamp === 'number'
-                                      ? message.timestamp
-                                      : Date.now()  // Fallback
-                              )}
+                          <div key={index} className={`chat-message ${message.type}`}>
+                            <div className="message-content-wrapper">
+                              <div className="message-header">
+                                <strong>{message.type === 'user' ? 'You' : 'Assistant'}</strong>
+                                <span className="message-time">
+                                  {typeof message.timestamp === 'object' && message.timestamp instanceof Date 
+                                    ? formatHistoryTimestamp(message.timestamp.getTime())
+                                    : formatHistoryTimestamp(message.timestamp)}
+                                </span>
+                              </div>
+                              <div className="message-content">
+                                {message.type === 'user' ? (
+                                  <p>{message.content}</p>
+                                ) : (
+                                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="no-chat-history">
-                        <p>No chat history available for this analysis.</p>
+                      <div className="no-history">
+                        <p>No chat messages available for this analysis.</p>
                       </div>
                     )}
-                  </div>
-                  
-                  {/* Chat Input Area */}
-                  <div className={`chat-input-area ${isChatResponseLoading ? 'loading' : ''}`}>
-                    <textarea 
-                      className="chat-input"
-                      placeholder="Type a message..."
-                      disabled={isChatResponseLoading}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && !isChatResponseLoading) {
-                          e.preventDefault();
-                          const target = e.target as HTMLTextAreaElement;
-                          if (currentChatEntryId) {
-                            handleAddChatMessage(currentChatEntryId, target.value);
-                            target.value = '';
-                          } else {
-                            console.error('No current chat entry ID');
-                          }
-                        }
-                      }}
-                    />
-                    <button 
-                      className="send-button"
-                      disabled={isChatResponseLoading}
-                      onClick={(e) => {
-                        if (isChatResponseLoading) return;
-                        
-                        const textarea = e.currentTarget.previousElementSibling as HTMLTextAreaElement;
-                        if (currentChatEntryId) {
-                          handleAddChatMessage(currentChatEntryId, textarea.value);
-                          textarea.value = '';
-                        } else {
-                          console.error('No current chat entry ID');
-                        }
-                      }}
-                    >
-                      {isChatResponseLoading ? 'Thinking...' : 'Send'}
-                    </button>
                   </div>
                 </div>
               </div>

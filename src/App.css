@@ -958,6 +958,7 @@ label.button { display: inline-flex; } /* For file input label */
   margin: 20px 0;
 }
 
+/* History Items with better hover behavior */
 .history-item {
   background-color: var(--color-white);
   border: var(--border-width) solid var(--border-color-light);
@@ -967,11 +968,19 @@ label.button { display: inline-flex; } /* For file input label */
   box-shadow: var(--shadow-small);
   transition: transform 0.2s, box-shadow 0.2s;
   position: relative; /* Needed for absolute positioning */
+  z-index: 1; /* Default z-index */
 }
 
+/* When hovering ANY history item, make sure it stays below active dropdown */
 .history-item:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-medium);
+  z-index: 1; /* Keep at base level when hovering */
+}
+
+/* Give history item with active menu a higher z-index */
+.history-item.has-active-menu {
+  z-index: 1010; /* Higher than other items and any dropdowns */
 }
 
 .history-entry {
@@ -1227,153 +1236,190 @@ label.button { display: inline-flex; } /* For file input label */
   color: var(--color-text);
 }
 
+/* Common styles for action menus */
 .action-menu-dropdown {
-  position: absolute;
-  top: calc(100% + 5px);
-  right: 0;
   background-color: var(--color-white);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-medium);
-  box-shadow: var(--shadow-medium);
-  z-index: 100;
-  min-width: 180px;
-  overflow: hidden;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: opacity 0.3s, visibility 0s 0.3s, transform 0.3s;
-}
-
-.action-menu-dropdown.visible {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  transition: opacity 0.3s, visibility 0s, transform 0.3s;
-  pointer-events: auto; /* Ensure clicks work properly */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001; /* Higher than overlay */
 }
 
 .action-menu-item {
-  padding: 12px 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  color: var(--color-text);
-  font-size: 14px;
-  text-align: left;
-  border: none;
-  background: none;
+  gap: 8px;
   width: 100%;
-}
-
-.action-menu-item:hover {
-  background-color: var(--gray-lighter);
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
 }
 
 .action-menu-item.delete {
   color: var(--color-error);
 }
 
-.action-menu-item.delete:hover {
-  background-color: var(--color-error-bg);
+/* Desktop specific menu styles - improved to prevent flickering */
+.action-menu-dropdown.desktop-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  min-width: 150px;
+  border-radius: var(--border-radius-medium);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(5px);
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
+  padding: 6px 0;
+  z-index: 1009; /* Just below active history item, above regular items */
+  /* Add fixed dimensions to prevent layout shift */
+  width: 180px;
 }
 
-.action-menu-item svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+.action-menu-dropdown.desktop-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
-/* Mobile-specific bottom sheet */
+/* Create a gap to move from button to menu */
+.action-menu-dropdown.desktop-menu::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  right: 0;
+  left: 0;
+  height: 10px;
+  background: transparent;
+}
+
+/* Stay visible when hovering over dropdown */
+.history-item.has-active-menu:hover .action-menu-dropdown.desktop-menu.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.history-item.has-active-menu {
+  z-index: 1010; /* Higher than other items and any dropdowns */
+}
+
+.history-item.has-active-menu:hover {
+  z-index: 1010; /* Maintain z-index when hovering active item */
+}
+
+/* Make sure the button looks active when menu is open */
+.action-menu-button.active {
+  background-color: var(--gray-medium);
+  color: var(--color-text);
+  z-index: 1010; /* Same as active history item */
+}
+
+/* Improve action menu item styling */
+.action-menu-dropdown.desktop-menu .action-menu-item {
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.action-menu-dropdown.desktop-menu .action-menu-item:last-child {
+  border-bottom: none;
+}
+
+/* Stronger hover effect */
+.action-menu-dropdown.desktop-menu .action-menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Mobile specific menu styles */
+.mobile-menu-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.mobile-menu-container .action-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: none;
+  pointer-events: auto;
+}
+
+.mobile-menu-container .action-menu-overlay.visible {
+  display: block;
+}
+
+.action-menu-dropdown.mobile-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  max-height: 80vh;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+.action-menu-dropdown.mobile-menu.visible {
+  transform: translateY(0);
+}
+
+.action-menu-dropdown.mobile-menu .action-menu-header {
+  padding: 16px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background-color: #fff;
+  z-index: 1003;
+}
+
+.action-menu-dropdown.mobile-menu .action-menu-item {
+  padding: 16px;
+  min-height: 54px;
+  border-bottom: 1px solid #eee;
+}
+
+.action-menu-dropdown.mobile-menu .action-menu-item:last-child {
+  border-bottom: none;
+  margin-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+.action-menu-dropdown.mobile-menu .action-menu-item:active {
+  background-color: #f0f0f0;
+}
+
+/* Media query to hide desktop menu on mobile and vice versa */
 @media (max-width: 600px) {
-  .action-menu-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+  .action-menu-dropdown.desktop-menu {
     display: none;
   }
-  
-  .action-menu-overlay.visible {
-    display: block;
-  }
-  
-  .action-menu-dropdown {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    top: auto;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
-    transform: translateY(100%);
-    min-width: 100%;
-    border: none;
-    border-top: 1px solid var(--border-color);
-    z-index: 1001; /* Higher than overlay */
-    background-color: var(--color-white);
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-  
-  .action-menu-dropdown.visible {
-    transform: translateY(0);
-  }
-  
-  .action-menu-header {
-    padding: 16px;
-    border-bottom: 1px solid var(--border-color-light);
-    font-weight: var(--font-weight-medium);
-    text-align: center;
-    color: var(--color-text);
-    position: sticky;
-    top: 0;
-    background-color: var(--color-white);
-    z-index: 1;
-  }
-  
-  .action-menu-item {
-    padding: 16px;
-    justify-content: center;
-    font-size: 16px;
-    min-height: 54px;
-    background-color: var(--color-white);
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: rgba(0,0,0,0.1);
-    position: relative;
-    z-index: 1;
-  }
-  
-  /* Add a bit of extra spacing at the bottom for iOS */
-  .action-menu-item:last-child {
-    margin-bottom: env(safe-area-inset-bottom, 16px);
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 16px));
-  }
-  
-  /* Add larger touch target for better mobile interaction */
-  .action-menu-item:active {
-    background-color: var(--gray-lighter);
-  }
-  
-  /* Add dividers between items */
-  .action-menu-item + .action-menu-item {
-    border-top: 1px solid var(--border-color-light);
-  }
-  
-  /* Make menu button more obvious */
-  .action-menu-button {
-    background-color: var(--gray-lighter);
-    width: 40px;
-    height: 40px;
-    font-size: 22px;
-  }
-  
-  .action-menu-button.active {
-    background-color: var(--gray-medium);
-    color: var(--color-text);
+}
+
+@media (min-width: 601px) {
+  .mobile-menu-container {
+    display: none;
   }
 }

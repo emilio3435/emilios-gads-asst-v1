@@ -233,17 +233,135 @@
 }
 
 /* Chat History Modal Specific Styles */
-.chat-history-modal .modal-chat-display {
-    max-height: 60vh; /* Limit height */
-    overflow-y: auto; /* Add scrollbar if content exceeds height */
-    padding: var(--spacing-medium); /* Add some padding inside scroll area */
-    border-top: 1px solid var(--gray-medium); /* Separator from header */
-    border-bottom: 1px solid var(--gray-medium); /* Separator if footer is added later */
+.chat-history-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+  padding: var(--spacing-large);
+  box-sizing: border-box;
 }
 
-/* Ensure messages inside the modal display correctly */
-.chat-history-modal .conversation-message {
-    margin-bottom: var(--spacing-medium);
+.chat-history-modal {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-large);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 600px;
+  position: relative;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-history-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-medium) var(--spacing-large);
+  border-bottom: 1px solid var(--gray-light);
+  flex-shrink: 0;
+}
+
+.chat-history-modal-header h2 {
+  margin: 0;
+  color: var(--gray-darkest);
+  font-size: 1.3em;
+  font-weight: 600;
+}
+
+.chat-history-modal .close-button {
+  background: none;
+  border: none;
+  color: var(--audacy-orange);
+  font-size: 22px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-history-modal .close-button:hover {
+  color: var(--audacy-orange-dark);
+}
+
+.chat-history-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-medium) var(--spacing-large);
+  background-color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+  gap: var(--spacing-small);
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-small);
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  max-width: 90%;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+}
+
+.chat-message.assistant {
+  align-self: flex-start;
+}
+
+.chat-message .message-content {
+  padding: 10px 12px;
+  border-radius: 16px;
+  line-height: 1.4;
+  font-size: 14px;
+  box-shadow: var(--shadow-small);
+}
+
+.chat-message.user .message-content {
+  background-color: var(--audacy-purple-light);
+  color: var(--gray-darkest);
+  border-radius: 16px 16px var(--border-radius-small) 16px;
+  align-self: flex-end;
+}
+
+.chat-message.assistant .message-content {
+  background-color: var(--color-white);
+  border: 1px solid var(--gray-light);
+  border-radius: 16px 16px 16px var(--border-radius-small);
+  color: var(--gray-darkest);
+  align-self: flex-start;
+}
+
+.chat-message .message-timestamp {
+  font-size: 9px;
+  color: var(--gray-dark);
+  margin-top: 2px;
+  text-align: right;
+}
+
+/* Fix the no-history message */
+.no-history {
+  display: flex;
+  height: 200px;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-dark);
+  font-style: italic;
+  text-align: center;
 }
 
 /* === Tables === */
