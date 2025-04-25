@@ -279,6 +279,20 @@ function App() {
                // Log the actual Firestore IDs for debugging
                console.log('Firestore document IDs:', result.data.map((entry: any) => entry.id));
                
+               // Add debug logs for helpConversation
+               console.log('Checking helpConversation in entries:', 
+                 result.data.map((entry: any) => ({
+                   id: entry.id,
+                   hasHelpConversation: entry.results && 
+                                        entry.results.helpConversation && 
+                                        Array.isArray(entry.results.helpConversation),
+                   helpConversationLength: entry.results && 
+                                        entry.results.helpConversation && 
+                                        Array.isArray(entry.results.helpConversation) ? 
+                                        entry.results.helpConversation.length : 0
+                 }))
+               );
+               
                // Correctly convert Firestore Timestamp object to milliseconds
                const formattedHistory = result.data.map((entry: any) => {
                    // Check if timestamp exists and has the expected structure
@@ -1188,10 +1202,38 @@ function App() {
     // Function to open the chat history modal
     const handleViewChatHistory = (entryId: string) => {
         const entry = analysisHistory.find(h => h.id === entryId);
-        // Ensure helpConversation exists and is an array before accessing length
-        if (entry && Array.isArray(entry.results.helpConversation) && entry.results.helpConversation.length > 0) {
+        console.log('Attempting to view chat history for entry:', entry);
+        
+        try {
+            if (!entry) {
+                console.error(`Entry with ID ${entryId} not found`);
+                alert('Entry not found. Please refresh the page and try again.');
+                return;
+            }
+            
+            if (!entry.results) {
+                console.error(`Entry ${entryId} has no results property`);
+                alert('This entry appears to be corrupted. Please contact support.');
+                return;
+            }
+            
+            // Initialize helpConversation if it doesn't exist
+            if (!entry.results.helpConversation) {
+                console.log(`Entry ${entryId} has no helpConversation, initializing empty array`);
+                entry.results.helpConversation = [];
+            }
+            
+            // Ensure it's an array
+            if (!Array.isArray(entry.results.helpConversation)) {
+                console.error(`Entry ${entryId} helpConversation is not an array:`, entry.results.helpConversation);
+                entry.results.helpConversation = []; // Force it to be an array
+            }
+            
+            // Show the modal even if empty - can handle empty case in the modal UI
+            console.log(`Opening chat history modal for entry ${entryId} with ${entry.results.helpConversation.length} messages`);
             setViewingChatHistory(entry.results.helpConversation);
             setShowChatHistoryModal(true);
+            
             // --- Data Layer Push ---
             window.dataLayer = window.dataLayer || [];
             window.dataLayer.push({
@@ -1200,9 +1242,9 @@ function App() {
                 'event_action': 'Click View Chat Button',
                 'event_label': entryId
             });
-        } else {
-            // Provide feedback if no history is found or if it's unexpectedly not an array
-            alert('No chat history found for this analysis.');
+        } catch (error) {
+            console.error('Error viewing chat history:', error);
+            alert('An error occurred while trying to view chat history.');
         }
     };
 
@@ -2151,20 +2193,24 @@ function App() {
                                                           >
                                                               Delete
                                                           </button>
-                                                          {/* Add View Chat History button if chat history exists */}
-                                                          {Array.isArray(entry.results.helpConversation) && 
-                                                           entry.results.helpConversation.length > 0 && (
-                                                            <button
-                                                                className="view-chat-button"
-                                                                onClick={() => handleViewChatHistory(entry.id)}
-                                                                title="View chat history for this analysis"
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                                                                </svg>
-                                                                View Chat
-                                                            </button>
-                                                          )}
+                                                          {/* Debug button - always visible */}
+                                                          <button
+                                                              className="view-chat-button"
+                                                              onClick={() => {
+                                                                  // Initialize an empty array if it doesn't exist
+                                                                  if (!entry.results.helpConversation || !Array.isArray(entry.results.helpConversation)) {
+                                                                      console.log('Creating empty helpConversation array for debugging');
+                                                                      entry.results.helpConversation = [];
+                                                                  }
+                                                                  handleViewChatHistory(entry.id);
+                                                              }}
+                                                              title="Debug: View/Create Chat History"
+                                                          >
+                                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                                              </svg>
+                                                              Chat
+                                                          </button>
                                                           <button
                                                               className="view-analysis-button"
                                                               onClick={() => handleLoadHistory(entry.id)}
