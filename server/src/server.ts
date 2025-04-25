@@ -89,7 +89,7 @@ app.get('/api/history/:id', authenticateToken, async (req: Request, res: Respons
 
     if (!doc.exists) {
       console.log(`GET ERROR: History entry ${entryId} not found. Doc doesn't exist.`);
-      return res.status(404).json({ message: 'History entry not found.' });
+      return res.status(404).json({ message: 'This history entry is no longer available. It may have been deleted.' });
     }
 
     const data = doc.data();

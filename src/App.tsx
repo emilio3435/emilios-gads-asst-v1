@@ -1416,8 +1416,12 @@ function App() {
         })
         .catch(error => {
             console.error('Error viewing chat history:', error);
-            setError(`Failed to load chat history: ${error.message}`);
-            alert(`An error occurred while trying to view chat history: ${error.message}`);
+            // Check if this is the "entry not found" error
+            if (error.message && error.message.includes('404')) {
+                setError('This chat history is no longer available. It may have been deleted.');
+            } else {
+                setError(`Failed to load chat history: ${error.message}`);
+            }
         })
         .finally(() => {
             setIsLoading(false);

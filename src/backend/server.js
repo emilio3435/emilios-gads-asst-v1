@@ -928,7 +928,7 @@ app.delete('/api/history/:id', authenticateToken, async (req, res) => {
 
     if (!doc.exists) {
       console.log(`DELETE ERROR: History entry ${entryId} not found. Doc doesn't exist.`);
-      return res.status(404).json({ message: 'History entry not found.' });
+      return res.status(404).json({ message: 'This history entry is no longer available. It may have been deleted.' });
     }
 
     const data = doc.data();
