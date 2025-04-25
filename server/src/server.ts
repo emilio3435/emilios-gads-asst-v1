@@ -218,6 +218,82 @@ app.post('/api/history/:id/chat', authenticateToken, async (req: Request, res: R
   }
 });
 
+// PUT /api/history/:id/chat - Update entire chat history for a specific entry
+app.put('/api/history/:id/chat', authenticateToken, async (req: Request, res: Response) => {
+  console.log(`Received PUT /api/history/:id/chat request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+  const entryId = req.params.id;
+  const { helpConversation } = req.body;
+
+  if (!userId) {
+    console.log('PUT ERROR: User ID not found after authentication');
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  if (!entryId) {
+    console.log('PUT ERROR: History entry ID is required');
+    return res.status(400).json({ message: 'History entry ID is required.' });
+  }
+
+  if (!helpConversation || !Array.isArray(helpConversation)) {
+    console.log('PUT ERROR: Valid helpConversation array is required');
+    return res.status(400).json({ message: 'Valid helpConversation array is required.' });
+  }
+
+  try {
+    console.log(`Looking up document with ID: ${entryId} in collection 'userHistory'`);
+    // Get the document to verify ownership
+    const docRef = db.collection('userHistory').doc(entryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      console.log(`PUT ERROR: History entry ${entryId} not found. Doc doesn't exist.`);
+      return res.status(404).json({ message: 'History entry not found.' });
+    }
+
+    const data = doc.data();
+    console.log(`Found entry with ID ${entryId}, updating chat history`);
+    
+    // Verify the entry belongs to the authenticated user
+    if (data?.userId !== userId) {
+      console.log(`PUT ERROR: Unauthorized attempt to update history entry ${entryId} by user ${userId}.`);
+      console.log(`Entry belongs to user ${data?.userId}`);
+      return res.status(403).json({ message: 'Unauthorized. You can only update your own history entries.' });
+    }
+
+    // Log the entry data for debugging
+    console.log('Entry data before update:', {
+      hasResults: !!data.results,
+      resultsKeys: data.results ? Object.keys(data.results) : [],
+      currentHelpConversation: data.results?.helpConversation || 'undefined'
+    });
+
+    // Prepare the update data
+    const updateData = {
+      'results.helpConversation': helpConversation
+    };
+    
+    console.log('Updating with help conversation:', {
+      conversationLength: helpConversation.length,
+      firstMessageType: helpConversation.length > 0 ? helpConversation[0].type : 'none',
+      lastMessageType: helpConversation.length > 0 ? helpConversation[helpConversation.length-1].type : 'none'
+    });
+
+    // Update the document with the new chat history
+    await docRef.update(updateData);
+    
+    console.log(`Successfully updated chat history for entry ${entryId}`);
+    res.status(200).json({ 
+      message: 'Chat history updated successfully.',
+      entryId: entryId
+    });
+
+  } catch (error) {
+    console.error(`PUT ERROR: Error updating chat history for entry ${entryId}:`, error);
+    res.status(500).json({ message: 'Failed to update chat history due to a server error.' });
+  }
+});
+
 // DELETE /api/history - Clear history for the user
 app.delete('/api/history', authenticateToken, async (req: Request, res: Response) => {
   console.log(`Received DELETE /api/history request for user: ${req.user?.email}`);
