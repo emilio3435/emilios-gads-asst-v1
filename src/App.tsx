@@ -917,6 +917,16 @@ function App() {
         });
     };
 
+    // Helper function to truncate large content to prevent request size issues
+    const truncateContentIfNeeded = (content: string | null, maxLength = 500000): string | null => {
+        if (!content) return null;
+        if (content.length <= maxLength) return content;
+        
+        console.log(`Truncating content from ${content.length} to ${maxLength} characters for history storage`);
+        return content.substring(0, maxLength) + '... [Content truncated for storage]';
+    };
+
+    // Handle form submission
     const handleSubmit = async () => {
         // --- Client-side Validation First ---
         // Reset all field errors before validating again
@@ -1056,10 +1066,10 @@ function App() {
                          outputDetail,
                     },
                     results: {
-                         analysisResult: sanitizedHtml, // Save sanitized HTML
-                         rawAnalysisResult: data.raw, 
+                         analysisResult: truncateContentIfNeeded(sanitizedHtml), // Save sanitized HTML
+                         rawAnalysisResult: truncateContentIfNeeded(data.raw), 
                          modelName: data.modelName,
-                         promptSent: data.prompt,
+                         promptSent: truncateContentIfNeeded(data.prompt),
                          // Initialize with an empty array to allow for future messages
                          helpConversation: []
                     }
@@ -1072,6 +1082,7 @@ function App() {
                     // This is important - let Firestore generate the ID
                     const { id, ...historyDataWithoutId } = historyEntryToSave;
                     console.log('Sending history data WITHOUT temporary ID:', historyDataWithoutId);
+                    console.log('History data size (approximate):', JSON.stringify(historyDataWithoutId).length, 'bytes');
                      
                     const historyResponse = await fetch(`${apiBaseUrl}/api/history`, {
                         method: 'POST',

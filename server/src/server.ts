@@ -8,6 +8,8 @@ import * as admin from 'firebase-admin'; // Import Firebase Admin types
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { authenticateToken } from './middleware/auth'; // Import the auth middleware
+import { ServiceAccount } from 'firebase-admin';
+import { OAuth2Client } from 'google-auth-library';
 
 // Verify GOOGLE_CLIENT_ID is loaded after dotenv.config()
 // This check is now less critical here as firebase init would fail first
@@ -21,7 +23,8 @@ const port = process.env.PORT || 3001; // Use environment variable or default
 
 // Middleware
 app.use(cors()); // Enable CORS for all origins (adjust for production)
-app.use(express.json()); // Parse JSON request bodies
+app.use(express.json({ limit: '50mb' })); // Parse JSON request bodies
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Simple Root Route
 app.get('/', (req: Request, res: Response) => {
@@ -118,6 +121,7 @@ app.get('/api/history/:id', authenticateToken, async (req: Request, res: Respons
 // POST /api/history - Save a new history entry
 app.post('/api/history', authenticateToken, async (req: Request, res: Response) => {
   console.log(`Received POST /api/history request for user: ${req.user?.email}`);
+  console.log(`POST request body size: ${JSON.stringify(req.body).length} bytes`);
   
   const userId = req.user?.sub;
   const historyEntryData = req.body; // Get data from frontend
