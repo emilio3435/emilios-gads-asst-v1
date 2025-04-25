@@ -2847,7 +2847,8 @@ function App() {
                                 {message.type === 'user' ? (
                                   <p>{message.content}</p>
                                 ) : (
-                                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                                  // Use rehypeRaw to render the existing HTML safely
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{message.content}</ReactMarkdown>
                                 )}
                               </div>
                             </div>
