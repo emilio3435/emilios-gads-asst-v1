@@ -1627,8 +1627,11 @@ function App() {
         setCurrentChatEntryId(null);
     };
 
-    // Function to add a user message to the chat history
-    const handleAddChatMessage = (entryId: string, message: string) => {
+    // State for loading status in chat
+    const [isChatResponseLoading, setIsChatResponseLoading] = useState<boolean>(false);
+
+    // Function to add a user message to the chat history and get AI response
+    const handleAddChatMessage = async (entryId: string, message: string) => {
         if (!message.trim() || !isLoggedIn || !idToken) return;
         
         if (!viewingChatHistory) {
@@ -1636,7 +1639,7 @@ function App() {
             return;
         }
         
-        // Add the message immediately to local state for UI feedback
+        // Add the user message immediately to local state for UI feedback
         const newUserMessage = {
             type: 'user',
             content: message,
@@ -1646,33 +1649,151 @@ function App() {
         const updatedChat = [...viewingChatHistory, newUserMessage];
         setViewingChatHistory(updatedChat);
         
-        // Send the message to the server
-        fetch(`${apiBaseUrl}/api/history/${entryId}/chat`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                type: 'user',
-                content: message
-            })
-        })
-        .then(response => {
+        // First, save the user message to the server
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/history/${entryId}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: 'user',
+                    content: message
+                })
+            });
+
             if (!response.ok) {
                 throw new Error(`Failed to add message: ${response.status} ${response.statusText}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Message added successfully:', data);
-        })
-        .catch(error => {
-            console.error('Error adding message:', error);
+            
+            const messageData = await response.json();
+            console.log('User message added successfully:', messageData);
+            
+            // Now get AI response
+            setIsChatResponseLoading(true);
+            
+            // Show typing indicator in the UI
+            const typingIndicator = {
+                type: 'assistant',
+                content: '<p class="typing-indicator">Audacy AI is thinking...</p>',
+                timestamp: new Date(),
+                isTyping: true
+            };
+            setViewingChatHistory([...updatedChat, typingIndicator]);
+            
+            // Get AI response
+            const aiResponse = await getAIResponseForChatMessage(entryId, message, updatedChat);
+            
+            if (aiResponse) {
+                // Remove typing indicator and add the real response
+                const finalChat = [...updatedChat, aiResponse];
+                setViewingChatHistory(finalChat);
+                
+                // Save AI response to the server
+                const aiSaveResponse = await fetch(`${apiBaseUrl}/api/history/${entryId}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'assistant',
+                        content: aiResponse.content
+                    })
+                });
+                
+                if (!aiSaveResponse.ok) {
+                    console.error('Failed to save AI response:', aiSaveResponse.status, aiSaveResponse.statusText);
+                } else {
+                    console.log('AI response saved successfully');
+                }
+            } else {
+                // If AI response failed, remove typing indicator
+                setViewingChatHistory(updatedChat);
+                console.error('Failed to get AI response');
+            }
+        } catch (error) {
+            console.error('Error in chat message flow:', error);
             // Revert the optimistic update if failed
             setViewingChatHistory(viewingChatHistory);
-            alert(`Failed to save message: ${error.message}`);
-        });
+            alert(`Failed to process message: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsChatResponseLoading(false);
+        }
+    };
+
+    // Function to get AI response for chat history messages
+    const getAIResponseForChatMessage = async (entryId: string, userMessage: string, currentChatHistory: Array<{type: string, content: string, timestamp: any}>) => {
+        if (!entryId || !userMessage.trim() || !isLoggedIn || !idToken) {
+            console.error('Missing required data for AI response');
+            return null;
+        }
+
+        try {
+            const entry = analysisHistory.find(h => h.id === entryId);
+            if (!entry) {
+                console.error(`Cannot find history entry with ID ${entryId}`);
+                return null;
+            }
+
+            // Create FormData for the AI request
+            const formData = new FormData();
+            
+            // Append context data from the history entry
+            formData.append('originalPrompt', entry.results?.promptSent || '');
+            formData.append('originalAnalysis', entry.results?.rawAnalysisResult || '');
+            formData.append('question', userMessage);
+            formData.append('tactic', entry.inputs.selectedTactics || '');
+            formData.append('kpi', entry.inputs.selectedKPIs || '');
+            formData.append('fileName', entry.inputs.fileName || '');
+            formData.append('currentSituation', entry.inputs.currentSituation || '');
+            
+            // Add the main analysis result if it exists
+            if (entry.results?.analysisResult) {
+                formData.append('analysisResult', entry.results.analysisResult);
+            }
+            
+            // Add conversation history for context
+            formData.append('conversationHistory', JSON.stringify(currentChatHistory));
+            
+            // Add selected model ID
+            formData.append('modelId', entry.inputs.selectedModelId);
+            
+            // Send request to the AI service
+            const response = await fetch(`${analysisApiUrl}/get-help`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`AI request failed with status ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            
+            // Parse and sanitize the response
+            const rawResponseText = data.response || '';
+            const parsedHtml = await marked.parse(rawResponseText);
+            let sanitizedHtml = DOMPurify.sanitize(parsedHtml);
+            sanitizedHtml = cleanMarkdownCodeBlocks(sanitizedHtml);
+            
+            // Create and return the assistant message
+            const assistantMessage = {
+                type: 'assistant',
+                content: sanitizedHtml,
+                timestamp: new Date()
+            };
+            
+            return assistantMessage;
+        } catch (error) {
+            console.error('Error getting AI response:', error);
+            return {
+                type: 'assistant',
+                content: `<p class="error-message">I'm sorry, I encountered an error while processing your request. Please try again later.</p>`,
+                timestamp: new Date()
+            };
+        }
     };
 
     if (showResults) {
@@ -2485,6 +2606,8 @@ function App() {
                             <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
                               {message.type === 'user' ? (
                                 message.content
+                              ) : 'isTyping' in message ? (
+                                <div className="typing-indicator">Audacy AI is thinking...</div>
                               ) : (
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm]}
@@ -2516,12 +2639,13 @@ function App() {
                   </div>
                   
                   {/* Chat Input Area */}
-                  <div className="chat-input-area">
+                  <div className={`chat-input-area ${isChatResponseLoading ? 'loading' : ''}`}>
                     <textarea 
                       className="chat-input"
                       placeholder="Type a message..."
+                      disabled={isChatResponseLoading}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        if (e.key === 'Enter' && !e.shiftKey && !isChatResponseLoading) {
                           e.preventDefault();
                           const target = e.target as HTMLTextAreaElement;
                           if (currentChatEntryId) {
@@ -2535,7 +2659,10 @@ function App() {
                     />
                     <button 
                       className="send-button"
+                      disabled={isChatResponseLoading}
                       onClick={(e) => {
+                        if (isChatResponseLoading) return;
+                        
                         const textarea = e.currentTarget.previousElementSibling as HTMLTextAreaElement;
                         if (currentChatEntryId) {
                           handleAddChatMessage(currentChatEntryId, textarea.value);
@@ -2545,7 +2672,7 @@ function App() {
                         }
                       }}
                     >
-                      Send
+                      {isChatResponseLoading ? 'Thinking...' : 'Send'}
                     </button>
                   </div>
                 </div>
