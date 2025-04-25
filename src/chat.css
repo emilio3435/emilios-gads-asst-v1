@@ -329,4 +329,57 @@
 .help-response-content p {
   margin-bottom: 0.5em;
   line-height: 1.4;
+}
+
+/* Chat input styles for chat history modal */
+.chat-input-area {
+  display: flex;
+  margin-top: 20px;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+.chat-input {
+  flex: 1;
+  min-height: 40px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.send-button {
+  margin-left: 10px;
+  padding: 0 20px;
+  height: 40px;
+  background-color: #5671d6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.send-button:hover {
+  background-color: #4861c2;
+}
+
+.send-button:active {
+  background-color: #3851b8;
+}
+
+/* Improve mobile responsiveness */
+@media (max-width: 768px) {
+  .chat-input-area {
+    flex-direction: column;
+  }
+  
+  .send-button {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
 } 

@@ -67,6 +67,54 @@ app.get('/api/history', authenticateToken, async (req: Request, res: Response) =
   }
 });
 
+// GET /api/history/:id - Fetch a specific history entry by ID
+app.get('/api/history/:id', authenticateToken, async (req: Request, res: Response) => {
+  console.log(`Received GET /api/history/:id request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+  const entryId = req.params.id;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  if (!entryId) {
+    return res.status(400).json({ message: 'History entry ID is required.' });
+  }
+
+  try {
+    console.log(`Looking up document with ID: ${entryId} in collection 'userHistory'`);
+    // Get the document
+    const docRef = db.collection('userHistory').doc(entryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      console.log(`GET ERROR: History entry ${entryId} not found. Doc doesn't exist.`);
+      return res.status(404).json({ message: 'History entry not found.' });
+    }
+
+    const data = doc.data();
+    
+    // Verify the entry belongs to the authenticated user
+    if (data?.userId !== userId) {
+      console.log(`GET ERROR: Unauthorized attempt to access history entry ${entryId} by user ${userId}.`);
+      return res.status(403).json({ message: 'Unauthorized. You can only access your own history entries.' });
+    }
+
+    // Return the entry data with its ID
+    const historyEntry = {
+      id: doc.id,
+      ...data
+    };
+    
+    console.log(`Successfully fetched history entry ${entryId} for user ${userId}.`);
+    res.status(200).json({ message: 'History entry fetched successfully.', data: historyEntry });
+
+  } catch (error) {
+    console.error(`GET ERROR: Error fetching history entry ${entryId} for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to fetch history entry due to a server error.' });
+  }
+});
+
 // POST /api/history - Save a new history entry
 app.post('/api/history', authenticateToken, async (req: Request, res: Response) => {
   console.log(`Received POST /api/history request for user: ${req.user?.email}`);
@@ -105,6 +153,64 @@ app.post('/api/history', authenticateToken, async (req: Request, res: Response) 
   } catch (error) {
     console.error(`Error saving history entry for user ${userId}:`, error);
     res.status(500).json({ message: 'Failed to save history entry due to a server error.' });
+  }
+});
+
+// POST /api/history/:id/chat - Add a chat message to an existing history entry
+app.post('/api/history/:id/chat', authenticateToken, async (req: Request, res: Response) => {
+  console.log(`Received POST /api/history/:id/chat request for entry ID: ${req.params.id} from user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+  const entryId = req.params.id;
+  const messageData = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  if (!entryId) {
+    return res.status(400).json({ message: 'History entry ID is required.' });
+  }
+
+  if (!messageData || !messageData.type || !messageData.content) {
+    return res.status(400).json({ message: 'Message data must include type and content.' });
+  }
+
+  try {
+    const docRef = db.collection('userHistory').doc(entryId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'History entry not found.' });
+    }
+
+    const data = doc.data();
+    
+    if (data?.userId !== userId) {
+      return res.status(403).json({ message: 'Unauthorized. You can only update your own history entries.' });
+    }
+
+    // Create a new message with a timestamp
+    const newMessage = {
+      type: messageData.type,
+      content: messageData.content,
+      timestamp: new Date()
+    };
+
+    // Update the document to append the new message to the helpConversation array
+    await docRef.update({
+      'results.helpConversation': admin.firestore.FieldValue.arrayUnion(newMessage)
+    });
+    
+    console.log(`Successfully added chat message to history entry ${entryId} for user ${userId}.`);
+    res.status(200).json({ 
+      message: 'Chat message added successfully.',
+      entryId: entryId,
+      chatMessage: newMessage
+    });
+
+  } catch (error) {
+    console.error(`Error adding chat message to history entry ${entryId} for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to add chat message due to a server error.' });
   }
 });
 

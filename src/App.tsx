@@ -121,7 +121,7 @@ function App() {
     const [isViewingHistory, setIsViewingHistory] = useState<boolean>(false);
     const [selectedHistoryEntryId, setSelectedHistoryEntryId] = useState<string | null>(null);
     const [showChatHistoryModal, setShowChatHistoryModal] = useState<boolean>(false);
-    const [viewingChatHistory, setViewingChatHistory] = useState<Array<{type: string, content: string, timestamp: Date}>>([]);
+    const [viewingChatHistory, setViewingChatHistory] = useState<Array<{type: string, content: string, timestamp: any}>>([]); 
     const [originalFileContent, setOriginalFileContent] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const itemsPerPage = 5; // Show 5 history items per page
@@ -144,6 +144,7 @@ function App() {
     const [fileError, setFileError] = useState<boolean>(false);
     // Add more if needed (e.g., clientNameError)
     const [clientNameError, setClientNameError] = useState<boolean>(false);
+    const [currentChatEntryId, setCurrentChatEntryId] = useState<string | null>(null);
 
     // --- Pagination Calculations ---
     const totalPages = Math.ceil(analysisHistory.length / itemsPerPage);
@@ -1254,20 +1255,41 @@ function App() {
 
     // Function to open the chat history modal
     const handleViewChatHistory = (entryId: string) => {
-        const entry = analysisHistory.find(h => h.id === entryId);
-        console.log('Attempting to view chat history for entry:', entry);
+        console.log(`Attempting to view chat history for entry: ${entryId}`);
+        setCurrentChatEntryId(entryId); // Track the current entry ID
         
-        try {
+        if (!isLoggedIn || !idToken) {
+            console.error('User must be logged in to view chat history');
+            alert('You must be logged in to view chat history.');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        
+        // Fetch the specific entry from the backend
+        fetch(`${apiBaseUrl}/api/history/${entryId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch chat history: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Fetched chat history entry:', data);
+            
+            const entry = data.data;
             if (!entry) {
-                console.error(`Entry with ID ${entryId} not found`);
-                alert('Entry not found. Please refresh the page and try again.');
-                return;
+                throw new Error(`Entry with ID ${entryId} not found in server response`);
             }
             
             if (!entry.results) {
-                console.error(`Entry ${entryId} has no results property`);
-                alert('This entry appears to be corrupted. Please contact support.');
-                return;
+                throw new Error(`Entry ${entryId} has no results property`);
             }
             
             // Initialize helpConversation if it doesn't exist
@@ -1280,6 +1302,42 @@ function App() {
             if (!Array.isArray(entry.results.helpConversation)) {
                 console.error(`Entry ${entryId} helpConversation is not an array:`, entry.results.helpConversation);
                 entry.results.helpConversation = []; // Force it to be an array
+            }
+            
+            // If the conversation is empty, add a test message
+            if (entry.results.helpConversation.length === 0 && idToken) {
+                console.log('Creating test message in empty conversation');
+                
+                // Add a test message to the conversation
+                fetch(`${apiBaseUrl}/api/history/${entryId}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${idToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'assistant',
+                        content: 'Welcome to chat history! This conversation will be saved and can be viewed anytime you return to this analysis.'
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Failed to add test message:', response.status, response.statusText);
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(msgData => {
+                    console.log('Added test message:', msgData);
+                    // Add the message to our local state too
+                    if (msgData && msgData.chatMessage) {
+                        entry.results.helpConversation.push(msgData.chatMessage);
+                    }
+                    setViewingChatHistory(entry.results.helpConversation);
+                })
+                .catch(err => {
+                    console.error('Error adding test message:', err);
+                });
             }
             
             // Show the modal even if empty - can handle empty case in the modal UI
@@ -1295,10 +1353,15 @@ function App() {
                 'event_action': 'Click View Chat Button',
                 'event_label': entryId
             });
-        } catch (error) {
+        })
+        .catch(error => {
             console.error('Error viewing chat history:', error);
-            alert('An error occurred while trying to view chat history.');
-        }
+            setError(`Failed to load chat history: ${error.message}`);
+            alert(`An error occurred while trying to view chat history: ${error.message}`);
+        })
+        .finally(() => {
+            setIsLoading(false);
+        });
     };
 
     // Helper function to format timestamp for history display
@@ -1558,9 +1621,58 @@ function App() {
     // --- Add console log here for debugging --- 
     // console.log('User Info State:', userInfo); // Removed for cleanup
 
-    // Add this function near other handler functions
+    // Function to close the chat history modal
     const handleCloseChatHistoryModal = () => {
-      setShowChatHistoryModal(false);
+        setShowChatHistoryModal(false);
+        setCurrentChatEntryId(null);
+    };
+
+    // Function to add a user message to the chat history
+    const handleAddChatMessage = (entryId: string, message: string) => {
+        if (!message.trim() || !isLoggedIn || !idToken) return;
+        
+        if (!viewingChatHistory) {
+            console.error('No chat history being viewed');
+            return;
+        }
+        
+        // Add the message immediately to local state for UI feedback
+        const newUserMessage = {
+            type: 'user',
+            content: message,
+            timestamp: new Date()
+        };
+        
+        const updatedChat = [...viewingChatHistory, newUserMessage];
+        setViewingChatHistory(updatedChat);
+        
+        // Send the message to the server
+        fetch(`${apiBaseUrl}/api/history/${entryId}/chat`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'user',
+                content: message
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to add message: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Message added successfully:', data);
+        })
+        .catch(error => {
+            console.error('Error adding message:', error);
+            // Revert the optimistic update if failed
+            setViewingChatHistory(viewingChatHistory);
+            alert(`Failed to save message: ${error.message}`);
+        });
     };
 
     if (showResults) {
@@ -2357,18 +2469,20 @@ function App() {
 
             {/* Chat History Modal */}
             {showChatHistoryModal && viewingChatHistory && (
-              <div className="chat-history-modal-backdrop" onClick={handleCloseChatHistoryModal}>
-                <div className="chat-history-modal" onClick={(e) => e.stopPropagation()}>
-                  <div className="chat-history-modal-header">
+              <div className="prompt-modal-backdrop">
+                <div className="prompt-modal chat-history-modal">
+                  <div className="modal-header">
                     <h2>Chat History</h2>
-                    <button className="close-button" onClick={handleCloseChatHistoryModal}>×</button>
+                    <button onClick={handleCloseChatHistoryModal} className="close-button" title="Close">&times;</button>
                   </div>
-                  <div className="chat-history-container">
+                  
+                  {/* Chat History Content */}
+                  <div className="chat-history-content">
                     {viewingChatHistory.length > 0 ? (
                       <div className="chat-messages">
                         {viewingChatHistory.map((message, index) => (
-                          <div key={index} className={`chat-message ${message.type === 'user' ? 'user' : 'assistant'}`}>
-                            <div className="message-content">
+                          <div key={index} className={`conversation-message ${message.type === 'user' ? 'user-message-container' : 'assistant-message-container'}`}>
+                            <div className={message.type === 'user' ? 'user-query' : 'assistant-response'}>
                               {message.type === 'user' ? (
                                 message.content
                               ) : (
@@ -2380,19 +2494,59 @@ function App() {
                                 </ReactMarkdown>
                               )}
                             </div>
-                            <div className="message-timestamp">
+                            <div className="message-time">
                               {formatHistoryTimestamp(
-                                typeof message.timestamp === 'number' 
-                                  ? message.timestamp 
-                                  : new Date(message.timestamp).getTime()
+                                message.timestamp instanceof Date 
+                                  ? message.timestamp.getTime() 
+                                  : typeof message.timestamp === 'object' && message.timestamp !== null && message.timestamp !== undefined && 'seconds' in (message.timestamp as any)
+                                    ? (message.timestamp as any).seconds * 1000  // Handle Firestore timestamp format
+                                    : typeof message.timestamp === 'number'
+                                      ? message.timestamp
+                                      : Date.now()  // Fallback
                               )}
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="no-history">No chat history available</div>
+                      <div className="no-chat-history">
+                        <p>No chat history available for this analysis.</p>
+                      </div>
                     )}
+                  </div>
+                  
+                  {/* Chat Input Area */}
+                  <div className="chat-input-area">
+                    <textarea 
+                      className="chat-input"
+                      placeholder="Type a message..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          const target = e.target as HTMLTextAreaElement;
+                          if (currentChatEntryId) {
+                            handleAddChatMessage(currentChatEntryId, target.value);
+                            target.value = '';
+                          } else {
+                            console.error('No current chat entry ID');
+                          }
+                        }
+                      }}
+                    />
+                    <button 
+                      className="send-button"
+                      onClick={(e) => {
+                        const textarea = e.currentTarget.previousElementSibling as HTMLTextAreaElement;
+                        if (currentChatEntryId) {
+                          handleAddChatMessage(currentChatEntryId, textarea.value);
+                          textarea.value = '';
+                        } else {
+                          console.error('No current chat entry ID');
+                        }
+                      }}
+                    >
+                      Send
+                    </button>
                   </div>
                 </div>
               </div>
