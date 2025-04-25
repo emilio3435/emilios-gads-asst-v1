@@ -959,13 +959,14 @@ label.button { display: inline-flex; } /* For file input label */
 }
 
 .history-item {
-  margin-bottom: 15px;
-  border: 1px solid var(--gray-medium-light);
-  border-radius: 8px;
-  overflow: hidden;
   background-color: var(--color-white);
+  border: var(--border-width) solid var(--border-color-light);
+  border-radius: var(--border-radius-medium);
+  padding: var(--spacing-medium);
+  margin-bottom: var(--spacing-medium);
   box-shadow: var(--shadow-small);
   transition: transform 0.2s, box-shadow 0.2s;
+  position: relative; /* Needed for absolute positioning */
 }
 
 .history-item:hover {
@@ -974,35 +975,39 @@ label.button { display: inline-flex; } /* For file input label */
 }
 
 .history-entry {
-  padding: 15px;
+  padding: 0; /* Remove the padding here as it's now on the history-item */
+  width: 100%;
 }
 
 .history-entry-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: var(--spacing-small);
+  position: relative; /* For dropdown positioning */
 }
 
 .history-entry-info {
   flex: 1;
+  overflow: hidden; /* Prevent overflow */
 }
 
 .history-entry-title {
-  margin: 0 0 8px 0;
-  font-size: 18px;
+  font-size: 1.1em;
+  margin: 0 0 var(--spacing-extra-small) 0;
   color: var(--color-primary);
-  font-weight: 600;
-  border: none;
-  padding: 0;
+  font-weight: var(--font-weight-semibold);
+  word-wrap: break-word; /* Allow wrapping of long words */
+  overflow-wrap: break-word; /* Modern browsers */
 }
 
 .history-entry-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 0.85em;
-  color: var(--gray-dark);
-  margin-bottom: 8px;
+  flex-wrap: wrap; /* Allow wrapping on small screens */
+  gap: var(--spacing-small);
+  font-size: var(--font-size-smaller);
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-extra-small);
 }
 
 .history-date {
@@ -1021,24 +1026,44 @@ label.button { display: inline-flex; } /* For file input label */
 }
 
 .history-file-name {
-  font-size: 0.85em;
-  color: var(--gray-dark);
+  font-family: var(--font-family-monospace);
+  font-size: var(--font-size-small);
+  background-color: var(--gray-lightest);
+  padding: 2px 6px;
+  border-radius: 4px;
   margin-top: 4px;
-  font-style: italic;
+  color: var(--color-text-light);
+  border: 1px solid var(--border-color-light);
+  word-break: break-all; /* Force breaking for very long filenames */
+  overflow-wrap: break-word; /* Modern browsers */
+  max-width: 100%; /* Ensure it respects the parent width */
 }
 
 .history-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-small);
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: var(--spacing-medium);
+  margin-left: auto; /* Push to the right */
 }
 
-.view-history-button, .delete-history-button {
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.9em;
+/* Style for both action buttons */
+.view-history-button, 
+.view-chat-button {
+  padding: 8px 12px;
+  border-radius: var(--border-radius-small);
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.2s;
   border: 1px solid;
+  min-width: 80px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
 }
 
 .view-history-button {
@@ -1052,16 +1077,56 @@ label.button { display: inline-flex; } /* For file input label */
   border-color: var(--color-primary-dark);
 }
 
-.delete-history-button {
-  background-color: white;
-  color: var(--gray-dark);
-  border-color: var(--gray-medium);
+.view-chat-button {
+  background-color: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
 }
 
-.delete-history-button:hover {
-  background-color: #fff0f0;
-  color: #d9534f;
-  border-color: #d9534f;
+.view-chat-button:hover {
+  background-color: var(--color-accent-dark);
+  border-color: var(--color-accent-dark);
+}
+
+@media (max-width: 600px) {
+  .history-entry-header {
+    flex-direction: column; /* Stack header elements on mobile */
+    gap: var(--spacing-small);
+    margin-bottom: var(--spacing-small);
+  }
+  
+  .history-actions {
+    justify-content: flex-end; /* Keep right-aligned on mobile */
+    width: 100%; /* Take full width */
+    margin-top: var(--spacing-medium);
+  }
+  
+  .history-item {
+    padding: var(--spacing-medium) var(--spacing-small); /* Reduce side padding */
+    padding-right: 36px; /* Make room for the delete icon */
+  }
+  
+  /* Always show delete icon on mobile touch devices */
+  .delete-history-icon {
+    opacity: 1;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    background-color: var(--gray-lighter);
+  }
+  
+  /* Hide the standalone delete button on mobile */
+  .delete-history-button {
+    display: none;
+  }
+  
+  /* Make buttons consistent size on mobile but keep them side by side */
+  .view-history-button, 
+  .view-chat-button {
+    flex: 1;
+    max-width: calc(50% - var(--spacing-small) / 2);
+  }
 }
 
 /* Pagination Controls */
@@ -1097,4 +1162,189 @@ label.button { display: inline-flex; } /* For file input label */
   padding: 0 10px;
   color: var(--gray-dark);
   font-size: 0.9em;
+}
+
+/* Delete icon styles */
+.delete-history-icon {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--gray-lighter);
+  color: var(--gray-medium-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s, color 0.2s;
+  border: 1px solid var(--border-color-light);
+  z-index: 2;
+}
+
+.history-item:hover .delete-history-icon,
+.history-item:focus-within .delete-history-icon {
+  opacity: 1;
+}
+
+.delete-history-icon:hover {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+/* Action Menu Styles */
+.action-menu-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--gray-lighter);
+  border: 1px solid var(--border-color-light);
+  color: var(--gray-dark);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  padding: 0;
+  font-size: 20px;
+  margin-left: auto;
+  flex-shrink: 0;
+  position: relative; /* For proper dropdown positioning */
+  z-index: 2; /* Ensure button stays above content */
+}
+
+.action-menu-button:hover, 
+.action-menu-button:focus {
+  background-color: var(--gray-light);
+  color: var(--color-text);
+}
+
+.action-menu-button.active {
+  background-color: var(--gray-medium);
+  color: var(--color-text);
+}
+
+.action-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  background-color: var(--color-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--shadow-medium);
+  z-index: 100;
+  min-width: 180px;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 0.3s, visibility 0s 0.3s, transform 0.3s;
+}
+
+.action-menu-dropdown.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.3s, visibility 0s, transform 0.3s;
+  pointer-events: auto; /* Ensure clicks work properly */
+}
+
+.action-menu-item {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: var(--color-text);
+  font-size: 14px;
+  text-align: left;
+  border: none;
+  background: none;
+  width: 100%;
+}
+
+.action-menu-item:hover {
+  background-color: var(--gray-lighter);
+}
+
+.action-menu-item.delete {
+  color: var(--color-error);
+}
+
+.action-menu-item.delete:hover {
+  background-color: var(--color-error-bg);
+}
+
+.action-menu-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Mobile-specific bottom sheet */
+@media (max-width: 600px) {
+  .action-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+  }
+  
+  .action-menu-overlay.visible {
+    display: block;
+  }
+  
+  .action-menu-dropdown {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+    transform: translateY(100%);
+    min-width: 100%;
+    border: none;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .action-menu-dropdown.visible {
+    transform: translateY(0);
+  }
+  
+  .action-menu-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color-light);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    color: var(--color-text);
+    position: sticky;
+    top: 0;
+    background-color: var(--color-white);
+  }
+  
+  .action-menu-item {
+    padding: 16px;
+    justify-content: center;
+    font-size: 16px;
+    min-height: 54px;
+  }
+  
+  /* Add a bit of extra spacing at the bottom for iOS */
+  .action-menu-item:last-child {
+    margin-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  
+  /* Add dividers between items */
+  .action-menu-item + .action-menu-item {
+    border-top: 1px solid var(--border-color-light);
+  }
 }
