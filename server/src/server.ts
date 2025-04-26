@@ -454,11 +454,12 @@ app.post('/analyze', upload.single('file'), async (req: Request, res: Response) 
         }
     }
 
-  } catch (outerError: any) { // Type error
+  } catch (outerError: any) { // Type error for the outer try/catch
     console.error('--- [/analyze] Outer Catch Block Error --- ');
     console.error(outerError);
     if (!res.headersSent) {
-         res.status(500).json({ error: 'Server error during analysis setup', details: outerError.message });
+         // Send plain text error for robustness
+         res.status(500).send(`Server error during analysis setup: ${outerError.message}`);
     }
   }
 });
