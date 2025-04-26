@@ -1047,10 +1047,15 @@ function App() {
                          outputDetail,
                     },
                     results: {
-                         analysisResult: truncateContentIfNeeded(sanitizedHtml), // Save sanitized HTML
-                         rawAnalysisResult: truncateContentIfNeeded(data.raw), 
+                         // TEMPORARILY REMOVE/COMMENT LARGE FIELDS FOR TESTING
+                         analysisResult: "SHORTENED_FOR_TEST", // Keep something small or null
+                         // rawAnalysisResult: truncateContentIfNeeded(data.raw), 
+                         rawAnalysisResult: null, // Or set to null
                          modelName: data.modelName,
-                         promptSent: truncateContentIfNeeded(data.prompt),
+                         // promptSent: truncateContentIfNeeded(data.prompt),
+                         promptSent: null, // Or set to null
+                         // rawFileContent is not currently saved in HistoryEntry interface, add if needed
+                         // rawFileContent: truncateContentIfNeeded(data.rawFileContent), 
                          // Initialize with an empty array to allow for future messages
                          helpConversation: []
                     }
@@ -1062,8 +1067,10 @@ function App() {
                     // Create a version without the ID field to send to the server
                     // This is important - let Firestore generate the ID
                     const { id, ...historyDataWithoutId } = historyEntryToSave;
-                    console.log('Sending history data WITHOUT temporary ID:', historyDataWithoutId);
-                    console.log('History data size (approximate):', JSON.stringify(historyDataWithoutId).length, 'bytes');
+                    
+                    // *** ADDED CONSOLE LOG FOR TESTING ***
+                    console.log('TEMPORARILY Sending SMALLER history data:', historyDataWithoutId);
+                    console.log('Smaller history data size (approximate):', JSON.stringify(historyDataWithoutId).length, 'bytes');
                      
                     const historyResponse = await fetch(`/api/history`, { // Changed to relative path
                         method: 'POST',
