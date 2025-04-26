@@ -115,9 +115,10 @@ html {
 }
 
 body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+  height: auto !important; /* Let body height be determined by content */
+  min-height: 100vh !important; /* Ensure it still takes full viewport height */
+  margin: 0 !important; /* Force override user agent */
+  padding: 0 !important;
   font-family: var(--font-family-base);
   background-color: var(--color-background);
   color: var(--color-text);
@@ -125,11 +126,12 @@ body {
   font-size: var(--font-size-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  width: 100%;
+  overflow-x: hidden !important;
+  width: 100% !important;
   min-width: 320px;
-  position: relative;
-  -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
+  position: relative !important; /* Ensure positioning context */
+  display: block !important; /* CRITICAL: Override display: flex */
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
@@ -138,17 +140,18 @@ body {
   margin: 0 auto;
   padding: 0;
   overflow-x: hidden;
-  min-height: 100%;
+  min-height: 100vh; /* Ensure root takes full height */
   display: flex;
   flex-direction: column;
 }
 
 .App {
   width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  overflow-x: hidden;
-  padding: 0 env(safe-area-inset-right, 0) 0 env(safe-area-inset-left, 0);
+  max-width: 1200px; /* Maintain max-width for desktop */
+  margin: 0 auto; /* Center content */
+  padding: 16px; /* Consistent padding */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  flex: 1; /* Allow App to fill space */
 }
 
 /* === Base Elements === */
@@ -1444,10 +1447,20 @@ label.button { display: inline-flex; } /* For file input label */
 /* === Mobile Specific Fixes === */
 @media screen and (max-width: 767px) {
   .App {
-    width: 100%;
+    padding: 8px; /* Adjust mobile padding */
     max-width: 100%;
-    padding: 0;
-    overflow-x: hidden;
+  }
+  /* Body override needed here too potentially */
+  body {
+    min-height: 100vh !important;
+    height: auto !important;
+  }
+  
+  /* Ensure tab nav doesn't cause issues - make it static */
+  .tab-navigation {
+      position: static !important; /* Remove sticky/fixed */
+      height: auto !important; /* Let height be natural */
+      margin-bottom: 8px; /* Add space below */
   }
   
   .history-list {
@@ -1529,11 +1542,6 @@ label.button { display: inline-flex; } /* For file input label */
   [style*="backgroundColor: var(--color-accent)"] svg {
     width: 14px !important;
     height: 14px !important;
-  }
-  
-  /* Fix tab navigation */
-  .tab-navigation {
-    padding: 8px !important;
   }
   
   /* Fix pagination controls */

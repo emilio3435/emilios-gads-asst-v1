@@ -1051,9 +1051,9 @@ function tryStartServer(port) {
   
   const server = app.listen(port, '0.0.0.0', () => { 
     console.log(`✅ Server successfully started and listening on http://0.0.0.0:${port}`);
-  });
+});
 
-  server.on('error', (error) => {
+server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
       console.log(`⚠️ Port ${port} is already in use`);
       attempts++;
@@ -1067,15 +1067,15 @@ function tryStartServer(port) {
         process.exit(1);
       }
     } else {
-      console.error('⚠️ Server failed to start:', error.message);
-      process.exit(1);
+  console.error('⚠️ Server failed to start:', error.message);
+  process.exit(1);
     }
-  });
+});
 
-  // Add a keep-alive mechanism to prevent immediate exit
-  setInterval(() => {
-    console.log('Server heartbeat check - still running');
-  }, 30000); // Log every 30 seconds
+// Add a keep-alive mechanism to prevent immediate exit
+setInterval(() => {
+  console.log('Server heartbeat check - still running');
+}, 30000); // Log every 30 seconds
 }
 
 // Start the server with the port-finding logic
