@@ -90,6 +90,7 @@ const formatPromptForDisplay = (prompt: string | null): string => {
 // --- Define API Base URL ---
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 const analysisApiUrl = import.meta.env.VITE_ANALYSIS_API_URL || apiBaseUrl;
+const historyApiUrl = import.meta.env.VITE_HISTORY_API_URL || 'https://emilios-ads-asst-v1-history-backend.onrender.com';
 
 const HistoryActionMenu = ({ 
   isOpen, 
@@ -274,7 +275,7 @@ function App() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
-            const response = await fetch(`/api/history`, { // Changed to relative path
+            const response = await fetch(`${historyApiUrl}/api/history`, { // Use absolute URL
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -377,7 +378,7 @@ function App() {
         } finally {
             setIsLoading(false);
         }
-    }, [apiBaseUrl, isTokenExpired]); // Include all dependencies
+    }, [historyApiUrl, isTokenExpired]); // Include historyApiUrl in dependencies
 
     // --- useEffect hooks ---
     // Focus on help input
@@ -752,7 +753,7 @@ function App() {
                         messageTypes: updatedConversationWithResponse.map(msg => msg.type)
                     });
                     
-                    const response = await fetch(`/api/history/${selectedHistoryEntryId}/chat`, { // Changed to relative path
+                    const response = await fetch(`${historyApiUrl}/api/history/${selectedHistoryEntryId}/chat`, { // Use absolute URL
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1072,7 +1073,7 @@ function App() {
                     console.log('TEMPORARILY Sending SMALLER history data:', historyDataWithoutId);
                     console.log('Smaller history data size (approximate):', JSON.stringify(historyDataWithoutId).length, 'bytes');
                      
-                    const historyResponse = await fetch(`/api/history`, { // Changed to relative path
+                    const historyResponse = await fetch(`${historyApiUrl}/api/history`, { // Use absolute URL
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1328,7 +1329,7 @@ function App() {
         setError(null);
         
         // Fetch the specific entry from the backend
-        fetch(`/api/history/${entryId}`, {
+        fetch(`${historyApiUrl}/api/history/${entryId}`, { // Use absolute URL
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${idToken}`,
@@ -1370,7 +1371,7 @@ function App() {
                 console.log('Creating test message in empty conversation');
                 
                 // Add a test message to the conversation
-                fetch(`/api/history/${entryId}/chat`, { // Changed to relative path
+                fetch(`${historyApiUrl}/api/history/${entryId}/chat`, { // Use absolute URL
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${idToken}`,
@@ -1464,7 +1465,7 @@ function App() {
             setError(null);
             
             try {
-                const response = await fetch(`/api/history`, { // Changed to relative path
+                const response = await fetch(`${historyApiUrl}/api/history`, { // Use absolute URL
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${idToken}`, // Use state idToken
@@ -1622,7 +1623,7 @@ function App() {
 
         try {
             // Make absolute URL to be safe
-            const response = await fetch(`/api/history/${entryId}`, {
+            const response = await fetch(`${historyApiUrl}/api/history/${entryId}`, { // Use absolute URL
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${idToken}`,
