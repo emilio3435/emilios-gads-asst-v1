@@ -629,22 +629,14 @@ CURRENT QUESTION: ${req.body.question}
 // GET /api/history - Fetch history for the user
 app.get('/api/history', authenticateToken, async (req: Request, res: Response) => {
   const userId = req.user?.sub; 
-  console.log(`[SIMPLIFIED GET /api/history] Request for user: ${userId}`);
+  console.log(`[GET /api/history] Request for user: ${userId}`);
 
   if (!userId) {
-    console.error('[SIMPLIFIED GET /api/history] User ID missing');
+    console.error('[GET /api/history] User ID missing');
     return res.status(400).json({ message: 'User ID not found after authentication.' });
   }
 
   try {
-    // TEST: Just try accessing the collection reference itself
-    const collectionRef = db.collection('userHistory');
-    console.log(`[SIMPLIFIED GET /api/history] Accessed collection 'userHistory' for user: ${userId}. Collection ref exists: ${!!collectionRef}`);
-    
-    // Send back a simple success message for testing, bypassing the actual query
-    return res.status(200).json({ message: 'Simplified history check OK.', data: [] });
-
-    /* --- ORIGINAL CODE COMMENTED OUT FOR TESTING ---
     console.log(`Fetching history for user ${userId}...`);
     const historyQuery = db.collection('userHistory')
                            .where('userId', '==', userId) 
@@ -664,11 +656,10 @@ app.get('/api/history', authenticateToken, async (req: Request, res: Response) =
 
     console.log(`Successfully fetched ${userHistory.length} history entries for user ${userId}.`);
     res.status(200).json({ message: 'History fetched successfully.', data: userHistory });
-    */
 
   } catch (error) {
-    console.error(`[SIMPLIFIED GET /api/history] Error accessing Firestore for user ${userId}:`, error);
-    res.status(500).json({ message: 'Failed during simplified history check due to a server error.' });
+    console.error(`[GET /api/history] Error accessing Firestore for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed during history check due to a server error.' });
   }
 });
 
