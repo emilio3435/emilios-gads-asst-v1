@@ -6,13 +6,30 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Proxy requests for /analyze, /get-help, and /api/* to the backend server
-      '^/(analyze|get-help|api)': { // Added |api
-        target: 'https://emilios-ads-asst-v1-backend.onrender.com', // Backend URL on Render
-        changeOrigin: true, // Required for external domains
-        secure: true, // Set to true for HTTPS
-        ws: true, // Enable WebSocket proxying if needed later
-        // No rewrite needed as the paths match
+      // Special handling for history API - must come first for specificity
+      '^/api/history': {
+        target: 'https://emilios-ads-asst-v1-history-backend.onrender.com',
+        changeOrigin: true,
+        secure: true,
+        ws: true,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('PROXY ERROR (HISTORY):', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log(`PROXYING HISTORY REQUEST: ${req.method} ${req.url} -> ${options.target}${proxyReq.path}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log(`PROXY HISTORY RESPONSE: ${proxyRes.statusCode} ${req.url}`);
+          });
+        },
+      },
+      // General proxy for other API requests, analyze, and get-help
+      '^/(analyze|get-help|api)': {
+        target: 'https://emilios-ads-asst-v1-backend.onrender.com',
+        changeOrigin: true,
+        secure: true,
+        ws: true,
         configure: (proxy, options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('PROXY ERROR:', err);
