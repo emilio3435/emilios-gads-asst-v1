@@ -1067,12 +1067,24 @@ function App() {
                         body: JSON.stringify(historyDataWithoutId), // Send data WITHOUT ID field
                     });
 
+                    // Get the raw response text first
+                    const responseText = await historyResponse.text();
+                    let historyResult;
+
+                    // Try to parse the response text as JSON
+                    try {
+                        historyResult = JSON.parse(responseText);
+                    } catch (parseError: any) {
+                        console.error('Failed to parse JSON response:', parseError);
+                        console.log('Raw response text:', responseText);
+                        throw new Error(`Server returned invalid JSON: ${parseError.message}`);
+                    }
+
                     if (!historyResponse.ok) {
                          let errorMsg = `Failed to save history: ${historyResponse.statusText}`;
-                         try {
-                             const errorData = await historyResponse.json();
-                             errorMsg = errorData.message || errorMsg;
-                         } catch (e) { /* Ignore */ }
+                         if (historyResult && historyResult.message) {
+                             errorMsg = historyResult.message;
+                         }
                          
                          // Handle authentication errors by logging out
                          if (historyResponse.status === 401 || historyResponse.status === 403) {
@@ -1092,7 +1104,6 @@ function App() {
                         console.warn(errorMsg);
                         console.log('Continuing with analysis results without saving to history');
                     } else {
-                     const historyResult = await historyResponse.json();
                      console.log('History entry saved successfully:', historyResult);
 
                     // Log the Firestore-generated ID
