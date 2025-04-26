@@ -1,11 +1,21 @@
 {
   "root": "dist",
   "clean_urls": true,
+  "proxies": {
+    "/api/history/": {
+      "origin": "https://emilios-ads-asst-v1-history-backend.onrender.com/api/history/"
+    },
+    "/api/": {
+      "origin": "https://emilios-ads-asst-v1-backend.onrender.com/api/"
+    },
+    "/analyze": {
+      "origin": "https://emilios-ads-asst-v1-backend.onrender.com/analyze"
+    },
+    "/get-help": {
+      "origin": "https://emilios-ads-asst-v1-backend.onrender.com/get-help"
+    }
+  },
   "routes": {
-    "/api/history/*": "https://emilios-ads-asst-v1-history-backend.onrender.com/api/history/:splat",
-    "/api/*": "https://emilios-ads-asst-v1-backend.onrender.com/api/:splat",
-    "/analyze": "https://emilios-ads-asst-v1-backend.onrender.com/analyze",
-    "/get-help": "https://emilios-ads-asst-v1-backend.onrender.com/get-help",
     "/**": "index.html"
   }
 } 
