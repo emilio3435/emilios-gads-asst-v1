@@ -275,8 +275,9 @@ function App() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
-            // Determine the correct URL (relative if proxying, absolute otherwise)
-            const url = `${historyApiUrl.startsWith('http') ? historyApiUrl : ''}/api/history`;
+            // Determine the correct URL
+            // const url = `${historyApiUrl.startsWith('http') ? historyApiUrl : ''}/api/history`; // OLD logic
+            const url = '/api/history'; // ALWAYS use relative path
             console.log(`fetchHistory using URL: ${url}`);
 
             const response = await fetch(url, {
