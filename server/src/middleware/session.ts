@@ -1,25 +1,26 @@
 import session from 'express-session';
-import { createClient } from 'redis';
-import { RedisStore } from 'connect-redis';
+import FileStoreFactory from 'session-file-store';
 import { Request, Response, NextFunction } from 'express';
+import path from 'path'; // Import path module
+
+// Create FileStore instance
+const FileStore = FileStoreFactory(session);
 
 // Load session secret from environment variables
 const SESSION_SECRET = process.env.SESSION_SECRET || 'your-very-secure-session-secret'; // Default for dev only!
 const SESSION_MAX_AGE = parseInt(process.env.SESSION_MAX_AGE || '604800000'); // Default to 7 days (in milliseconds)
 
-// Initialize Redis client
-const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
+// Define the session storage path - MUST match Render Disk Mount Path
+const sessionStorePath = process.env.SESSION_PATH || path.join(__dirname, '..', '..', 'sessions'); // Default to local 'sessions' folder if not on Render
+console.log(`Session store path configured to: ${sessionStorePath}`);
 
-redisClient.on('error', (err) => {
-  console.error('Redis client error:', err);
-});
-
-// Connect to Redis
-redisClient.connect().catch((err) => {
-  console.error('Failed to connect to Redis:', err);
-});
+// Initialize FileStore with options
+const fileStoreOptions = {
+  path: sessionStorePath,
+  ttl: SESSION_MAX_AGE / 1000, // Convert ms to seconds for TTL
+  retries: 0, // Number of retries for reading/writing session files
+  logFn: console.log // Optional: Log file store activity
+};
 
 // Type definition to safely extend express-session types
 declare module 'express-session' {
@@ -34,24 +35,17 @@ declare module 'express-session' {
   }
 }
 
-// Initialize RedisStore
-const redisStore = new RedisStore({
-  client: redisClient,
-  prefix: 'audacy-sess:',  // Custom prefix to avoid conflicts with other apps
-  ttl: SESSION_MAX_AGE / 1000, // Convert milliseconds to seconds for Redis TTL
-});
-
 // Configure session middleware
 export const sessionMiddleware = session({
-  store: redisStore,
+  store: new FileStore(fileStoreOptions),
   secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
+  resave: false, // Don't save session if unmodified
+  saveUninitialized: false, // Don't create session until something stored
   cookie: {
     secure: process.env.NODE_ENV === 'production', // use secure cookies in production
     httpOnly: true,                               // prevent client-side JS from reading
     maxAge: SESSION_MAX_AGE,                      // session duration in ms (7 days)
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // CSRF protection
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // CSRF protection - 'none' might be needed for cross-site requests in production
   }
 });
 
