@@ -1,9 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      },
+    },
+    outDir: 'dist',
+  },
+  publicDir: 'public',
+  // Explicitly copy _redirects file to output directory
+  // This additional configuration ensures Render gets the file
   server: {
     proxy: {
       // Special handling for history API - must come first for specificity
