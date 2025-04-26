@@ -2,10 +2,10 @@
   "root": "dist",
   "clean_urls": true,
   "proxies": {
-    "/api/history/": {
+    "/api/history": {
       "origin": "https://emilios-ads-asst-v1-history-backend.onrender.com"
     },
-    "/api/": {
+    "/api": {
       "origin": "https://emilios-ads-asst-v1-backend.onrender.com"
     },
     "/analyze": {

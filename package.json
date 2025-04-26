@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"node src/backend/server.js\"",
     "dev:all": "concurrently \"vite\" \"cd server && PORT=5001 npm run dev\"",
-    "build": "tsc -b && vite build && cp static.json dist/",
+    "build": "tsc -b && vite build && cp static.json dist/ && echo '--- Contents of dist/ after copy: ---' && ls -la dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
