@@ -88,9 +88,9 @@ const formatPromptForDisplay = (prompt: string | null): string => {
 };
 
 // --- Define API Base URL ---
-const apiBaseUrl = '/'; // Force relative URLs
-const analysisApiUrl = '/'; // Force relative URLs
-//const historyApiUrl = import.meta.env.VITE_HISTORY_API_URL || 'https://emilios-ads-asst-v1-history-backend.onrender.com';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/'; // Allow fallback to relative
+const analysisApiUrl = import.meta.env.VITE_ANALYSIS_API_URL || apiBaseUrl; // Use base or specific env
+const historyApiUrl = import.meta.env.VITE_HISTORY_API_URL || apiBaseUrl; // Use base or specific env
 
 const HistoryActionMenu = ({ 
   isOpen, 
@@ -275,7 +275,11 @@ function App() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
-            const response = await fetch(`/api/history`, {
+            // Determine the correct URL (relative if proxying, absolute otherwise)
+            const url = `${historyApiUrl.startsWith('http') ? historyApiUrl : ''}/api/history`;
+            console.log(`fetchHistory using URL: ${url}`);
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${token}`,
@@ -378,7 +382,7 @@ function App() {
         } finally {
             setIsLoading(false);
         }
-    }, [isTokenExpired]); // Include historyApiUrl in dependencies
+    }, [historyApiUrl, isTokenExpired]); // Add historyApiUrl back
 
     // --- useEffect hooks ---
     // Focus on help input
