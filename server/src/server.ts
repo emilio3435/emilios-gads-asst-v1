@@ -719,6 +719,7 @@ app.get('/api/history/:id', authenticateToken, async (req: Request, res: Respons
 app.post('/api/history', authenticateToken, async (req: Request, res: Response) => {
   console.log(`Received POST /api/history request for user: ${req.user?.email}`);
   console.log(`POST request body size: ${JSON.stringify(req.body).length} bytes`);
+  console.log('Request headers:', req.headers);
   
   const userId = req.user?.sub;
   const historyEntryData = req.body; // Get data from frontend
@@ -734,6 +735,9 @@ app.post('/api/history', authenticateToken, async (req: Request, res: Response) 
   }
 
   try {
+    console.log(`History data structure: ${JSON.stringify(Object.keys(historyEntryData))}`);
+    console.log(`Results keys: ${historyEntryData.results ? JSON.stringify(Object.keys(historyEntryData.results)) : 'No results'}`);
+    
     // Truncate large fields to prevent Firestore document size limits
     const sanitizedData = {
       ...historyEntryData,
@@ -764,23 +768,32 @@ app.post('/api/history', authenticateToken, async (req: Request, res: Response) 
       timestamp: historyEntryData.timestamp ? new Date(historyEntryData.timestamp) : new Date(), 
     };
 
-    console.log(`Data being saved to Firestore for user ${userId} (truncated if necessary)`);
+    console.log(`Sanitized data ready for Firestore, final size: ${JSON.stringify(dataToSave).length} bytes`);
 
-    const docRef = await db.collection('userHistory').add(dataToSave);
+    let docRef;
+    try {
+      docRef = await db.collection('userHistory').add(dataToSave);
+      console.log(`History entry saved successfully for user ${userId} with ID: ${docRef.id}`);
+    } catch (firestoreError) {
+      console.error(`Firestore error saving history entry: ${firestoreError}`);
+      throw firestoreError;
+    }
     
-    console.log(`History entry saved successfully for user ${userId} with ID: ${docRef.id}`);
-
-    res.status(201).json({ 
-        message: `History entry saved successfully for user ${userId}`,
-        entryId: docRef.id,
-        data: {
-          id: docRef.id 
-        }
-    });
+    // Create a simple response that's not too large
+    const responseData = { 
+      message: `History entry saved successfully for user ${userId}`,
+      entryId: docRef.id,
+      data: {
+        id: docRef.id 
+      }
+    };
+    
+    console.log(`Sending response: ${JSON.stringify(responseData)}`);
+    return res.status(201).json(responseData);
 
   } catch (error: any) {
     console.error(`Error saving history entry for user ${userId}:`, error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       message: 'Failed to save history entry due to a server error.',
       error: error.message 
     });
@@ -1028,6 +1041,33 @@ app.get('/api/debug/firebase-test', async (req: Request, res: Response) => {
       isConnected: false,
       error: String(error)
     });
+  }
+});
+
+// Debug endpoint to test JSON responses
+app.post('/api/debug/json-test', (req: Request, res: Response) => {
+  console.log('Debug JSON test received:', {
+    bodySize: JSON.stringify(req.body).length,
+    contentType: req.headers['content-type']
+  });
+  
+  try {
+    // Log the request body structure
+    console.log('Request body keys:', Object.keys(req.body));
+    
+    // Attempt to process and return a simple response
+    const testData = {
+      message: 'JSON test successful',
+      received: true,
+      timestamp: new Date().toISOString(),
+      data: { test: 'value' }
+    };
+    
+    console.log('Sending response:', testData);
+    res.status(200).json(testData);
+  } catch (error) {
+    console.error('Error in debug endpoint:', error);
+    res.status(500).json({ error: 'Internal server error', message: String(error) });
   }
 });
 
