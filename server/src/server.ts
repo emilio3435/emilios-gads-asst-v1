@@ -32,6 +32,14 @@ import path from 'path'; // Import path module
 const app = express();
 const port = process.env.PORT || 5001; // Use environment variable or default to 5001
 
+// --- SIMPLE REQUEST LOGGER --- 
+// Add this middleware EARLY to see all incoming requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] Received Request: ${req.method} ${req.originalUrl}`);
+  next(); // Pass control to the next middleware/route handler
+});
+// --- END REQUEST LOGGER ---
+
 // --- Configuration needed for /analyze ---
 // Configure Multer for file uploads (memory storage)
 const storage = multer.memoryStorage();
@@ -620,18 +628,27 @@ CURRENT QUESTION: ${req.body.question}
 
 // GET /api/history - Fetch history for the user
 app.get('/api/history', authenticateToken, async (req: Request, res: Response) => {
-  console.log(`Received GET /api/history request for user: ${req.user?.email}`);
-  const userId = req.user?.sub; // Google User ID (subject)
+  const userId = req.user?.sub; 
+  console.log(`[SIMPLIFIED GET /api/history] Request for user: ${userId}`);
 
   if (!userId) {
+    console.error('[SIMPLIFIED GET /api/history] User ID missing');
     return res.status(400).json({ message: 'User ID not found after authentication.' });
   }
 
   try {
+    // TEST: Just try accessing the collection reference itself
+    const collectionRef = db.collection('userHistory');
+    console.log(`[SIMPLIFIED GET /api/history] Accessed collection 'userHistory' for user: ${userId}. Collection ref exists: ${!!collectionRef}`);
+    
+    // Send back a simple success message for testing, bypassing the actual query
+    return res.status(200).json({ message: 'Simplified history check OK.', data: [] });
+
+    /* --- ORIGINAL CODE COMMENTED OUT FOR TESTING ---
     console.log(`Fetching history for user ${userId}...`);
     const historyQuery = db.collection('userHistory')
-                           .where('userId', '==', userId) // Filter by the logged-in user
-                           .orderBy('timestamp', 'desc'); // Order by timestamp, newest first
+                           .where('userId', '==', userId) 
+                           .orderBy('timestamp', 'desc'); 
 
     const snapshot = await historyQuery.get();
 
@@ -640,18 +657,18 @@ app.get('/api/history', authenticateToken, async (req: Request, res: Response) =
       return res.status(200).json({ message: 'No history found for user.', data: [] });
     }
 
-    // Explicitly type 'doc' using Firestore types
     const userHistory = snapshot.docs.map((doc: admin.firestore.QueryDocumentSnapshot) => ({
-      id: doc.id, // Include the Firestore document ID
-      ...doc.data(), // Spread the rest of the document data
+      id: doc.id, 
+      ...doc.data(), 
     }));
 
     console.log(`Successfully fetched ${userHistory.length} history entries for user ${userId}.`);
     res.status(200).json({ message: 'History fetched successfully.', data: userHistory });
+    */
 
   } catch (error) {
-    console.error(`Error fetching history for user ${userId}:`, error);
-    res.status(500).json({ message: 'Failed to fetch history due to a server error.' });
+    console.error(`[SIMPLIFIED GET /api/history] Error accessing Firestore for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed during simplified history check due to a server error.' });
   }
 });
 
@@ -966,7 +983,28 @@ app.delete('/api/history/:id', authenticateToken, async (req: Request, res: Resp
   }
 });
 
-// --- End History API Routes ---
+// Debug endpoint to test Firebase connection - remove after confirming
+app.get('/api/debug/firebase-test', async (req: Request, res: Response) => {
+  try {
+    // Attempt to access the userHistory collection
+    const collectionRef = db.collection('userHistory');
+    const snapshot = await collectionRef.limit(1).get();
+    
+    res.status(200).json({
+      message: 'Firebase connection successful',
+      isConnected: true,
+      collectionExists: !!collectionRef,
+      documentCount: snapshot.size
+    });
+  } catch (error) {
+    console.error('Firebase connection test failed:', error);
+    res.status(500).json({
+      message: 'Firebase connection failed',
+      isConnected: false,
+      error: String(error)
+    });
+  }
+});
 
 // Global Error Handler (Example)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
