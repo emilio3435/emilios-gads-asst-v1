@@ -105,6 +105,14 @@
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   font-family: var(--font-family-base);
@@ -114,8 +122,25 @@ body {
   font-size: var(--font-size-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
   width: 100%;
+  min-width: 320px;
+  position: relative;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.App {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow-x: hidden;
+  padding: 0 env(safe-area-inset-right, 0) 0 env(safe-area-inset-left, 0);
 }
 
 /* === Base Elements === */
@@ -1405,5 +1430,60 @@ label.button { display: inline-flex; } /* For file input label */
 @media (min-width: 601px) {
   .mobile-menu-container {
     display: none;
+  }
+}
+
+/* === Mobile Specific Fixes === */
+@media screen and (max-width: 767px) {
+  .App {
+    width: 100vw;
+    max-width: 100vw;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  
+  .history-list {
+    width: 100%;
+    padding: 0 10px;
+  }
+  
+  .history-item {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .history-entry {
+    width: 100%;
+  }
+  
+  .history-entry-header {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .history-entry-info {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  /* Override inline styles with !important for mobile */
+  [style*="display: flex"][style*="flexDirection: row"][style*="gap: 10px"] {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  
+  /* Style buttons with !important for mobile */
+  [style*="backgroundColor: var(--color-primary)"],
+  [style*="backgroundColor: var(--color-accent)"] {
+    width: 48% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 8px 4px !important;
+    font-size: 14px !important;
   }
 }
