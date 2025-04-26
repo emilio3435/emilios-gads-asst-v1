@@ -992,6 +992,7 @@ function App() {
 
         try {
             const url = getApiUrl('/analyze', 'analysis');
+            console.log('Analysis URL:', url);
             const response = await fetch(url, { // Use getApiUrl helper
                 method: 'POST',
                 body: formData
@@ -1008,7 +1009,18 @@ function App() {
                 throw new Error(errorDetails);
             }
 
-            const data = await response.json();
+            // Get the raw response text first to debug any JSON parsing issues
+            const responseText = await response.text();
+            console.log('Raw response from /analyze:', responseText);
+            
+            let data;
+            try {
+                // Try to parse the response text as JSON
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse analyze response as JSON:', parseError);
+                throw new Error(`Failed to parse server response: ${responseText.substring(0, 100)}...`);
+            }
             
             // Log the raw HTML received BEFORE sanitization
             console.log(">>> RAW HTML from backend:", data.html);

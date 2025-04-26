@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Analyze API Test</h1>
+    
+    <div>
+        <h2>Test file upload</h2>
+        <form id="analyzeForm">
+            <div>
+                <label for="file">Upload a test file:</label>
+                <input type="file" id="file" name="file">
+            </div>
+            <div>
+                <label for="tactics">Tactics:</label>
+                <input type="text" id="tactics" name="tactics" value="SEM">
+            </div>
+            <div>
+                <label for="kpis">KPIs:</label>
+                <input type="text" id="kpis" name="kpis" value="CTR">
+            </div>
+            <div>
+                <label for="currentSituation">Current Situation:</label>
+                <textarea id="currentSituation" name="currentSituation">Test situation</textarea>
+            </div>
+            <div>
+                <label for="modelId">Model ID:</label>
+                <input type="text" id="modelId" name="modelId" value="gemini-2.0-flash">
+            </div>
+            <div>
+                <label for="outputDetail">Output Detail:</label>
+                <input type="text" id="outputDetail" name="outputDetail" value="brief">
+            </div>
+            <div>
+                <label for="clientName">Client Name:</label>
+                <input type="text" id="clientName" name="clientName" value="Test Client">
+            </div>
+            <button type="button" onclick="testAnalyzeEndpoint()">Test Analyze Endpoint</button>
+        </form>
+        <div id="analyzeResult" class="result">Results will appear here...</div>
+    </div>
+    
+    <script>
+        async function testAnalyzeEndpoint() {
+            const resultDiv = document.getElementById('analyzeResult');
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                const formData = new FormData(document.getElementById('analyzeForm'));
+                
+                // JSON stringify the values that need to be stringified
+                formData.set('tactics', JSON.stringify(formData.get('tactics')));
+                formData.set('kpis', JSON.stringify(formData.get('kpis')));
+                
+                // Use relative URL for proxy to work
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const responseText = await response.text();
+                resultDiv.innerHTML = '<h3>Raw Response:</h3><pre>' + 
+                    responseText.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
+                
+                try {
+                    // Try to parse as JSON
+                    const jsonResponse = JSON.parse(responseText);
+                    resultDiv.innerHTML += '<h3>Parsed JSON:</h3><pre>' + 
+                        JSON.stringify(jsonResponse, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
+                } catch (jsonError) {
+                    resultDiv.innerHTML += '<h3>JSON Parse Error:</h3><pre>' + 
+                        jsonError.message + '</pre>';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 
