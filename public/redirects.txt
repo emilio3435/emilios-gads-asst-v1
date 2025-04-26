@@ -1,9 +1,0 @@
-https://audacyai.com/api/*  https://emilios-ads-asst-v1-backend.onrender.com/api/:splat  200!
-https://www.audacyai.com/api/*  https://emilios-ads-asst-v1-backend.onrender.com/api/:splat  200!
-/api/*  https://emilios-ads-asst-v1-backend.onrender.com/api/:splat  200
-https://audacyai.com/analyze/*  https://emilios-ads-asst-v1-backend.onrender.com/analyze/:splat  200!
-https://www.audacyai.com/analyze/*  https://emilios-ads-asst-v1-backend.onrender.com/analyze/:splat  200!
-/analyze/*  https://emilios-ads-asst-v1-backend.onrender.com/analyze/:splat  200
-https://audacyai.com/get-help/*  https://emilios-ads-asst-v1-backend.onrender.com/get-help/:splat  200!
-https://www.audacyai.com/get-help/*  https://emilios-ads-asst-v1-backend.onrender.com/get-help/:splat  200!
-/get-help/*  https://emilios-ads-asst-v1-backend.onrender.com/get-help/:splat  200 
