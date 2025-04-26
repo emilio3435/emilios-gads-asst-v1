@@ -280,7 +280,7 @@ function App() {
     // --- Define fetchHistory function HERE (before useEffect that uses it) ---
     const fetchHistory = useCallback(async (token: string | null) => {
         console.log('Fetching history...');
-        setIsLoading(true);
+        setIsLoading(true); 
         
         try {
             // Add timeout to prevent hanging requests
@@ -291,48 +291,48 @@ function App() {
             console.log(`fetchHistory using URL: ${url}`);
 
             const response = await fetch(url, {
-                method: 'GET',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
+               method: 'GET',
+               headers: { 
+                   'Authorization': `Bearer ${token}`,
+                   'Accept': 'application/json'
                 },
                 credentials: 'include', // Add this to include cookies
                 signal: controller.signal
-            });
-            
+           });
+           
             clearTimeout(timeoutId); // Clear timeout on successful response
             
-            if (!response.ok) {
-                let errorMsg = `Failed to fetch history: ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.message || errorMsg;
-                } catch (e) { /* Ignore */ }
-                
-                // Handle authentication errors by logging out
-                if (response.status === 401 || response.status === 403) {
-                    console.log('Authentication error. Logging out:', errorMsg);
-                    // Clear stored credentials
-                    localStorage.removeItem('idToken');
-                    localStorage.removeItem('userInfo');
-                    setIsLoggedIn(false);
-                    setIdToken(null);
-                    setUserInfo(null);
-                    setAnalysisHistory([]);
-                    setError('Your session has expired. Please log in again.');
-                    return;
-                }
-                
-                throw new Error(errorMsg);
-            }
-            
-            const result = await response.json();
-            
+          if (!response.ok) {
+               let errorMsg = `Failed to fetch history: ${response.statusText}`;
+               try {
+                   const errorData = await response.json();
+                   errorMsg = errorData.message || errorMsg;
+               } catch (e) { /* Ignore */ }
+               
+               // Handle authentication errors by logging out
+               if (response.status === 401 || response.status === 403) {
+                   console.log('Authentication error. Logging out:', errorMsg);
+                   // Clear stored credentials
+                   localStorage.removeItem('idToken');
+                   localStorage.removeItem('userInfo');
+                   setIsLoggedIn(false);
+                   setIdToken(null);
+                   setUserInfo(null);
+                   setAnalysisHistory([]);
+                   setError('Your session has expired. Please log in again.');
+                   return;
+               }
+               
+               throw new Error(errorMsg);
+          }
+          
+          const result = await response.json();
+          
             if (result.data && Array.isArray(result.data)) {
-                console.log('History fetched successfully:', result.data);
-                
-                // Log the actual Firestore IDs for debugging
-                console.log('Firestore document IDs:', result.data.map((entry: any) => entry.id));
+               console.log('History fetched successfully:', result.data);
+               
+               // Log the actual Firestore IDs for debugging
+               console.log('Firestore document IDs:', result.data.map((entry: any) => entry.id));
                 
                 // Add debug logs for helpConversation
                 console.log('Checking helpConversation in entries:', 
@@ -347,9 +347,9 @@ function App() {
                                         entry.results.helpConversation.length : 0
                     }))
                 );
-                
-                // Correctly convert Firestore Timestamp object to milliseconds
-                const formattedHistory = result.data.map((entry: any) => {
+               
+               // Correctly convert Firestore Timestamp object to milliseconds
+               const formattedHistory = result.data.map((entry: any) => {
                     // Ensure entry.results exists and has helpConversation
                     if (!entry.results) {
                         entry.results = {};
@@ -359,39 +359,39 @@ function App() {
                         entry.results.helpConversation = [];
                     }
                     
-                    // Check if timestamp exists and has the expected structure
-                    const timestampInMillis = entry.timestamp && typeof entry.timestamp === 'object' && entry.timestamp._seconds
-                        ? entry.timestamp._seconds * 1000 + Math.floor((entry.timestamp._nanoseconds || 0) / 1000000)
-                        : entry.timestamp; // Fallback if it's already a number or invalid
-                    
-                    // Log individual entry ID for debugging
-                    console.log(`Entry ID from Firestore: ${entry.id}`);
-                    
-                    return {
-                        ...entry,
-                        timestamp: timestampInMillis, // Replace the object with the millisecond number
-                    };
-                });
-                setAnalysisHistory(formattedHistory);
-            } else {
-                console.warn('Received unexpected data format when fetching history:', result);
-                setAnalysisHistory([]);
-            }
-            
+                   // Check if timestamp exists and has the expected structure
+                   const timestampInMillis = entry.timestamp && typeof entry.timestamp === 'object' && entry.timestamp._seconds
+                       ? entry.timestamp._seconds * 1000 + Math.floor((entry.timestamp._nanoseconds || 0) / 1000000)
+                       : entry.timestamp; // Fallback if it's already a number or invalid
+                   
+                   // Log individual entry ID for debugging
+                   console.log(`Entry ID from Firestore: ${entry.id}`);
+                   
+                   return {
+                       ...entry,
+                       timestamp: timestampInMillis, // Replace the object with the millisecond number
+                   };
+               });
+               setAnalysisHistory(formattedHistory);
+           } else {
+               console.warn('Received unexpected data format when fetching history:', result);
+               setAnalysisHistory([]);
+           }
+           
         } catch (error: any) {
-            console.error('Failed to fetch history:', error);
+          console.error('Failed to fetch history:', error);
             
             if (error.name === 'AbortError') {
                 setError('Failed to load history: Request timed out. Please try again.');
             } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
                 setError('Failed to load history: Network error. Check your connection and try again.');
             } else {
-                setError(error.message || 'Failed to load history.');
+          setError(error.message || 'Failed to load history.');
             }
             
-            setAnalysisHistory([]);
+          setAnalysisHistory([]);
         } finally {
-            setIsLoading(false);
+           setIsLoading(false);
         }
     }, [historyApiUrl, isTokenExpired]); // Add historyApiUrl back
 
@@ -1040,30 +1040,22 @@ function App() {
                          outputDetail,
                     },
                     results: {
-                         // TEMPORARILY REMOVE/COMMENT LARGE FIELDS FOR TESTING
-                         analysisResult: "SHORTENED_FOR_TEST", // Keep something small or null
-                         // rawAnalysisResult: truncateContentIfNeeded(data.raw), 
-                         rawAnalysisResult: null, // Or set to null
+                         // Use the real data instead of test data
+                         analysisResult: truncateContentIfNeeded(sanitizedHtml),
+                         rawAnalysisResult: truncateContentIfNeeded(data.raw),
                          modelName: data.modelName,
-                         // promptSent: truncateContentIfNeeded(data.prompt),
-                         promptSent: null, // Or set to null
-                         // rawFileContent is not currently saved in HistoryEntry interface, add if needed
-                         // rawFileContent: truncateContentIfNeeded(data.rawFileContent), 
+                         promptSent: truncateContentIfNeeded(data.prompt),
                          // Initialize with an empty array to allow for future messages
                          helpConversation: []
                     }
                 };
 
                 try {
-                    console.log('Saving history entry to backend...');
+                     console.log('Saving history entry to backend...');
                      
-                    // Create a version without the ID field to send to the server
-                    // This is important - let Firestore generate the ID
-                    const { id, ...historyDataWithoutId } = historyEntryToSave;
-                    
-                    // *** ADDED CONSOLE LOG FOR TESTING ***
-                    console.log('TEMPORARILY Sending SMALLER history data:', historyDataWithoutId);
-                    console.log('Smaller history data size (approximate):', JSON.stringify(historyDataWithoutId).length, 'bytes');
+                     // Create a version without the ID field to send to the server
+                     // This is important - let Firestore generate the ID
+                     const { id, ...historyDataWithoutId } = historyEntryToSave;
                      
                     const historyResponse = await fetch(`/api/history`, { // Use relative path
                         method: 'POST',
@@ -1076,49 +1068,49 @@ function App() {
                     });
 
                     if (!historyResponse.ok) {
-                        let errorMsg = `Failed to save history: ${historyResponse.statusText}`;
-                        try {
-                            const errorData = await historyResponse.json();
-                            errorMsg = errorData.message || errorMsg;
-                        } catch (e) { /* Ignore */ }
+                         let errorMsg = `Failed to save history: ${historyResponse.statusText}`;
+                         try {
+                             const errorData = await historyResponse.json();
+                             errorMsg = errorData.message || errorMsg;
+                         } catch (e) { /* Ignore */ }
                          
-                        // Handle authentication errors by logging out
-                        if (historyResponse.status === 401 || historyResponse.status === 403) {
-                            console.log('Authentication error during save history. Logging out:', errorMsg);
-                            // Clear stored credentials
-                            localStorage.removeItem('idToken');
-                            localStorage.removeItem('userInfo');
-                            setIsLoggedIn(false);
-                            setIdToken(null);
-                            setUserInfo(null);
-                            setAnalysisHistory([]);
-                            setError('Your session has expired. Please log in again, but your analysis results are still available.');
-                            return;
-                        }
+                         // Handle authentication errors by logging out
+                         if (historyResponse.status === 401 || historyResponse.status === 403) {
+                             console.log('Authentication error during save history. Logging out:', errorMsg);
+                             // Clear stored credentials
+                             localStorage.removeItem('idToken');
+                             localStorage.removeItem('userInfo');
+                             setIsLoggedIn(false);
+                             setIdToken(null);
+                             setUserInfo(null);
+                             setAnalysisHistory([]);
+                             setError('Your session has expired. Please log in again, but your analysis results are still available.');
+                             return;
+                         }
                          
                         // For other errors, just log and continue showing results
                         console.warn(errorMsg);
                         console.log('Continuing with analysis results without saving to history');
                     } else {
-                        const historyResult = await historyResponse.json();
-                        console.log('History entry saved successfully:', historyResult);
+                     const historyResult = await historyResponse.json();
+                     console.log('History entry saved successfully:', historyResult);
 
-                        // Log the Firestore-generated ID
-                        if (historyResult.entryId) {
-                            console.log('Server generated document ID:', historyResult.entryId);
+                    // Log the Firestore-generated ID
+                    if (historyResult.entryId) {
+                        console.log('Server generated document ID:', historyResult.entryId);
                             // Set the selected history entry ID after saving
                             setSelectedHistoryEntryId(historyResult.entryId);
-                        } else {
-                            console.warn('No document ID returned from server');
-                        }
+                    } else {
+                        console.warn('No document ID returned from server');
+                    }
 
                         // Try to refetch history but don't let failures block showing results
                         try {
-                            // IMPORTANT: Always refetch to get the server's real data with proper IDs
-                            // This ensures we're using the actual Firestore document IDs 
-                            // rather than temporary client-side IDs
+                    // IMPORTANT: Always refetch to get the server's real data with proper IDs
+                    // This ensures we're using the actual Firestore document IDs 
+                    // rather than temporary client-side IDs
                             await fetchHistory(idToken); // Refetch the history list from backend
-                            setCurrentPage(1); // Reset to first page
+                    setCurrentPage(1); // Reset to first page
                         } catch (fetchError) {
                             console.warn('Failed to fetch updated history after save:', fetchError);
                         }
@@ -1412,9 +1404,9 @@ function App() {
             // Check if this is the "entry not found" error
             if (error.message && error.message.includes('404')) {
                 setError('This chat history is no longer available. It may have been deleted.');
-            } else {
+        } else {
                 setError(`Failed to load chat history: ${error.message}`);
-            }
+        }
         })
         .finally(() => {
             setIsLoading(false);
@@ -1445,78 +1437,78 @@ function App() {
     // Function to clear history
     const handleClearHistory = async () => {
         if (!window.confirm('Are you sure you want to clear all history? This cannot be undone.')) {
-            return;
+             return;
         }
         
         setIsLoading(true);
-        
-        try {
+            
+            try {
             const url = getApiUrl('/api/history', 'history');
             const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
+                    method: 'DELETE',
+                    headers: {
                     'Authorization': `Bearer ${idToken}`,
                     'Content-Type': 'application/json'
-                },
+                    },
                 credentials: 'include'
-            });
-            
-            if (!response.ok) {
-                let errorMsg = `Failed to clear history: ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.message || errorMsg;
-                } catch (e) { /* Ignore */ }
-                
-                // Handle authentication errors by logging out
-                if (response.status === 401 || response.status === 403) {
-                    console.log('Authentication error during clear history. Logging out:', errorMsg);
-                    // Clear stored credentials
-                    localStorage.removeItem('idToken');
-                    localStorage.removeItem('userInfo');
-                    setIsLoggedIn(false);
-                    setIdToken(null);
-                    setUserInfo(null);
-                    setAnalysisHistory([]);
-                    setError('Your session has expired. Please log in again.');
-                    return;
+                });
+
+                if (!response.ok) {
+                    let errorMsg = `Failed to clear history: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorMsg;
+                    } catch (e) { /* Ignore */ }
+                    
+                    // Handle authentication errors by logging out
+                    if (response.status === 401 || response.status === 403) {
+                        console.log('Authentication error during clear history. Logging out:', errorMsg);
+                        // Clear stored credentials
+                        localStorage.removeItem('idToken');
+                        localStorage.removeItem('userInfo');
+                        setIsLoggedIn(false);
+                        setIdToken(null);
+                        setUserInfo(null);
+                        setAnalysisHistory([]);
+                        setError('Your session has expired. Please log in again.');
+                        return;
+                    }
+                    
+                    throw new Error(errorMsg);
                 }
                 
-                throw new Error(errorMsg);
+                const result = await response.json();
+                console.log("History cleared successfully:", result.message);
+                
+                // Clear local state on successful deletion from backend
+                setAnalysisHistory([]); 
+                setCurrentPage(1); // Reset pagination
+                
+                // Optionally provide user feedback beyond console log
+                // e.g., set a temporary success message state
+
+                // --- Data Layer Push (Keep if needed) ---
+                 window.dataLayer = window.dataLayer || [];
+                 window.dataLayer.push({
+                     'event': 'clear_history_success', // More specific event?
+                     'event_category': 'History Interaction',
+                     'event_action': 'Clear History Backend'
+                 });
+
+            } catch (error: any) {
+                console.error('Error clearing history:', error);
+                setError(`Failed to clear history: ${error.message}`);
+                 // --- Data Layer Push for Error ---
+                 window.dataLayer = window.dataLayer || [];
+                 window.dataLayer.push({
+                     'event': 'clear_history_error',
+                     'event_category': 'History Interaction',
+                     'event_action': 'Clear History Backend Error',
+                     'event_label': error.message
+                 });
+            } finally {
+                setIsLoading(false);
             }
-            
-            const result = await response.json();
-            console.log("History cleared successfully:", result.message);
-            
-            // Clear local state on successful deletion from backend
-            setAnalysisHistory([]); 
-            setCurrentPage(1); // Reset pagination
-            
-            // Optionally provide user feedback beyond console log
-            // e.g., set a temporary success message state
-
-            // --- Data Layer Push (Keep if needed) ---
-             window.dataLayer = window.dataLayer || [];
-             window.dataLayer.push({
-                 'event': 'clear_history_success', // More specific event?
-                 'event_category': 'History Interaction',
-                 'event_action': 'Clear History Backend'
-             });
-
-        } catch (error: any) {
-            console.error('Error clearing history:', error);
-            setError(`Failed to clear history: ${error.message}`);
-             // --- Data Layer Push for Error ---
-             window.dataLayer = window.dataLayer || [];
-             window.dataLayer.push({
-                 'event': 'clear_history_error',
-                 'event_category': 'History Interaction',
-                 'event_action': 'Clear History Backend Error',
-                 'event_label': error.message
-             });
-        } finally {
-            setIsLoading(false);
-        }
     };
 
     // Function to save analysis to history
@@ -1641,11 +1633,11 @@ function App() {
             console.error('No authentication token available');
             return;
         }
-        
+
         if (!window.confirm('Are you sure you want to delete this entry?')) {
             return;
         }
-        
+
         setIsLoading(true);
         
         try {
@@ -1719,18 +1711,18 @@ function App() {
                 const url = getApiUrl(`/api/history/${entryId}/chat`, 'history');
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${idToken}`,
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
                         'Content-Type': 'application/json'
-                    },
+                },
                     body: JSON.stringify({
                         type: 'user',
                         content: message
                     }),
                     credentials: 'include'
-                });
+            });
 
-                if (!response.ok) {
+            if (!response.ok) {
                     throw new Error(`Failed to add message: ${response.status} ${response.statusText}`);
                 }
                 
@@ -2112,9 +2104,9 @@ function App() {
                             <div className="prompt-modal help-modal">
                                 <div className="modal-header">
                                 <h2>Chat with Audacy AI</h2>
-                                <div className="modal-header-buttons">
-                                    <button onClick={() => setShowHelpModal(false)} className="close-button" title="Close Chat">&times;</button>
-                                </div>
+                                    <div className="modal-header-buttons">
+                                        <button onClick={() => setShowHelpModal(false)} className="close-button" title="Close Chat">&times;</button>
+                                    </div>
                                 </div>
                                 
                                 {/* Conversation History */}
@@ -2438,7 +2430,7 @@ function App() {
                                 onChange={handleFileChange}
                                 style={{ display: 'none' }}
                                 ref={fileInputRef}
-                              />
+                            />
                               <p className="file-types-info">
                                 Please select a CSV, XLSX, PDF, PNG, JPG, GIF, or WEBP file. {/* Updated text */}
                               </p>
@@ -2637,9 +2629,9 @@ function App() {
                                                       <div className="history-entry-info">
                                                           {/* New container for Title and Timestamp */}
                                                           <div className="history-title-timestamp">
-                                                              <h3 className="history-entry-title">
-                                                                  {entry.inputs.clientName || 'Unnamed Analysis'}
-                                                              </h3>
+                                                          <h3 className="history-entry-title">
+                                                              {entry.inputs.clientName || 'Unnamed Analysis'}
+                                                          </h3>
                                                               <span className="history-date">
                                                                   {formatHistoryTimestamp(entry.timestamp)}
                                                               </span>
@@ -2673,7 +2665,7 @@ function App() {
                                                           flexShrink: '0',
                                                           flexWrap: 'nowrap'
                                                       }}>
-                                                          <button 
+                                                          <button
                                                               style={{
                                                                   backgroundColor: 'var(--color-primary)',
                                                                   color: 'white',
@@ -2700,7 +2692,7 @@ function App() {
                                                               View
                                                           </button>
                                                           
-                                                          <button 
+                                                          <button
                                                               style={{
                                                                   backgroundColor: 'var(--color-accent)',
                                                                   color: 'white',
@@ -2813,8 +2805,8 @@ function App() {
             {showChatHistoryModal && viewingChatHistory && (
               <div className="chat-history-modal-backdrop">
                 <div className="chat-history-modal">
-                  <div className="chat-history-modal-header">
-                    <h2>Chat History</h2>
+                        <div className="chat-history-modal-header">
+                            <h2>Chat History</h2>
                     <button 
                       className="modal-close-button" 
                       onClick={handleCloseChatHistoryModal}
@@ -2822,12 +2814,12 @@ function App() {
                     >
                       <span className="material-icons">close</span>
                     </button>
-                  </div>
-                  <div className="chat-history-container">
+                        </div>
+                        <div className="chat-history-container">
                     {viewingChatHistory.length > 0 ? (
-                      <div className="chat-messages">
-                        {viewingChatHistory.map((message, index) => (
-                          <div key={index} className={`chat-message ${message.type}`}>
+                                <div className="chat-messages">
+                                    {viewingChatHistory.map((message, index) => (
+                                        <div key={index} className={`chat-message ${message.type}`}>
                             <div className="message-content-wrapper">
                               <div className="message-header">
                                 <strong>{message.type === 'user' ? 'You' : 'Assistant'}</strong>
@@ -2846,17 +2838,17 @@ function App() {
                                 )}
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
                       <div className="no-history">
                         <p>No chat messages available for this analysis.</p>
                       </div>
-                    )}
-                  </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
-              </div>
             )}
         </div>
     );
