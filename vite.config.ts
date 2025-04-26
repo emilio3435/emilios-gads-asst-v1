@@ -20,7 +20,7 @@ export default defineConfig({
     proxy: {
       // Special handling for history API - must come first for specificity
       '^/api/history': {
-        target: 'https://emilios-ads-asst-v1-history-backend.onrender.com',
+        target: 'https://emilios-ads-asst-v1-backend.onrender.com',
         changeOrigin: true,
         secure: true,
         ws: true,

@@ -1,7 +1,7 @@
 # Netlify redirects file
 # Order matters - more specific rules first
-/api/history/*  https://emilios-ads-asst-v1-history-backend.onrender.com/api/history/:splat  200!
-/api/*          https://emilios-ads-asst-v1-backend.onrender.com/api/:splat                  200!
+/api/history/*  https://emilios-ads-asst-v1-backend.onrender.com/api/history/:splat  200!
+/api/*          https://emilios-ads-asst-v1-backend.onrender.com/api/:splat          200!
 /analyze/*      https://emilios-ads-asst-v1-backend.onrender.com/analyze/:splat              200!
 /get-help/*     https://emilios-ads-asst-v1-backend.onrender.com/get-help/:splat             200!
 /*             /index.html                                                                  200 
