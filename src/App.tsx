@@ -2611,8 +2611,19 @@ function App() {
                                               </button>
                                               
                                               <div className="history-entry">
-                                                  <div className="history-entry-header">
-                                                      <div className="history-entry-info">
+                                                  <div className="history-entry-header" style={{
+                                                      display: 'flex',
+                                                      flexDirection: 'row',
+                                                      justifyContent: 'space-between',
+                                                      alignItems: 'center',
+                                                      width: '100%'
+                                                  }}>
+                                                      <div className="history-entry-info" style={{
+                                                          flex: '1',
+                                                          minWidth: '0',
+                                                          overflow: 'hidden',
+                                                          paddingRight: '16px'
+                                                      }}>
                                                           <h3 className="history-entry-title">
                                                               {entry.inputs.clientName || 'Unnamed Analysis'}
                                                           </h3>
@@ -2635,14 +2646,35 @@ function App() {
                                                           )}
                                                       </div>
 
-                                                      {/* Action buttons in a container */}
-                                                      <div className="history-action-wrapper" style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
+                                                      <div style={{
+                                                          display: 'flex',
+                                                          flexDirection: 'row',
+                                                          alignItems: 'center',
+                                                          gap: '10px',
+                                                          flexShrink: '0',
+                                                          flexWrap: 'nowrap'
+                                                      }}>
                                                           <button 
-                                                              className="view-history-button"
+                                                              style={{
+                                                                  backgroundColor: 'var(--color-primary)',
+                                                                  color: 'white',
+                                                                  border: 'none',
+                                                                  borderRadius: '8px',
+                                                                  padding: '8px 16px',
+                                                                  display: 'flex',
+                                                                  alignItems: 'center',
+                                                                  justifyContent: 'center',
+                                                                  gap: '4px',
+                                                                  fontWeight: '500',
+                                                                  fontSize: '14px',
+                                                                  cursor: 'pointer',
+                                                                  width: '100px',
+                                                                  height: '36px',
+                                                                  flexShrink: '0'
+                                                              }}
                                                               onClick={(e) => handleViewClick(entry.id, e)}
-                                                              style={{width: '100px', flexShrink: 0}}
                                                           >
-                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px'}}>
+                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                                   <circle cx="12" cy="12" r="3"></circle>
                                                               </svg>
@@ -2650,11 +2682,26 @@ function App() {
                                                           </button>
                                                           
                                                           <button 
-                                                              className="chat-history-button"
+                                                              style={{
+                                                                  backgroundColor: 'var(--color-accent)',
+                                                                  color: 'white',
+                                                                  border: 'none',
+                                                                  borderRadius: '8px',
+                                                                  padding: '8px 16px',
+                                                                  display: 'flex',
+                                                                  alignItems: 'center',
+                                                                  justifyContent: 'center',
+                                                                  gap: '4px',
+                                                                  fontWeight: '500',
+                                                                  fontSize: '14px',
+                                                                  cursor: 'pointer',
+                                                                  width: '100px',
+                                                                  height: '36px',
+                                                                  flexShrink: '0'
+                                                              }}
                                                               onClick={(e) => handleChatClick(entry, e)}
-                                                              style={{width: '100px', flexShrink: 0}}
                                                           >
-                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px'}}>
+                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                                               </svg>
                                                               Chat
