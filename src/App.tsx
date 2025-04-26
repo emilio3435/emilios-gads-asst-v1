@@ -2597,7 +2597,19 @@ function App() {
                               {analysisHistory.length > 0 && (
                                   <ul className="history-list">
                                       {paginatedHistory.map(entry => (
-                                          <li key={entry.id} className={`history-item ${activeMenuId === entry.id ? 'has-active-menu' : ''}`}>
+                                          <li key={entry.id} className="history-item">
+                                              {/* Delete icon (X) in top right corner */}
+                                              <button 
+                                                className="delete-history-icon"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteClick(entry.id, e);
+                                                }}
+                                                aria-label="Delete analysis"
+                                              >
+                                                &times;
+                                              </button>
+                                              
                                               <div className="history-entry">
                                                   <div className="history-entry-header">
                                                       <div className="history-entry-info">
@@ -2623,98 +2635,29 @@ function App() {
                                                           )}
                                                       </div>
 
-                                                      {/* Add View button with Audacy Purple color */}
-                                                      <button 
-                                                          className="view-history-button"
-                                                          onClick={(e) => handleViewClick(entry.id, e)}
-                                                      >
-                                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px'}}>
-                                                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                              <circle cx="12" cy="12" r="3"></circle>
-                                                          </svg>
-                                                          View
-                                                      </button>
-                                                      
-                                                      {/* Button now uses a function to ensure it correctly gets/loses focus */}
-                                                      <button 
-                                                          ref={activeMenuId === entry.id ? buttonRef : null}
-                                                          className={`action-menu-button ${activeMenuId === entry.id ? 'active' : ''}`}
-                                                          aria-label="Show actions menu"
-                                                          onClick={(e) => {
-                                                              e.stopPropagation();
-                                                              toggleActionMenu(entry.id);
-                                                          }}
-                                                      >
-                                                          &hellip;
-                                                      </button>
-                                                      
-                                                      {/* Separate handling for desktop and mobile menus */}
-                                                      {/* Desktop dropdown - always in DOM, visibility controlled by CSS */}
-                                                      <div 
-                                                          ref={activeMenuId === entry.id ? menuRef : null}
-                                                          className={`action-menu-dropdown desktop-menu ${activeMenuId === entry.id ? 'visible' : ''}`}
-                                                          onClick={(e) => e.stopPropagation()}
-                                                      >
+                                                      {/* Action buttons in a container */}
+                                                      <div className="history-buttons">
                                                           <button 
-                                                              className="action-menu-item"
-                                                              onClick={(e) => handleChatClick(entry, e)}>
-                                                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                                                  </svg>
-                                                                  Chat
-                                                              </button>
-                                                          <button 
-                                                              className="action-menu-item delete"
-                                                              onClick={(e) => handleDeleteClick(entry.id, e)}
+                                                              className="view-history-button"
+                                                              onClick={(e) => handleViewClick(entry.id, e)}
                                                           >
-                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                  <polyline points="3 6 5 6 21 6"></polyline>
-                                                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                                  <line x1="10" y1="11" x2="10" y2="17"></line>
-                                                                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px'}}>
+                                                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                                  <circle cx="12" cy="12" r="3"></circle>
                                                               </svg>
-                                                              Delete
+                                                              View
+                                                          </button>
+                                                          
+                                                          <button 
+                                                              className="chat-history-button"
+                                                              onClick={(e) => handleChatClick(entry, e)}
+                                                          >
+                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px'}}>
+                                                                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                                              </svg>
+                                                              Chat
                                                           </button>
                                                       </div>
-                                                      
-                                                      {/* Mobile overlay and action menu - conditionally rendered */}
-                                                      {activeMenuId === entry.id && (
-                                                          <div className="mobile-menu-container">
-                                                              <div 
-                                                                  className="action-menu-overlay visible" 
-                                                                  onClick={(e) => {
-                                                                      e.stopPropagation();
-                                                                      setActiveMenuId(null);
-                                                                  }}
-                                                              ></div>
-                                                              <div 
-                                                                  className="action-menu-dropdown mobile-menu visible"
-                                                                  onClick={(e) => e.stopPropagation()}
-                                                              >
-                                                                  <div className="action-menu-header">Actions</div>
-                                                                  <button 
-                                                                      className="action-menu-item"
-                                                                      onClick={(e) => handleChatClick(entry, e)}>
-                                                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                                                      </svg>
-                                                                      Chat
-                                                                  </button>
-                                                                  <button 
-                                                                      className="action-menu-item delete"
-                                                                      onClick={(e) => handleDeleteHistoryEntry(entry.id)}
-                                                                  >
-                                                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                          <polyline points="3 6 5 6 21 6"></polyline>
-                                                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                                                                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                                                                      </svg>
-                                                                      Delete
-                                                                  </button>
-                                                              </div>
-                                                          </div>
-                                                      )}
                                                   </div>
                                               </div>
                                           </li>
