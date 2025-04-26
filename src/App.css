@@ -984,10 +984,12 @@ label.button { display: inline-flex; } /* For file input label */
 
 .history-entry-header {
   display: flex;
+  flex-direction: row !important; /* Force horizontal layout */
   width: 100%; /* Ensure full width */
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-medium); /* Increased gap between info and buttons */
+  flex-wrap: nowrap !important; /* Don't wrap the header elements */
 }
 
 .history-entry-info {
@@ -1032,10 +1034,13 @@ label.button { display: inline-flex; } /* For file input label */
 /* Button Styles */
 .history-buttons {
   display: flex;
+  flex-direction: row !important; /* Force horizontal layout */
   align-items: center;
-  gap: var(--spacing-small);
+  justify-content: flex-end; /* Align to the right */
+  gap: 12px; /* Consistent gap */
+  flex-wrap: nowrap !important; /* Prevent wrapping at all costs */
+  width: auto; /* Allow container to size naturally */
   flex-shrink: 0; /* Prevent container from shrinking */
-  flex-wrap: nowrap; /* Prevent wrapping */
 }
 
 /* View button */
@@ -1053,8 +1058,9 @@ label.button { display: inline-flex; } /* For file input label */
   align-items: center;
   justify-content: center;
   flex-shrink: 0; /* Prevent button from shrinking */
+  width: 100px; /* Fixed width */
   height: 36px;
-  min-width: 80px;
+  margin: 0; /* Remove any margin */
 }
 
 .view-history-button:hover {
@@ -1076,8 +1082,9 @@ label.button { display: inline-flex; } /* For file input label */
   align-items: center;
   justify-content: center;
   flex-shrink: 0; /* Prevent button from shrinking */
+  width: 100px; /* Fixed width */
   height: 36px;
-  min-width: 80px;
+  margin: 0; /* Remove any margin */
 }
 
 .chat-history-button:hover {
@@ -1115,9 +1122,9 @@ label.button { display: inline-flex; } /* For file input label */
 }
 
 /* === Responsive adjustments for history items === */
-@media (max-width: 768px) {
+@media (max-width: 550px) {
   .history-entry-header {
-    flex-direction: column;
+    flex-direction: column !important;
     align-items: flex-start;
   }
   
@@ -1133,12 +1140,7 @@ label.button { display: inline-flex; } /* For file input label */
   
   .view-history-button,
   .chat-history-button {
-    flex: 1;
-    min-width: 0; /* Allow buttons to shrink on mobile */
-  }
-  
-  .delete-history-icon {
-    opacity: 1; /* Always visible on mobile */
+    width: 48%; /* Allow a bit of space between */
   }
 }
 
