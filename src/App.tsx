@@ -88,9 +88,24 @@ const formatPromptForDisplay = (prompt: string | null): string => {
 };
 
 // --- Define API Base URL ---
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/'; // Allow fallback to relative
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; // Empty string for relative path
 const analysisApiUrl = import.meta.env.VITE_ANALYSIS_API_URL || apiBaseUrl; // Use base or specific env
 const historyApiUrl = import.meta.env.VITE_HISTORY_API_URL || apiBaseUrl; // Use base or specific env
+
+// Helper function to get the correct API URL based on environment
+const getApiUrl = (endpoint: string, service: 'history' | 'analysis' = 'history') => {
+  // For local development, use relative paths
+  if (window.location.hostname === 'localhost') {
+    return endpoint;
+  }
+  
+  // For production, use absolute URLs to avoid proxy issues
+  if (service === 'history') {
+    return `https://emilios-ads-asst-v1-history-backend.onrender.com${endpoint}`;
+  } else {
+    return `https://emilios-ads-asst-v1-backend.onrender.com${endpoint}`;
+  }
+};
 
 const HistoryActionMenu = ({ 
   isOpen, 
@@ -275,9 +290,7 @@ function App() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
-            // Determine the correct URL
-            // const url = `${historyApiUrl.startsWith('http') ? historyApiUrl : ''}/api/history`; // OLD logic
-            const url = '/api/history'; // ALWAYS use relative path
+            const url = getApiUrl('/api/history', 'history');
             console.log(`fetchHistory using URL: ${url}`);
 
             const response = await fetch(url, {
@@ -668,42 +681,18 @@ function App() {
         const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''; // Use import.meta.env for Vite
 
         try {
-            // Create FormData to support file uploads
+            // Create form data for file upload
             const formData = new FormData();
-            
-            // Append all the data fields
-            formData.append('originalPrompt', promptSent || '');
-            formData.append('originalAnalysis', rawAnalysisResult || '');
             formData.append('question', helpQuestion);
-            formData.append('tactic', selectedTactics || '');
-            formData.append('kpi', selectedKPIs || '');
-            formData.append('fileName', fileName || '');
-            formData.append('currentSituation', currentSituation || '');
-            // Add the main analysis result if it exists
-            if (analysisResult) {
-                formData.append('analysisResult', analysisResult);
-            }
             
-            // Add conversation history to help provide context - always include it
-            formData.append('conversationHistory', JSON.stringify(updatedConversation)); // Sends the *updated* history
-            
-            // Add selected model ID to use the same model as the analysis
-            formData.append('modelId', selectedModelId);
-            
-            // Append the context file if it exists
             if (helpContextFile) {
-                formData.append('contextFile', helpContextFile);
+                formData.append('file', helpContextFile);
             }
-
-            // --- NEW: Append original file content if available ---
-            if (originalFileContent) {
-                formData.append('originalFileContent', originalFileContent);
-            }
-
-            // Send the help request to the server
-            const response = await fetch(`${analysisApiUrl}/get-help`, { // Use analysisApiUrl for help endpoint
+            
+            const url = getApiUrl('/get-help', 'analysis');
+            const response = await fetch(url, { // Use getApiUrl helper
                 method: 'POST',
-                body: formData,
+                body: formData
             });
 
             if (!response.ok) {
@@ -1003,9 +992,10 @@ function App() {
         });
 
         try {
-            const response = await fetch(`${analysisApiUrl}/analyze`, { // Use analysisApiUrl for the analyze endpoint
+            const url = getApiUrl('/analyze', 'analysis');
+            const response = await fetch(url, { // Use getApiUrl helper
                 method: 'POST',
-                body: formData,
+                body: formData
             });
 
             if (!response.ok) {
@@ -1321,25 +1311,23 @@ function App() {
 
     // Function to open the chat history modal
     const handleViewChatHistory = (entryId: string) => {
-        console.log(`Attempting to view chat history for entry: ${entryId}`);
-        setCurrentChatEntryId(entryId); // Track the current entry ID
-        
-        if (!isLoggedIn || !idToken) {
-            console.error('User must be logged in to view chat history');
-            alert('You must be logged in to view chat history.');
+        if (!idToken) {
+            console.error('No authentication token available');
             return;
         }
-
-        setIsLoading(true);
-        setError(null);
         
-        // Fetch the specific entry from the backend
-        fetch(`/api/history/${entryId}`, { // Use relative path
+        // Start loading
+        setIsLoading(true);
+        
+        // Fetch chat history from the server
+        const url = getApiUrl(`/api/history/${entryId}`, 'history');
+        fetch(url, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${idToken}`,
+                'Accept': 'application/json'
             },
-            credentials: 'include', // Add this to include cookies
+            credentials: 'include'
         })
         .then(response => {
             if (!response.ok) {
@@ -1457,86 +1445,141 @@ function App() {
         }
     };
 
-    // <<< ADDED: Function to clear analysis history >>>
-    const handleClearHistory = async () => { // Make async
-        if (!isLoggedIn || !idToken) { // Check login status and token
-             alert('You must be logged in to clear history.');
-             return;
+    // Function to clear history
+    const handleClearHistory = async () => {
+        if (!window.confirm('Are you sure you want to clear all history? This cannot be undone.')) {
+            return;
         }
         
-        if (window.confirm('Are you sure you want to clear all your analysis history? This cannot be undone.')) {
-            console.log('Attempting to clear history via backend...');
-            setIsLoading(true); // Indicate loading/processing
-            setError(null);
+        setIsLoading(true);
+        
+        try {
+            const url = getApiUrl('/api/history', 'history');
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
             
-            try {
-                const response = await fetch(`/api/history`, { // Use relative path
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${idToken}`, // Use state idToken
-                    },
-                    credentials: 'include', // Add this to include cookies
-                });
-
-                if (!response.ok) {
-                    let errorMsg = `Failed to clear history: ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMsg = errorData.message || errorMsg;
-                    } catch (e) { /* Ignore */ }
-                    
-                    // Handle authentication errors by logging out
-                    if (response.status === 401 || response.status === 403) {
-                        console.log('Authentication error during clear history. Logging out:', errorMsg);
-                        // Clear stored credentials
-                        localStorage.removeItem('idToken');
-                        localStorage.removeItem('userInfo');
-                        setIsLoggedIn(false);
-                        setIdToken(null);
-                        setUserInfo(null);
-                        setAnalysisHistory([]);
-                        setError('Your session has expired. Please log in again.');
-                        return;
-                    }
-                    
-                    throw new Error(errorMsg);
+            if (!response.ok) {
+                let errorMsg = `Failed to clear history: ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorMsg;
+                } catch (e) { /* Ignore */ }
+                
+                // Handle authentication errors by logging out
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Authentication error during clear history. Logging out:', errorMsg);
+                    // Clear stored credentials
+                    localStorage.removeItem('idToken');
+                    localStorage.removeItem('userInfo');
+                    setIsLoggedIn(false);
+                    setIdToken(null);
+                    setUserInfo(null);
+                    setAnalysisHistory([]);
+                    setError('Your session has expired. Please log in again.');
+                    return;
                 }
                 
-                const result = await response.json();
-                console.log("History cleared successfully:", result.message);
-                
-                // Clear local state on successful deletion from backend
-                setAnalysisHistory([]); 
-                setCurrentPage(1); // Reset pagination
-                
-                // Optionally provide user feedback beyond console log
-                // e.g., set a temporary success message state
-
-                // --- Data Layer Push (Keep if needed) ---
-                 window.dataLayer = window.dataLayer || [];
-                 window.dataLayer.push({
-                     'event': 'clear_history_success', // More specific event?
-                     'event_category': 'History Interaction',
-                     'event_action': 'Clear History Backend'
-                 });
-
-            } catch (error: any) {
-                console.error('Error clearing history:', error);
-                setError(`Failed to clear history: ${error.message}`);
-                 // --- Data Layer Push for Error ---
-                 window.dataLayer = window.dataLayer || [];
-                 window.dataLayer.push({
-                     'event': 'clear_history_error',
-                     'event_category': 'History Interaction',
-                     'event_action': 'Clear History Backend Error',
-                     'event_label': error.message
-                 });
-            } finally {
-                setIsLoading(false);
+                throw new Error(errorMsg);
             }
+            
+            const result = await response.json();
+            console.log("History cleared successfully:", result.message);
+            
+            // Clear local state on successful deletion from backend
+            setAnalysisHistory([]); 
+            setCurrentPage(1); // Reset pagination
+            
+            // Optionally provide user feedback beyond console log
+            // e.g., set a temporary success message state
+
+            // --- Data Layer Push (Keep if needed) ---
+             window.dataLayer = window.dataLayer || [];
+             window.dataLayer.push({
+                 'event': 'clear_history_success', // More specific event?
+                 'event_category': 'History Interaction',
+                 'event_action': 'Clear History Backend'
+             });
+
+        } catch (error: any) {
+            console.error('Error clearing history:', error);
+            setError(`Failed to clear history: ${error.message}`);
+             // --- Data Layer Push for Error ---
+             window.dataLayer = window.dataLayer || [];
+             window.dataLayer.push({
+                 'event': 'clear_history_error',
+                 'event_category': 'History Interaction',
+                 'event_action': 'Clear History Backend Error',
+                 'event_label': error.message
+             });
+        } finally {
+            setIsLoading(false);
         }
     };
-    // <<< END ADDED FUNCTION >>>
+
+    // Function to save analysis to history
+    const saveToHistory = async (analysisResult: string, rawResult: string): Promise<string | null> => {
+        if (!isLoggedIn || !idToken) {
+            console.error('Cannot save to history - user not logged in');
+            return null;
+        }
+        
+        try {
+            // Create the history entry object
+            const historyEntry = {
+                inputs: {
+                    clientName,
+                    selectedTactics,
+                    selectedKPIs,
+                    fileName,
+                    currentSituation,
+                    selectedModelId,
+                    outputDetail
+                },
+                results: {
+                    analysisResult,
+                    rawAnalysisResult: rawResult,
+                    modelName,
+                    promptSent,
+                    helpConversation: [] // Initialize with empty array
+                }
+            };
+            
+            // Save to backend
+            const url = getApiUrl('/api/history', 'history');
+            const historyResponse = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(historyEntry),
+                credentials: 'include'
+            });
+            
+            if (!historyResponse.ok) {
+                throw new Error(`Failed to save history: ${historyResponse.status} ${historyResponse.statusText}`);
+            }
+            
+            const result = await historyResponse.json();
+            
+            if (result.data && result.data.id) {
+                console.log(`Analysis saved to history with ID: ${result.data.id}`);
+                return result.data.id;
+            } else {
+                console.error('History save succeeded but no ID returned:', result);
+                return null;
+            }
+        } catch (error) {
+            console.error('Error saving to history:', error);
+            return null;
+        }
+    };
 
     // Update handleLoginSuccess
     const handleLoginSuccess = (credentialResponse: CredentialResponse) => {
@@ -1597,95 +1640,50 @@ function App() {
 
     // <<< NEW: Function to delete a specific history entry >>>
     const handleDeleteHistoryEntry = async (entryId: string) => {
-        if (!isLoggedIn || !idToken) {
-            alert('You must be logged in to delete history entries.');
+        if (!idToken) {
+            console.error('No authentication token available');
             return;
         }
-
-        // Confirmation dialog
-        if (!window.confirm(`Are you sure you want to delete this history entry? This action cannot be undone.`)) {
-            return; // User cancelled
+        
+        if (!window.confirm('Are you sure you want to delete this entry?')) {
+            return;
         }
-
-        console.log(`Attempting to delete history entry ${entryId} via backend...`);
+        
         setIsLoading(true);
-        setError(null);
-
-        // Check if this is a temporary ID (starts with 'temp-')
-        // If so, we can't delete it on the server because it doesn't exist there
-        if (entryId.startsWith('temp-')) {
-            console.warn(`Skipping server delete for temporary ID: ${entryId}`);
-            // Just remove it from local state
-            setAnalysisHistory(prevHistory => prevHistory.filter(entry => entry.id !== entryId));
-            setIsLoading(false);
-            // Reset view if needed
-            if (selectedHistoryEntryId === entryId) {
-                handleNewInquiry();
-                setActiveView('history');
-            }
-            return;
-        }
-
+        
         try {
-            // Make absolute URL to be safe
-            const response = await fetch(`/api/history/${entryId}`, { // Use relative path
+            const url = getApiUrl(`/api/history/${entryId}`, 'history');
+            const response = await fetch(url, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${idToken}`,
+                    'Authorization': `Bearer ${idToken}`
                 },
-                credentials: 'include', // Add this to include cookies
+                credentials: 'include'
             });
-
+            
             if (!response.ok) {
-                let errorMsg = `Failed to delete history entry: ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg = errorData.message || errorMsg;
-                } catch (e) { /* Ignore JSON parsing error */ }
-                
-                // Handle authentication errors by logging out
-                if (response.status === 401 || response.status === 403) {
-                    console.log('Authentication error during delete entry. Logging out:', errorMsg);
-                    // Clear stored credentials
-                    localStorage.removeItem('idToken');
-                    localStorage.removeItem('userInfo');
-                    setIsLoggedIn(false);
-                    setIdToken(null);
-                    setUserInfo(null);
-                    setAnalysisHistory([]);
-                    setError('Your session has expired. Please log in again.');
-                    return;
-                }
-                
-                throw new Error(errorMsg);
+                throw new Error(`Failed to delete entry: ${response.status} ${response.statusText}`);
             }
-
-            const result = await response.json();
-            console.log("History entry deleted successfully:", result.message);
-
-            // Update local state to remove the deleted entry
-            setAnalysisHistory(prevHistory => prevHistory.filter(entry => entry.id !== entryId));
-
-            // If the deleted entry was the one being viewed, reset the view
+            
+            // Remove the entry from local state
+            setAnalysisHistory(prev => prev.filter(entry => entry.id !== entryId));
+            
+            // If we were viewing the deleted entry, go back to the history list
             if (selectedHistoryEntryId === entryId) {
-                 handleNewInquiry(); // Or reset to a neutral state
-                 setActiveView('history'); // Stay on history tab
+                setShowResults(false);
+                setSelectedHistoryEntryId(null);
+                setIsViewingHistory(true);
             }
-
-            // Adjust pagination if necessary (e.g., if the last item on a page was deleted)
-            if (paginatedHistory.length === 1 && currentPage > 1) {
-                setCurrentPage(currentPage - 1);
-            } else if (analysisHistory.length % itemsPerPage === 0 && currentPage > totalPages) {
-                 // Edge case if deletion makes the last page empty
-                 setCurrentPage(Math.max(1, totalPages -1));
+            
+            // If we were in the chat for the deleted entry, close the chat modal
+            if (currentChatEntryId === entryId) {
+                setShowChatHistoryModal(false);
+                setViewingChatHistory([]);
             }
-
-            // Optional: User feedback (e.g., temporary success message)
-
-        } catch (error: any) {
-            console.error(`Error deleting history entry ${entryId}:`, error);
-            setError(`Failed to delete history entry: ${error.message}`);
-            // Optional: User feedback for error
+            
+        } catch (error) {
+            console.error('Error deleting history entry:', error);
+            setError(`Failed to delete entry: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setIsLoading(false);
         }
@@ -1706,94 +1704,102 @@ function App() {
 
     // Function to add a user message to the chat history and get AI response
     const handleAddChatMessage = async (entryId: string, message: string) => {
-        if (!message.trim() || !isLoggedIn || !idToken) return;
+        if (!message.trim()) return;
         
-        if (!viewingChatHistory) {
-            console.error('No chat history being viewed');
-            return;
-        }
-        
-        // Add the user message immediately to local state for UI feedback
-        const newUserMessage = {
-            type: 'user',
-            content: message,
-            timestamp: new Date()
-        };
-        
-        const updatedChat = [...viewingChatHistory, newUserMessage];
-        setViewingChatHistory(updatedChat);
-        
-        // First, save the user message to the server
         try {
-            const response = await fetch(`/api/history/${entryId}/chat`, { // Changed to relative path
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    type: 'user',
-                    content: message
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to add message: ${response.status} ${response.statusText}`);
-            }
-            
-            const messageData = await response.json();
-            console.log('User message added successfully:', messageData);
-            
-            // Now get AI response
-            setIsChatResponseLoading(true);
-            
-            // Show typing indicator in the UI
-            const typingIndicator = {
-                type: 'assistant',
-                content: '<p class="typing-indicator">Audacy AI is thinking...</p>',
-                timestamp: new Date(),
-                isTyping: true
+            // Add user message to local state first for immediate feedback
+            const userMessage = {
+                type: 'user',
+                content: message,
+                timestamp: new Date()
             };
-            setViewingChatHistory([...updatedChat, typingIndicator]);
             
-            // Get AI response
-            const aiResponse = await getAIResponseForChatMessage(entryId, message, updatedChat);
+            const updatedChat = [...viewingChatHistory, userMessage];
+            setViewingChatHistory(updatedChat);
             
-            if (aiResponse) {
-                // Remove typing indicator and add the real response
-                const finalChat = [...updatedChat, aiResponse];
-                setViewingChatHistory(finalChat);
-                
-                // Save AI response to the server
-                const aiSaveResponse = await fetch(`/api/history/${entryId}/chat`, { // Changed to relative path
+            // First, save the user message to the server
+            try {
+                const url = getApiUrl(`/api/history/${entryId}/chat`, 'history');
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${idToken}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        type: 'assistant',
-                        content: aiResponse.content
-                    })
+                        type: 'user',
+                        content: message
+                    }),
+                    credentials: 'include'
                 });
-                
-                if (!aiSaveResponse.ok) {
-                    console.error('Failed to save AI response:', aiSaveResponse.status, aiSaveResponse.statusText);
-                } else {
-                    console.log('AI response saved successfully');
+
+                if (!response.ok) {
+                    throw new Error(`Failed to add message: ${response.status} ${response.statusText}`);
                 }
-            } else {
-                // If AI response failed, remove typing indicator
-                setViewingChatHistory(updatedChat);
-                console.error('Failed to get AI response');
+                
+                const messageData = await response.json();
+                console.log('User message added successfully:', messageData);
+                
+                // Now get AI response
+                setIsChatResponseLoading(true);
+                
+                // Show typing indicator in the UI
+                const typingIndicator = {
+                    type: 'assistant',
+                    content: '<p class="typing-indicator">Audacy AI is thinking...</p>',
+                    timestamp: new Date(),
+                    isTyping: true
+                };
+                setViewingChatHistory([...updatedChat, typingIndicator]);
+                
+                // Get AI response
+                const aiResponse = await getAIResponseForChatMessage(entryId, message, updatedChat);
+                
+                if (aiResponse) {
+                    // Remove typing indicator and add the real response
+                    const finalChat = [...updatedChat, aiResponse];
+                    setViewingChatHistory(finalChat);
+                    
+                    // Save AI response to the server
+                    const aiSaveUrl = getApiUrl(`/api/history/${entryId}/chat`, 'history');
+                    const aiSaveResponse = await fetch(aiSaveUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${idToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type: 'assistant',
+                            content: aiResponse.content
+                        }),
+                        credentials: 'include'
+                    });
+                    
+                    if (!aiSaveResponse.ok) {
+                        console.error('Failed to save AI response:', aiSaveResponse.status, aiSaveResponse.statusText);
+                    } else {
+                        console.log('AI response saved successfully');
+                    }
+                } else {
+                    // If AI response failed, remove typing indicator
+                    setViewingChatHistory(updatedChat);
+                    console.error('Failed to get AI response');
+                }
+            } catch (error) {
+                console.error('Error in chat process:', error);
+                setError(`Failed to send message: ${error instanceof Error ? error.message : String(error)}`);
+                // Revert the local state if there was an error
+                setViewingChatHistory(viewingChatHistory.filter(msg => msg !== userMessage));
+            } finally {
+                setIsChatResponseLoading(false);
             }
+            
+            // Clear the input field
+            setHelpQuestion('');
+            
         } catch (error) {
-            console.error('Error in chat message flow:', error);
-            // Revert the optimistic update if failed
-            setViewingChatHistory(viewingChatHistory);
-            alert(`Failed to process message: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        } finally {
-            setIsChatResponseLoading(false);
+            console.error('Error in chat process:', error);
+            setError(`Failed to send message: ${error instanceof Error ? error.message : String(error)}`);
         }
     };
 
