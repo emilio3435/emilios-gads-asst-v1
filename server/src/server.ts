@@ -35,7 +35,13 @@ const port = process.env.PORT || 5001; // Use environment variable or default to
 // --- Configuration needed for /analyze ---
 // Configure Multer for file uploads (memory storage)
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100 MB limit for files
+    fieldSize: 50 * 1024 * 1024,  // 50 MB limit for non-file fields
+  },
+});
 
 // Initialize Gemini API
 const apiKey = process.env.GEMINI_API_KEY;
@@ -52,6 +58,11 @@ const genAI = new GoogleGenerativeAI(apiKey);
 console.log('CORS_ORIGIN from env:', process.env.CORS_ORIGIN);
 
 // Middleware
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp'); // Or 'unsafe-none' if needed, but start with 'require-corp'
+  next();
+});
 app.use(cors({ 
   origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
     // Allow requests with no origin (like mobile apps, curl requests)
@@ -86,6 +97,16 @@ app.use(sessionMiddleware);
 app.get('/', (req: Request, res: Response) => {
   res.send('Audacy Assistant Backend is running!');
 });
+
+// Define interfaces for document data
+interface DocumentData {
+  userId: string;
+  results?: {
+    helpConversation?: any[];
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
 
 // --- Helper functions needed for /analyze (copied from server.js) ---
 
@@ -659,7 +680,7 @@ app.get('/api/history/:id', authenticateToken, async (req: Request, res: Respons
       return res.status(404).json({ message: 'This history entry is no longer available. It may have been deleted.' });
     }
 
-    const data = doc.data();
+    const data = doc.data() as DocumentData;
     
     // Verify the entry belongs to the authenticated user
     if (data?.userId !== userId) {
@@ -751,7 +772,7 @@ app.post('/api/history/:id/chat', authenticateToken, async (req: Request, res: R
       return res.status(404).json({ message: 'History entry not found.' });
     }
 
-    const data = doc.data();
+    const data = doc.data() as DocumentData;
     
     if (data?.userId !== userId) {
       return res.status(403).json({ message: 'Unauthorized. You can only update your own history entries.' });
@@ -815,7 +836,7 @@ app.put('/api/history/:id/chat', authenticateToken, async (req: Request, res: Re
       return res.status(404).json({ message: 'History entry not found.' });
     }
 
-    const data = doc.data();
+    const data = doc.data() as DocumentData;
     console.log(`Found entry with ID ${entryId}, updating chat history`);
     
     // Verify the entry belongs to the authenticated user
@@ -923,7 +944,7 @@ app.delete('/api/history/:id', authenticateToken, async (req: Request, res: Resp
       return res.status(404).json({ message: 'History entry not found.' });
     }
 
-    const data = doc.data();
+    const data = doc.data() as DocumentData;
     console.log(`Found entry with ID ${entryId}, data:`, data);
     
     // Verify the entry belongs to the authenticated user
