@@ -958,187 +958,154 @@ label.button { display: inline-flex; } /* For file input label */
   margin: 20px 0;
 }
 
-/* History Items with better hover behavior */
+/* === History Items with better hover behavior === */
 .history-item {
-  background-color: var(--color-white);
-  border: var(--border-width) solid var(--border-color-light);
-  border-radius: var(--border-radius-medium);
   padding: var(--spacing-medium);
-  margin-bottom: var(--spacing-medium);
-  box-shadow: var(--shadow-small);
-  transition: transform 0.2s, box-shadow 0.2s;
-  position: relative; /* Needed for absolute positioning */
-  z-index: 1; /* Default z-index */
+  margin-bottom: var(--spacing-small);
+  border-radius: var(--border-radius-medium);
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  position: relative;
+  width: 100%; /* Ensure full width */
+  background-color: var(--color-content-background);
 }
 
-/* When hovering ANY history item, make sure it stays below active dropdown */
 .history-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-medium);
-  z-index: 1; /* Keep at base level when hovering */
-}
-
-/* Give history item with active menu a higher z-index */
-.history-item.has-active-menu {
-  z-index: 1010; /* Higher than other items and any dropdowns */
+  background-color: var(--gray-lightest);
+  border-color: var(--border-color-light);
 }
 
 .history-entry {
-  padding: 0; /* Remove the padding here as it's now on the history-item */
+  display: flex;
+  flex-direction: column;
   width: 100%;
 }
 
 .history-entry-header {
   display: flex;
+  width: 100%; /* Ensure full width */
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--spacing-small);
-  position: relative; /* For dropdown positioning */
+  align-items: center;
+  gap: var(--spacing-small);
 }
 
 .history-entry-info {
   flex: 1;
-  overflow: hidden; /* Prevent overflow */
-}
-
-.history-entry-title {
-  font-size: 1.1em;
-  margin: 0 0 var(--spacing-extra-small) 0;
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
-  word-wrap: break-word; /* Allow wrapping of long words */
-  overflow-wrap: break-word; /* Modern browsers */
-}
-
-.history-entry-meta {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping on small screens */
-  gap: var(--spacing-small);
-  font-size: var(--font-size-smaller);
-  color: var(--color-text-light);
-  margin-bottom: var(--spacing-extra-small);
-}
-
-.history-date {
-  display: inline-flex;
-  align-items: center;
+  flex-direction: column;
   gap: 4px;
+  min-width: 0; /* Critical for text truncation */
+  margin-right: var(--spacing-small); /* Space between text and button */
+  overflow: hidden; /* Ensure text doesn't overflow */
 }
 
-.history-tactic, .history-kpi {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background-color: var(--gray-lightest);
-  font-weight: 500;
+.history-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-meta {
+  color: var(--color-text-light);
+  font-size: var(--font-size-smaller);
 }
 
 .history-file-name {
-  font-family: var(--font-family-monospace);
-  font-size: var(--font-size-small);
-  background-color: var(--gray-lightest);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-top: 4px;
-  color: var(--color-text-light);
-  border: 1px solid var(--border-color-light);
-  word-break: break-all; /* Force breaking for very long filenames */
-  overflow-wrap: break-word; /* Modern browsers */
-  max-width: 100%; /* Ensure it respects the parent width */
-}
-
-.history-actions {
   display: flex;
-  gap: var(--spacing-small);
-  justify-content: flex-end;
   align-items: center;
-  margin-top: var(--spacing-medium);
-  margin-left: auto; /* Push to the right */
+  width: 100%;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  font-size: 14px;
+  overflow: hidden;
 }
 
-/* Style for both action buttons */
-.view-history-button, 
-.view-chat-button {
-  padding: 8px 12px;
+.history-file-name span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* New styles for the View button */
+.view-history-button {
+  background-color: var(--color-primary); /* Audacy Purple */
+  color: white;
+  border: none;
+  padding: 8px 16px;
   border-radius: var(--border-radius-small);
-  font-size: 14px;
   font-weight: var(--font-weight-medium);
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid;
-  min-width: 80px;
-  text-align: center;
-  display: inline-flex;
+  transition: background-color 0.2s;
+  display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0; /* Prevent button from shrinking */
   height: 36px;
-}
-
-.view-history-button {
-  background-color: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
+  min-width: 80px;
+  margin-right: var(--spacing-small);
 }
 
 .view-history-button:hover {
   background-color: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
 }
 
-.view-chat-button {
-  background-color: var(--color-accent);
-  color: white;
-  border-color: var(--color-accent);
+/* === Action Menu Button - Fixed position right === */
+.action-menu-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--gray-lighter);
+  border: 1px solid var(--border-color-light);
+  color: var(--gray-dark);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  padding: 0;
+  font-size: 20px;
+  flex-shrink: 0; /* Prevent button from shrinking */
+  margin-left: auto; /* Push to the right */
+  position: relative; /* For proper dropdown positioning */
+  z-index: 2; /* Ensure button stays above content */
 }
 
-.view-chat-button:hover {
-  background-color: var(--color-accent-dark);
-  border-color: var(--color-accent-dark);
+.action-menu-button:hover, 
+.action-menu-button:focus {
+  background-color: var(--gray-light);
+  color: var(--color-text);
 }
 
+/* Fix for the .action-menu-button.active class */
+.action-menu-button.active {
+  background-color: var(--gray-medium);
+  color: var(--color-text);
+  z-index: 1010; /* Same as active history item */
+}
+
+/* === Responsive adjustments for history items === */
 @media (max-width: 600px) {
   .history-entry-header {
-    flex-direction: column; /* Stack header elements on mobile */
-    gap: var(--spacing-small);
+    flex-wrap: wrap;
+  }
+  
+  .history-entry-info {
+    width: 100%;
     margin-bottom: var(--spacing-small);
+    margin-right: 0;
   }
   
-  .history-actions {
-    justify-content: flex-end; /* Keep right-aligned on mobile */
-    width: 100%; /* Take full width */
-    margin-top: var(--spacing-medium);
-  }
-  
-  .history-item {
-    padding: var(--spacing-medium) var(--spacing-small); /* Reduce side padding */
-    padding-right: 36px; /* Make room for the delete icon */
-  }
-  
-  /* Always show delete icon on mobile touch devices */
-  .delete-history-icon {
-    opacity: 1;
-    top: 10px;
-    right: 10px;
-    width: 28px;
-    height: 28px;
-    background-color: var(--gray-lighter);
-  }
-  
-  /* Hide the standalone delete button on mobile */
-  .delete-history-button {
-    display: none;
-  }
-  
-  /* Make buttons consistent size on mobile but keep them side by side */
-  .view-history-button, 
-  .view-chat-button {
-    flex: 1;
-    max-width: calc(50% - var(--spacing-small) / 2);
+  .view-history-button {
+    margin-right: var(--spacing-small);
   }
 }
 
-/* Pagination Controls */
+/* === Pagination Controls === */
 .pagination-controls {
   display: flex;
   align-items: center;
@@ -1173,7 +1140,7 @@ label.button { display: inline-flex; } /* For file input label */
   font-size: 0.9em;
 }
 
-/* Delete icon styles */
+/* === Delete icon styles === */
 .delete-history-icon {
   position: absolute;
   top: 12px;
@@ -1204,39 +1171,7 @@ label.button { display: inline-flex; } /* For file input label */
   color: var(--color-error);
 }
 
-/* Action Menu Styles */
-.action-menu-button {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--gray-lighter);
-  border: 1px solid var(--border-color-light);
-  color: var(--gray-dark);
-  cursor: pointer;
-  transition: background-color 0.2s;
-  padding: 0;
-  font-size: 20px;
-  margin-left: auto;
-  flex-shrink: 0;
-  position: relative; /* For proper dropdown positioning */
-  z-index: 2; /* Ensure button stays above content */
-}
-
-.action-menu-button:hover, 
-.action-menu-button:focus {
-  background-color: var(--gray-light);
-  color: var(--color-text);
-}
-
-.action-menu-button.active {
-  background-color: var(--gray-medium);
-  color: var(--color-text);
-}
-
-/* Common styles for action menus */
+/* === Action Menu Styles === */
 .action-menu-dropdown {
   background-color: var(--color-white);
   border: 1px solid var(--border-color);
@@ -1260,7 +1195,7 @@ label.button { display: inline-flex; } /* For file input label */
   color: var(--color-error);
 }
 
-/* Desktop specific menu styles - improved to prevent flickering */
+/* === Desktop specific menu styles - improved to prevent flickering === */
 .action-menu-dropdown.desktop-menu {
   position: absolute;
   top: calc(100% + 5px);
@@ -1311,13 +1246,6 @@ label.button { display: inline-flex; } /* For file input label */
 
 .history-item.has-active-menu:hover {
   z-index: 1010; /* Maintain z-index when hovering active item */
-}
-
-/* Make sure the button looks active when menu is open */
-.action-menu-button.active {
-  background-color: var(--gray-medium);
-  color: var(--color-text);
-  z-index: 1010; /* Same as active history item */
 }
 
 /* Improve action menu item styling */

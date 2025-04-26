@@ -94,14 +94,12 @@ const analysisApiUrl = import.meta.env.VITE_ANALYSIS_API_URL || apiBaseUrl;
 const HistoryActionMenu = ({ 
   isOpen, 
   onClose, 
-  onView, 
   onChat, 
   onDelete,
   isMobile
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onView: () => void;
   onChat: () => void;
   onDelete: () => void;
   isMobile: boolean;
@@ -115,10 +113,6 @@ const HistoryActionMenu = ({
         />
         <div className={`action-menu-dropdown ${isOpen ? 'visible' : ''}`}>
           <div className="action-menu-header">Actions</div>
-          <button className="action-menu-item" onClick={onView}>
-            <span className="material-icons">visibility</span>
-            View
-          </button>
           <button className="action-menu-item" onClick={onChat}>
             <span className="material-icons">chat</span>
             Chat
@@ -135,10 +129,6 @@ const HistoryActionMenu = ({
   // Desktop dropdown (unchanged)
   return (
     <div className={`action-menu ${isOpen ? 'open' : ''}`}>
-      <button onClick={onView} className="action-item">
-        <span className="material-icons">visibility</span>
-        View
-      </button>
       <button onClick={onChat} className="action-item">
         <span className="material-icons">chat</span>
         Chat
@@ -2626,11 +2616,24 @@ function App() {
                                                               </span>
                                                           </div>
                                                           {entry.inputs.fileName && (
-                                                              <div className="history-file-name">
-                                                                  {entry.inputs.fileName}
-                                                              </div>
+                                                              <p className="history-file-name" title={entry.inputs.fileName}>
+                                                                  <span className="material-icons history-file-icon">attachment</span>
+                                                                  <span>{entry.inputs.fileName}</span>
+                                                              </p>
                                                           )}
                                                       </div>
+
+                                                      {/* Add View button with Audacy Purple color */}
+                                                      <button 
+                                                          className="view-history-button"
+                                                          onClick={(e) => handleViewClick(entry.id, e)}
+                                                      >
+                                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '4px'}}>
+                                                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                              <circle cx="12" cy="12" r="3"></circle>
+                                                          </svg>
+                                                          View
+                                                      </button>
                                                       
                                                       {/* Button now uses a function to ensure it correctly gets/loses focus */}
                                                       <button 
@@ -2652,16 +2655,6 @@ function App() {
                                                           className={`action-menu-dropdown desktop-menu ${activeMenuId === entry.id ? 'visible' : ''}`}
                                                           onClick={(e) => e.stopPropagation()}
                                                       >
-                                                          <button 
-                                                              className="action-menu-item"
-                                                              onClick={(e) => handleViewClick(entry.id, e)}
-                                                          >
-                                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                                  <circle cx="12" cy="12" r="3"></circle>
-                                                              </svg>
-                                                              View
-                                                          </button>
                                                           <button 
                                                               className="action-menu-item"
                                                               onClick={(e) => handleChatClick(entry, e)}>
@@ -2699,16 +2692,6 @@ function App() {
                                                                   onClick={(e) => e.stopPropagation()}
                                                               >
                                                                   <div className="action-menu-header">Actions</div>
-                                                                  <button 
-                                                                      className="action-menu-item"
-                                                                      onClick={(e) => handleViewClick(entry.id, e)}
-                                                                  >
-                                                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                                          <circle cx="12" cy="12" r="3"></circle>
-                                                                      </svg>
-                                                                      View
-                                                                  </button>
                                                                   <button 
                                                                       className="action-menu-item"
                                                                       onClick={(e) => handleChatClick(entry, e)}>
