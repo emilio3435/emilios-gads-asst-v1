@@ -1,6 +1,20 @@
 {
   "root": "dist",
   "clean_urls": true,
+  "proxies": {
+    "/api": {
+      "origin": "https://emilios-ads-asst-v1-backend.onrender.com"
+    },
+    "/api/history": {
+      "origin": "https://emilios-ads-asst-v1-history-backend.onrender.com"
+    },
+    "/analyze": {
+      "origin": "https://emilios-ads-asst-v1-backend.onrender.com"
+    },
+    "/get-help": {
+      "origin": "https://emilios-ads-asst-v1-backend.onrender.com"
+    }
+  },
   "routes": {
     "/**": "index.html"
   }
