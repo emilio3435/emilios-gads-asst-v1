@@ -1,0 +1,4 @@
+/* /index.html 200
+/api/* https://emilios-ads-asst-v1-backend.onrender.com/api/:splat 200
+/analyze https://emilios-ads-asst-v1-backend.onrender.com/analyze 200
+/get-help https://emilios-ads-asst-v1-backend.onrender.com/get-help 200 

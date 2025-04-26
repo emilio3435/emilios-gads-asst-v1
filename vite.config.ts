@@ -8,9 +8,9 @@ export default defineConfig({
     proxy: {
       // Proxy requests for /analyze, /get-help, and /api/* to the backend server
       '^/(analyze|get-help|api)': { // Added |api
-        target: 'http://localhost:5001', // Correct backend port
-        changeOrigin: true, // Recommended for virtual hosted sites
-        secure: false, // OK for localhost development
+        target: 'https://emilios-ads-asst-v1-backend.onrender.com', // Backend URL on Render
+        changeOrigin: true, // Required for external domains
+        secure: true, // Set to true for HTTPS
         ws: true, // Enable WebSocket proxying if needed later
         // No rewrite needed as the paths match
         configure: (proxy, options) => {
