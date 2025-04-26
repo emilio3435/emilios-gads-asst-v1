@@ -100,11 +100,8 @@ const getApiUrl = (endpoint: string, service: 'history' | 'analysis' = 'history'
   }
   
   // For production, use absolute URLs to avoid proxy issues
-  if (service === 'history') {
-    return `https://emilios-ads-asst-v1-history-backend.onrender.com${endpoint}`;
-  } else {
-    return `https://emilios-ads-asst-v1-backend.onrender.com${endpoint}`;
-  }
+  // Route ALL requests to the main backend, regardless of service type
+  return `https://emilios-ads-asst-v1-backend.onrender.com${endpoint}`;
 };
 
 const HistoryActionMenu = ({ 
