@@ -94,12 +94,15 @@ const historyApiUrl = import.meta.env.VITE_HISTORY_API_URL || apiBaseUrl; // Use
 
 // Helper function to get the correct API URL based on environment
 const getApiUrl = (endpoint: string, service: 'history' | 'analysis' = 'history') => {
-  // For local development or the audacyai.com deployment, use relative paths
-  if (window.location.hostname === 'localhost' || window.location.hostname.includes('audacyai.com')) {
+  // For local development or audacyai.com, use relative paths
+  // This allows static.json proxy rules to route the request appropriately
+  if (window.location.hostname === 'localhost' || 
+      window.location.hostname === 'www.audacyai.com' || 
+      window.location.hostname === 'audacyai.com') {
     return endpoint;
   }
   
-  // For other production environments, use absolute URLs to avoid proxy issues
+  // For other production environments, use absolute URLs
   return `https://emilios-ads-asst-v1-backend.onrender.com${endpoint}`;
 };
 
