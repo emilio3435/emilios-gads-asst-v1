@@ -2,11 +2,11 @@
   "root": "dist",
   "clean_urls": true,
   "proxies": {
-    "/api/history": {
-      "origin": "https://emilios-ads-asst-v1-history-backend.onrender.com"
-    },
     "/api": {
       "origin": "https://emilios-ads-asst-v1-backend.onrender.com"
+    },
+    "/api/history": {
+      "origin": "https://emilios-ads-asst-v1-history-backend.onrender.com"
     },
     "/analyze": {
       "origin": "https://emilios-ads-asst-v1-backend.onrender.com"
