@@ -626,42 +626,10 @@ CURRENT QUESTION: ${req.body.question}
 
 // --- History API Routes (Protected by Auth Middleware) ---
 
-// GET /api/history - Fetch history for the user (TEMPORARILY REMOVING AUTH MIDDLEWARE FOR TESTING)
-app.get('/api/history', /* authenticateToken, */ async (req: Request, res: Response) => {
-  // const userId = req.user?.sub; // Temporarily comment out user check
-  const userId = 'TEST_USER_ID'; // Use a test ID for now
-  console.log(`[GET /api/history] Request (AUTH DISABLED) for test user: ${userId}`);
-
-  if (!userId) { // Keep basic check just in case
-    console.error('[GET /api/history] TEST User ID missing - THIS SHOULD NOT HAPPEN');
-    return res.status(400).json({ message: 'Test User ID missing.' });
-  }
-
-  try {
-    console.log(`Fetching history for user ${userId}...`);
-    const historyQuery = db.collection('userHistory')
-                           .where('userId', '==', userId)
-                           .orderBy('timestamp', 'desc');
-
-    const snapshot = await historyQuery.get();
-
-    if (snapshot.empty) {
-      console.log(`No history found for user ${userId}.`);
-      return res.status(200).json({ message: 'No history found for user.', data: [] });
-    }
-
-    const userHistory = snapshot.docs.map((doc: admin.firestore.QueryDocumentSnapshot) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    console.log(`Successfully fetched ${userHistory.length} history entries for user ${userId}.`);
-    res.status(200).json({ message: 'History fetched successfully.', data: userHistory });
-
-  } catch (error) {
-    console.error(`[GET /api/history] Error accessing Firestore for user ${userId}:`, error);
-    res.status(500).json({ message: 'Failed during history check due to a server error.' });
-  }
+// GET /api/history - Fetch history for the user (SIMPLIFIED FOR 404 DEBUG)
+app.get('/api/history', (req: Request, res: Response) => {
+  console.log(`[GET /api/history] Simplified handler hit! Returning dummy data.`);
+  res.status(200).json({ message: 'Simplified GET OK', data: [] });
 });
 
 // GET /api/history/:id - Fetch a specific history entry by ID
