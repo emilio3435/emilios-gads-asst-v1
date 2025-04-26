@@ -8,6 +8,7 @@ import * as admin from 'firebase-admin'; // Import Firebase Admin types
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { authenticateToken } from './middleware/auth'; // Import the auth middleware
+import { sessionMiddleware } from './middleware/session'; // Import the session middleware
 import { ServiceAccount } from 'firebase-admin';
 import { OAuth2Client } from 'google-auth-library';
 
@@ -21,10 +22,37 @@ import { OAuth2Client } from 'google-auth-library';
 const app = express();
 const port = process.env.PORT || 3001; // Use environment variable or default
 
+// Log allowed CORS origin from env for debugging
+console.log('CORS_ORIGIN from env:', process.env.CORS_ORIGIN);
+
 // Middleware
-app.use(cors()); // Enable CORS for all origins (adjust for production)
+app.use(cors({ 
+  origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins - use CORS_ORIGIN env var if available
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      process.env.CORS_ORIGIN
+    ].filter(Boolean); // Remove any null/undefined values
+    
+    console.log(`Received request from origin: ${origin}, allowed origins:`, allowedOrigins);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true // Important for cookies/sessions
+})); 
 app.use(express.json({ limit: '50mb' })); // Parse JSON request bodies
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Add session middleware
+app.use(sessionMiddleware);
 
 // Simple Root Route
 app.get('/', (req: Request, res: Response) => {
