@@ -626,10 +626,45 @@ CURRENT QUESTION: ${req.body.question}
 
 // --- History API Routes (Protected by Auth Middleware) ---
 
-// GET /api/history - Fetch history for the user (SIMPLIFIED FOR 404 DEBUG)
-app.get('/api/history', (req: Request, res: Response) => {
-  console.log(`[GET /api/history] Simplified handler hit! Returning dummy data.`);
-  res.status(200).json({ message: 'Simplified GET OK', data: [] });
+// GET /api/history - Fetch history for the user
+app.get('/api/history', authenticateToken, async (req: Request, res: Response) => {
+  console.log(`Received GET /api/history request for user: ${req.user?.email}`);
+  const userId = req.user?.sub;
+
+  if (!userId) {
+    console.error('User ID missing after authentication.');
+    return res.status(400).json({ message: 'User ID not found after authentication.' });
+  }
+
+  try {
+    console.log(`Looking up history for user ${userId}...`);
+    const query = db.collection('userHistory').where('userId', '==', userId);
+    const snapshot = await query.get();
+
+    if (snapshot.empty) {
+      console.log(`No history found for user ${userId}.`);
+      return res.status(200).json({ message: 'No history found.', data: [] });
+    }
+
+    // Convert snapshot to array of history entries
+    const historyEntries = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data
+      };
+    });
+
+    console.log(`Successfully fetched ${historyEntries.length} history entries for user ${userId}.`);
+    res.status(200).json({ 
+      message: 'History fetched successfully.',
+      data: historyEntries
+    });
+
+  } catch (error) {
+    console.error(`Error fetching history for user ${userId}:`, error);
+    res.status(500).json({ message: 'Failed to fetch history due to a server error.' });
+  }
 });
 
 // GET /api/history/:id - Fetch a specific history entry by ID
@@ -699,13 +734,37 @@ app.post('/api/history', authenticateToken, async (req: Request, res: Response) 
   }
 
   try {
-    const dataToSave = {
+    // Truncate large fields to prevent Firestore document size limits
+    const sanitizedData = {
       ...historyEntryData,
+      results: {
+        ...historyEntryData.results,
+        // Limit the size of these fields if they're too large
+        analysisResult: historyEntryData.results?.analysisResult ? 
+          (historyEntryData.results.analysisResult.length > 100000 ? 
+            historyEntryData.results.analysisResult.substring(0, 100000) + '... [truncated]' : 
+            historyEntryData.results.analysisResult) : 
+          null,
+        rawAnalysisResult: historyEntryData.results?.rawAnalysisResult ? 
+          (historyEntryData.results.rawAnalysisResult.length > 100000 ? 
+            historyEntryData.results.rawAnalysisResult.substring(0, 100000) + '... [truncated]' : 
+            historyEntryData.results.rawAnalysisResult) : 
+          null,
+        promptSent: historyEntryData.results?.promptSent ? 
+          (historyEntryData.results.promptSent.length > 100000 ? 
+            historyEntryData.results.promptSent.substring(0, 100000) + '... [truncated]' : 
+            historyEntryData.results.promptSent) : 
+          null,
+      }
+    };
+
+    const dataToSave = {
+      ...sanitizedData,
       userId: userId, 
       timestamp: historyEntryData.timestamp ? new Date(historyEntryData.timestamp) : new Date(), 
     };
 
-    console.log(`Data being saved to Firestore for user ${userId}:`, dataToSave);
+    console.log(`Data being saved to Firestore for user ${userId} (truncated if necessary)`);
 
     const docRef = await db.collection('userHistory').add(dataToSave);
     
@@ -714,11 +773,17 @@ app.post('/api/history', authenticateToken, async (req: Request, res: Response) 
     res.status(201).json({ 
         message: `History entry saved successfully for user ${userId}`,
         entryId: docRef.id,
+        data: {
+          id: docRef.id 
+        }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error saving history entry for user ${userId}:`, error);
-    res.status(500).json({ message: 'Failed to save history entry due to a server error.' });
+    res.status(500).json({ 
+      message: 'Failed to save history entry due to a server error.',
+      error: error.message 
+    });
   }
 });
 
