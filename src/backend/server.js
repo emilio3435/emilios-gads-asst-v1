@@ -417,10 +417,18 @@ app.post('/analyze', upload.single('file'), async (req, res) => {
                     if (pdfError instanceof Error) errorMessage += ` Details: ${pdfError.message}`;
                     throw new Error(errorMessage); // Throw error
                 }
+            } else if (lowerCaseFileName.endsWith('.png') || lowerCaseFileName.endsWith('.jpg') || lowerCaseFileName.endsWith('.jpeg') || lowerCaseFileName.endsWith('.gif') || lowerCaseFileName.endsWith('.webp')) {
+                console.log('Processing image file...');
+                // Convert image buffer to Base64 string
+                const base64Image = fileBuffer.toString('base64');
+                const mimeType = req.file.mimetype; // Get MIME type from multer
+                dataString = `data:${mimeType};base64,${base64Image}`; // Create data URI
+                rawFileContent = dataString; // Store the data URI as raw content
+                console.log(`Image (${mimeType}) processed successfully.`);
             } else {
                 console.log('Unsupported file type.');
                 rawFileContent = 'Unsupported file type.';
-                throw new Error('Unsupported file type. Please upload CSV, XLSX, or PDF.'); // Throw error
+                throw new Error('Unsupported file type. Please upload CSV, XLSX, PDF, PNG, JPG, GIF, or WEBP.'); // Updated error message
             }
         }
         console.log('[/analyze] File processing finished.'); // LOG 6: After File Processing
@@ -1048,7 +1056,7 @@ let maxAttempts = 10;
 
 function tryStartServer(port) {
   console.log(`Attempting to start server on port ${port}...`);
-  
+
   const server = app.listen(port, '0.0.0.0', () => { 
     console.log(`✅ Server successfully started and listening on http://0.0.0.0:${port}`);
 });

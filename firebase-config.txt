@@ -1,0 +1,7 @@
+# Firebase configuration values - copy to your .env file
+VITE_FIREBASE_API_KEY=AIzaSyCf3w8d0QiHYI14Jx4ZR_XLMsRRGCLgldo
+VITE_FIREBASE_AUTH_DOMAIN=emilio-s-ads-assistant.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=emilio-s-ads-assistant
+VITE_FIREBASE_STORAGE_BUCKET=emilio-s-ads-assistant.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=767785559382
+VITE_FIREBASE_APP_ID=1:767785559382:web:eb36d9f32e30c13f9e7f04

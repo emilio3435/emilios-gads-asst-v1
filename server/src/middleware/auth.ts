@@ -21,6 +21,19 @@ declare global {
 }
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+  // First check if there's an active session
+  if (req.session.isAuthenticated && req.session.user) {
+    console.log('Using existing session for user:', req.session.user.email);
+    req.user = {
+      sub: req.session.user.sub,
+      email: req.session.user.email,
+      name: req.session.user.name,
+      picture: req.session.user.picture,
+    } as TokenPayload;
+    return next();
+  }
+
+  // If no session, fall back to token verification
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
@@ -51,7 +64,19 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     }
 
     console.log('Token verified successfully for user:', payload.email);
-    req.user = payload; // Attach user payload to the request object
+    
+    // Store the user information in session
+    req.session.user = {
+      sub: payload.sub || '',
+      email: payload.email || '',
+      name: payload.name,
+      picture: payload.picture
+    };
+    req.session.isAuthenticated = true;
+    
+    // Attach user payload to the request object
+    req.user = payload;
+    
     next(); // Proceed to the next middleware or route handler
 
   } catch (error) {

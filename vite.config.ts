@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Proxy requests for /analyze and /get-help to the backend server
-      '^/(analyze|get-help)': { // Match paths starting with /analyze OR /get-help
+      // Proxy requests for /analyze, /get-help, and /api/* to the backend server
+      '^/(analyze|get-help|api)': { // Added |api
         target: 'http://localhost:5001', // Correct backend port
         changeOrigin: true, // Recommended for virtual hosted sites
         secure: false, // OK for localhost development
